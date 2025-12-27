@@ -49,4 +49,8 @@ class User extends Authenticatable
             'is_active' => 'boolean',
         ];
     }
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
 }

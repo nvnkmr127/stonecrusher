@@ -12,6 +12,46 @@
         </div>
     </x-slot>
 
+    <!-- Resources Stats Row -->
+    <div class="row row-deck row-cards mb-3">
+        <div class="col-sm-6 col-lg-3">
+            <x-card>
+                <div class="subheader">Total Clients</div>
+                <div class="h1 mb-3">{{ $totalClients }}</div>
+                <div class="d-flex mb-2">
+                    <div>Active partners</div>
+                </div>
+            </x-card>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <x-card>
+                <div class="subheader">Total Vehicles</div>
+                <div class="h1 mb-3">{{ $vehicleStats['total'] }}</div>
+                <div class="d-flex mb-2">
+                    <div>Fleet size</div>
+                </div>
+            </x-card>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <x-card>
+                <div class="subheader">Active Vehicles</div>
+                <div class="h1 mb-3 text-success">{{ $vehicleStats['active'] }}</div>
+                <div class="d-flex mb-2">
+                    <div>Operational</div>
+                </div>
+            </x-card>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <x-card>
+                <div class="subheader">Maintenance</div>
+                <div class="h1 mb-3 text-warning">{{ $vehicleStats['total'] - $vehicleStats['active'] }}</div>
+                <div class="d-flex mb-2">
+                    <div>Requires attention</div>
+                </div>
+            </x-card>
+        </div>
+    </div>
+
     <!-- Project Stats Row -->
     <div class="row row-deck row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
@@ -98,7 +138,7 @@
                                         'cancelled' => 'danger'
                                     ];
                                 @endphp
-                                <span class="badge bg-{{ $statusColors[$project->status] ?? 'secondary' }}">
+                                <span class="badge bg-{{ $statusColors[$project->status] ?? 'secondary' }} text-white">
                                     {{ ucfirst($project->status) }}
                                 </span>
                             </td>

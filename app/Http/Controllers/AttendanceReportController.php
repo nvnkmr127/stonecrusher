@@ -1,0 +1,107 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use App\Models\Attendance;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+
+class AttendanceReportController extends Controller
+{
+    public function index(Request $request)
+    {
+        $month = $request->input('month', now()->month);
+        $year = $request->input('year', now()->year);
+
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+
+        $employees = User::with([
+            'attendances' => function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('date', [$startDate, $endDate]);
+            }
+        ])->get();
+
+        $reportData = $employees->map(function ($employee) {
+            $present = $employee->attendances->where('status', 'present')->count();
+            $late = $employee->attendances->where('status', 'late')->count();
+            $halfDay = $employee->attendances->where('status', 'half_day')->count();
+            // Absent is tricky: it's either an 'absent' record OR no record for a working day.
+            // For now, let's count explicit 'absent' status records + maybe days without records?
+            // Actually, Requirement says "Absent days".
+            // Let's stick to explicitly marked 'absent' OR leave for now, or just status counts.
+            // If we want "No Record" as absent, we need to know total working days.
+
+            $absent = $employee->attendances->where('status', 'absent')->count();
+            $leave = $employee->attendances->where('status', 'leave')->count();
+
+            // Total working days = count of attendance records? Or days in month? 
+            // If we assume every day is a working day except Sundays, we could calculate potential working days.
+            // But let's stick to summarizing the *records* we have plus maybe a simple count.
+
+            return [
+                'user' => $employee,
+                'present' => $present + $late, // Late is technically present but late
+                'late' => $late,
+                'half_day' => $halfDay,
+                'absent' => $absent,
+                'leave' => $leave,
+                'total_attended' => $present + $late + $halfDay,
+            ];
+        });
+
+        return view('attendance.report', compact('reportData', 'month', 'year'));
+    }
+
+    public function export(Request $request)
+    {
+        $month = $request->input('month', now()->month);
+        $year = $request->input('year', now()->year);
+
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+
+        $employees = User::with([
+            'attendances' => function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('date', [$startDate, $endDate]);
+            }
+        ])->get();
+
+        $filename = "attendance_report_{$month}_{$year}.csv";
+        $headers = [
+            "Content-type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        $columns = ['Employee', 'Present (Days)', 'Late (Days)', 'Half Day', 'Absent', 'Leave'];
+
+        $callback = function () use ($employees, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($employees as $employee) {
+                $present = $employee->attendances->whereIn('status', ['present', 'late'])->count();
+                $late = $employee->attendances->where('status', 'late')->count();
+                $halfDay = $employee->attendances->where('status', 'half_day')->count();
+                $absent = $employee->attendances->where('status', 'absent')->count();
+                $leave = $employee->attendances->where('status', 'leave')->count();
+
+                fputcsv($file, [
+                    $employee->name,
+                    $present,
+                    $late,
+                    $halfDay,
+                    $absent,
+                    $leave
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+}

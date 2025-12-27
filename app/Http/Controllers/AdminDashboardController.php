@@ -20,6 +20,12 @@ class AdminDashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('admin.dashboard', compact('projectStats', 'recentProjects'));
+        $totalClients = \App\Models\Client::count();
+        $vehicleStats = [
+            'total' => \App\Models\Vehicle::count(),
+            'active' => \App\Models\Vehicle::where('is_active', true)->count(),
+        ];
+
+        return view('admin.dashboard', compact('projectStats', 'recentProjects', 'totalClients', 'vehicleStats'));
     }
 }

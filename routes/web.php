@@ -9,6 +9,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\MetalTypeController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\AttendanceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -37,6 +38,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::resource('vehicles', VehicleController::class);
     Route::resource('metal-types', MetalTypeController::class);
     Route::resource('projects', ProjectController::class);
+
+    // Attendance
+    Route::get('attendance/report', [App\Http\Controllers\AttendanceReportController::class, 'index'])->name('attendance.report');
+    Route::get('attendance/report/export', [App\Http\Controllers\AttendanceReportController::class, 'export'])->name('attendance.report.export');
+    Route::resource('attendance', AttendanceController::class);
 });
 
 // User Routes

@@ -33,6 +33,8 @@ class SettingsController extends Controller
             'rate_per_km' => 'required|numeric|min:0',
             'date_format' => 'required|string|max:20',
             'google_maps_api_key' => 'nullable|string|max:255',
+            'attendance_shift_start' => 'required|date_format:H:i',
+            'attendance_shift_end' => 'required|date_format:H:i|after:attendance_shift_start',
         ]);
 
         foreach ($validated as $key => $value) {

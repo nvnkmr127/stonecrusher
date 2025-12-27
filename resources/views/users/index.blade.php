@@ -117,7 +117,7 @@
                                                 class="d-inline">
                                                 @csrf
                                                 <button type="submit"
-                                                    class="btn btn-sm btn-{{ $user->is_active ? 'warning' : 'success' }}">
+                                                    class="btn btn-sm btn-{{ $user->is_active ? 'warning' : 'success' }} text-white">
                                                     {{ $user->is_active ? 'Deactivate' : 'Activate' }}
                                                 </button>
                                             </form>

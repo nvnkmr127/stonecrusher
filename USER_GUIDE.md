@@ -73,6 +73,38 @@ Control who can access the system.
 
 ---
 
+## 📅 Attendance Module
+
+Track and manage employee attendance efficiently.
+
+### Daily Register
+- **View**: Go to **Attendance > Daily Register** to see a full list of staff attendance for the selected date.
+- **Filters**: Filter by specific **Date** or **Employee**.
+- **Status Indicators**:
+  - `Present`: On-time arrival.
+  - `Late`: Checked in after the configured *Shift Start Time*.
+  - `Half Day`: Early departure or significant lateness.
+  - `Leave` / `Absent`: As marked.
+
+### Marking Attendance
+- **Add Entry**: Click **Add New** on the Daily Register page.
+  - Select **Staff Member**, **Date**, **Check In/Out Time**, and **Status**.
+  - **Remarks**: Optional notes (mandatory for edits).
+- **Edit Entry**: Click **Edit** on any record to update times or change status.
+  - *Note*: Auditors can see who modified a record and the reason provided.
+
+### Monthly Report
+- **View**: Go to **Attendance > Monthly Report**.
+- **Summary**: view a table showing total Present, Late, Half Day, Leave, and Absent days for each employee for the selected month.
+- **Export**: Click **Export CSV** to download the data for payroll processing.
+- **Print**: Use the **Print** button for a hard copy.
+
+### Configuration
+- **Shift Timings**: Go to **Settings** to define your standard **Shift Start Time** and **Shift End Time**.
+  - These settings determine whether an employee is marked as 'Late' or 'Half Day'.
+
+---
+
 ## 🚛 Distance Calculation Service
 
 The system automatically calculates distances between your **Crusher Location** (set in Settings) and project sites if coordinates are available.

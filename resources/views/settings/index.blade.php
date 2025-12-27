@@ -112,6 +112,28 @@
                                 :value="$settings['google_maps_api_key'] ?? ''"
                                 placeholder="Leave empty to use free OpenStreetMap"
                             />
+
+                            <h3 class="mb-3 mt-4">Attendance Settings</h3>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <x-form.input 
+                                        name="attendance_shift_start" 
+                                        label="Shift Start Time" 
+                                        type="time"
+                                        :value="$settings['attendance_shift_start'] ?? '09:30'"
+                                        required 
+                                    />
+                                </div>
+                                <div class="col-md-6">
+                                    <x-form.input 
+                                        name="attendance_shift_end" 
+                                        label="Shift End Time" 
+                                        type="time"
+                                        :value="$settings['attendance_shift_end'] ?? '18:30'"
+                                        required 
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
