@@ -150,6 +150,90 @@ php artisan event:cache
 
 ## Troubleshooting
 
+### **CRITICAL: PHP Version Mismatch Error**
+If you see errors like `Root composer.json requires php ^8.2 but your php version (7.4.33)...`, your server is using an old PHP version by default.
+
+**Solution:**
+1.  **Check available versions**: Run `ls /usr/bin/php*` or `which php8.2`.
+2.  **Use the correct executable**: Use the full path to php 8.2+ for composer commands.
+    ```bash
+    # Example using specific PHP version
+    /usr/bin/php8.2 /usr/local/bin/composer install
+    ```
+3.  **Change default version**:
+    - **cPanel**: Go to "MultiPHP Manager" and set the domain to PHP 8.2 or 8.3.
+    - **Ubuntu/Debian**: `sudo update-alternatives --set php /usr/bin/php8.2`
+    - **Alias**: Add `alias php='/usr/bin/php8.2'` to your shell profile.
+
+### **CRITICAL: Missing PHP Extensions (ext-fileinfo)**
+If you see errors like `requires ext-fileinfo * -> it is missing from your system`, your PHP installation is missing required extensions.
+
+**Solution:**
+1.  **cPanel / Shared Hosting**:
+    - Go to **"Select PHP Version"** (or MultiPHP Manager).
+    - Ensure your version is set to 8.2 or higher.
+    - Click on the **"Extensions"** tab.
+    - Check/Enable the `fileinfo` box.
+    - Also ensure `mbstring`, `openssl`, `pdo`, `tokenizer`, `xml`, and `ctype` are enabled.
+
+2.  **VPS / Ubuntu**:
+    ```bash
+    sudo apt-get install php8.2-fileinfo
+    ```
+
+3.  **Temporary Workaround (Not Recommended for Production)**:
+    If you cannot enable it immediately, you can try ignoring the requirement during install:
+    ```bash
+    composer install --optimize-autoloader --no-dev --ignore-platform-req=ext-fileinfo
+    ```
+
+### **Permission Issues (403 Forbidden / "User does not have right roles")**
+
+If you can login but cannot see the sidebar or access pages:
+
+1.  **Clear Permission Cache**:
+    ```bash
+    php artisan permission:cache-reset
+    ```
+
+2.  **Verify User Roles**:
+    Run `php artisan tinker` and check if the user has the role:
+    ```php
+    $user = App\Models\User::where('email', 'admin@example.com')->first();
+    $user->getRoleNames(); // Should output ["admin"]
+    ```
+
+3.  **Re-run Seeder**:
+    If the role is missing, re-run the seeder:
+    ```bash
+    php artisan db:seed --class=RoleAndPermissionSeeder --force
+    ```
+
+4.  **Manually Assign Role (Emergency)**:
+    If the seeder doesn't work, assign it manually in tinker:
+    ```php
+    $user = App\Models\User::where('email', 'your_email@example.com')->first();
+    $user->assignRole('admin');
+    exit
+    ```
+
+### **Wrong Dashboard URL (403 Forbidden)**
+
+**Critical Note:** This system has separate dashboards for Admins and Users.
+- **Admins** must use: `/admin/dashboard`
+  - Requires `admin` role.
+  - If you go to `/dashboard` as an admin, you **will** get a 403 error (unless you also have the 'user' role).
+- **Standard Users** must use: `/dashboard`
+  - Requires `user` role.
+
+**Diagnose with "Role Checker" Script**:
+Run this in `php artisan tinker` to see exactly what roles your user has:
+```php
+$u = App\Models\User::where('email', 'admin@example.com')->first();
+echo "Roles: " . implode(', ', $u->getRoleNames()->toArray()) . "\n";
+echo "Permissions: " . implode(', ', $u->getAllPermissions()->pluck('name')->toArray()) . "\n";
+```
+
 - **500 Server Error**: Check `storage/logs/laravel.log` and verify permissions.
 - **Assets 404**: Ensure `npm run build` was run and the `public/build` directory exists.
 - **Database Error**: Ensure the database file (SQLite) or connection (MySQL) is correct and migrations ran.
