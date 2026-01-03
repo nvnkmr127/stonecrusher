@@ -104,6 +104,51 @@ Track and manage employee attendance efficiently.
   - These settings determine whether an employee is marked as 'Late' or 'Half Day'.
 
 ---
+---
+
+## 💰 Client Financials & Ledger (New)
+
+Manage client accounts, track advance payments, and monitor outstanding balances.
+
+### 1. Client Management Enhanced
+- **Credit Limit & Notes**: When adding a new client, you can now set a **Credit Limit** and add strictly private **Notes**.
+- **Net Balance**: The main Client List now shows a **Balance** column:
+  - **Green**: Advance/Excess payment received.
+  - **Red**: Outstanding amount (Client owes you).
+- **Ledger Access**: Click on any client name or the **"Ledger"** button to view their full financial history.
+
+### 2. Client Ledger
+The Ledger is your single source of truth for a client's account.
+- **Transaction History**: View a chronological list of all sales and payments.
+- **Date Filter**: Use the date pickers at the top to filter transactions for a specific period (e.g., "This Month").
+- **Print**: Click the printer icon to generate a hard copy of the filtered ledger.
+
+### 3. Recording Transactions
+To record a new payment or sale:
+1. Go to the **Client Ledger**.
+2. Click **"Record Transaction"**.
+3. **Transaction Type**:
+   - Select **Credit** for payments received (Advance).
+   - Select **Debit** for sales/invoices (Balance Due).
+4. **Payment Mode**: For advances, specify (Cash, UPI, Bank Transfer, etc.).
+5. **Amount**: Enter the value.
+6. **Save**: The ledger will auto-recalculate the Net Balance.
+
+### 4. Editing Transactions (Admin Only)
+Only Admins have the permission to correct past mistakes.
+- Locate the transaction in the Ledger.
+- Click the **"Edit"** button in the Actions column.
+- Modify the details (Date, Amount, etc.).
+- **Mandatory Reason**: You **must** provide a reason for the edit. This is logged for audit purposes.
+
+### 5. Outstanding Report
+Get a bird's-eye view of your receivables.
+- **Navigate**: Go to **Reports > Client Outstanding**.
+- **Summary**: See total Sales, Total Advances, and Total Outstanding across the company.
+- **Table**: Detailed breakdown per client with "Advance" or "Outstanding" status badges.
+- **Export**: Click **"Export CSV"** to download the data for Excel analysis.
+
+---
 
 ## 🚛 Distance Calculation Service
 
