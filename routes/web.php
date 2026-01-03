@@ -34,15 +34,31 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
     // Master Data
-    Route::resource('clients', ClientController::class);
-    Route::resource('vehicles', VehicleController::class);
-    Route::resource('metal-types', MetalTypeController::class);
-    Route::resource('projects', ProjectController::class);
-
-    // Attendance
+    // Attendance (Policy handled in controller, but route access mainly Admin)
     Route::get('attendance/report', [App\Http\Controllers\AttendanceReportController::class, 'index'])->name('attendance.report');
     Route::get('attendance/report/export', [App\Http\Controllers\AttendanceReportController::class, 'export'])->name('attendance.report.export');
     Route::resource('attendance', AttendanceController::class);
+
+    // Restricted Transaction Edits (Admin Only)
+    Route::get('clients/{client}/transactions/{transaction}/edit', [App\Http\Controllers\ClientTransactionController::class, 'edit'])->name('clients.transactions.edit');
+    Route::put('clients/{client}/transactions/{transaction}', [App\Http\Controllers\ClientTransactionController::class, 'update'])->name('clients.transactions.update');
+});
+
+// Admin & Manager Routes
+Route::middleware(['auth', 'verified', 'role:admin|manager'])->group(function () {
+
+    // Client Reports (Placed before resource to avoid ID collision)
+    Route::get('clients/reports/outstanding', [App\Http\Controllers\ClientReportController::class, 'index'])->name('clients.reports.outstanding');
+    Route::get('clients/reports/outstanding/export', [App\Http\Controllers\ClientReportController::class, 'export'])->name('clients.reports.outstanding.export');
+
+    // Master Data
+    Route::resource('clients', ClientController::class);
+    Route::resource('vehicles', VehicleController::class); // Assuming managers need this too? Keep it here for consistency if needed, else leave in Admin. 
+    // Actually, stick to just Clients for now to be safe.
+
+    // Client Transactions
+    Route::get('clients/{client}/transactions/create', [App\Http\Controllers\ClientTransactionController::class, 'create'])->name('clients.transactions.create');
+    Route::post('clients/{client}/transactions', [App\Http\Controllers\ClientTransactionController::class, 'store'])->name('clients.transactions.store');
 });
 
 // User Routes

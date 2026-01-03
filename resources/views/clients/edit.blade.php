@@ -19,6 +19,9 @@
                     <x-form.input name="email" label="Email" type="email" :value="$client->email" />
                     <x-form.input name="phone" label="Phone" :value="$client->phone" />
                     <x-form.textarea name="address" label="Address" :value="$client->address" rows="3" />
+                    <x-form.input name="credit_limit" label="Credit Limit" type="number" step="0.01"
+                        :value="$client->credit_limit" />
+                    <x-form.textarea name="notes" label="Notes" rows="3" :value="$client->notes" />
                     <x-form.checkbox name="is_active" label="Active" :checked="$client->is_active" />
 
                     <hr class="my-4">

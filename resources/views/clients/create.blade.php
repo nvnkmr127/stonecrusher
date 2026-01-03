@@ -18,6 +18,8 @@
                     <x-form.input name="email" label="Email" type="email" />
                     <x-form.input name="phone" label="Phone" />
                     <x-form.textarea name="address" label="Address" rows="3" />
+                    <x-form.input name="credit_limit" label="Credit Limit" type="number" step="0.01" />
+                    <x-form.textarea name="notes" label="Notes" rows="3" />
                     <x-form.checkbox name="is_active" label="Active" :checked="true" />
 
                     <hr class="my-4">

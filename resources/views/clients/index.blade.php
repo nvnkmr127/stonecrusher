@@ -27,12 +27,26 @@
                     Clients ({{ $clients->total() }})
                 </x-slot>
 
+                <div class="card-body border-bottom py-3">
+                    <div class="d-flex">
+                        <div class="ms-auto text-muted">
+                            Search:
+                            <div class="ms-2 d-inline-block">
+                                <form method="GET" action="{{ route('clients.index') }}">
+                                    <input type="text" name="search" value="{{ request('search') }}" class="form-control form-control-sm" aria-label="Search client" placeholder="Name, Phone, or Email...">
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <x-table>
                     <thead>
                         <tr>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Phone</th>
+                            <th>Balance</th>
                             <th>Status</th>
                             <th>Created</th>
                             <th>Actions</th>
@@ -41,9 +55,20 @@
                     <tbody>
                         @forelse($clients as $client)
                             <tr>
-                                <td>{{ $client->name }}</td>
+                                <td>
+                                    <a href="{{ route('clients.show', $client) }}"
+                                        class="text-reset fw-bold">{{ $client->name }}</a>
+                                </td>
                                 <td>{{ $client->email ?? '-' }}</td>
                                 <td>{{ $client->phone ?? '-' }}</td>
+                                <td>
+                                    @php
+                                        $bal = $client->balance;
+                                    @endphp
+                                    <span class="{{ $bal >= 0 ? 'text-success' : 'text-danger' }}">
+                                        {{ number_format(abs($bal), 2) }} {{ $bal >= 0 ? 'Cr' : 'Dr' }}
+                                    </span>
+                                </td>
                                 <td>
                                     @if($client->is_active)
                                         <span class="badge bg-success">Active</span>
@@ -54,6 +79,8 @@
                                 <td>{{ $client->created_at->format('M d, Y') }}</td>
                                 <td>
                                     <div class="btn-list">
+                                        <a href="{{ route('clients.show', $client) }}"
+                                            class="btn btn-sm btn-outline-info">Ledger</a>
                                         <a href="{{ route('clients.edit', $client) }}"
                                             class="btn btn-sm btn-primary">Edit</a>
                                         <form action="{{ route('clients.destroy', $client) }}" method="POST"
