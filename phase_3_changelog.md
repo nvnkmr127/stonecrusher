@@ -28,7 +28,12 @@
     - **Managers**: Can View Clients, View Ledgers, and Record Transactions.
     - **Admins**: Have full access including Editing past transactions.
 
-## 4. Reporting & Analytics
+## 4. Business Rules Implementation (Final Refinement)
+- **Credit Limit Warnings**: Visual indicators for Credit Limit and Available Credit during transaction entry.
+- **Delete Restoration**: Deleting a transaction (Admin only) automatically restores the client's balance logic.
+- **FIFO Logic**: Supported via chronological Ledger balance calculation.
+
+## 5. Reporting & Analytics
 - **Client Outstanding Report**:
     - Created a comprehensive report summarizing **Total Sales**, **Total Advances**, and **Net Balance** for all clients.
     - Provides a clear "Status" indicator (Advance vs Outstanding) for each client.

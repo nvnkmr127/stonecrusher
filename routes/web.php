@@ -42,6 +42,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     // Restricted Transaction Edits (Admin Only)
     Route::get('clients/{client}/transactions/{transaction}/edit', [App\Http\Controllers\ClientTransactionController::class, 'edit'])->name('clients.transactions.edit');
     Route::put('clients/{client}/transactions/{transaction}', [App\Http\Controllers\ClientTransactionController::class, 'update'])->name('clients.transactions.update');
+    Route::delete('clients/{client}/transactions/{transaction}', [App\Http\Controllers\ClientTransactionController::class, 'destroy'])->name('clients.transactions.destroy');
 });
 
 // Admin & Manager Routes

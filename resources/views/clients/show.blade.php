@@ -131,7 +131,14 @@
                                     </td>
                                     @if(auth()->user()->hasRole('admin'))
                                     <td>
-                                        <a href="{{ route('clients.transactions.edit', [$client, $txn]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ route('clients.transactions.edit', [$client, $txn]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                            <form action="{{ route('clients.transactions.destroy', [$client, $txn]) }}" method="POST" onsubmit="return confirm('Are you sure? This will adjust the client balance.')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        </div>
                                     </td>
                                     @endif
                                 </tr>

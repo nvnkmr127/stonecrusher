@@ -8,6 +8,19 @@
             <span class="{{ $client->balance >= 0 ? 'text-success' : 'text-danger' }}">
                 {{ number_format(abs($client->balance), 2) }} {{ $client->balance >= 0 ? 'Cr' : 'Dr' }}
             </span>
+            @if($client->credit_limit > 0)
+                <span class="mx-2">|</span>
+                Credit Limit: {{ number_format($client->credit_limit, 2) }}
+                @php
+                    $available = $client->credit_limit + $client->balance; // Balance is signed. If -500 (Dr), Limit 1000. Available = 500.
+                    // Wait, logic:
+                    // If Balance +ve (Advance 200), Limit 1000. Can buy 1200.
+                    // If Balance -ve (Due 200), Limit 1000. Can buy 800.
+                    // Formula: Limit + Balance.
+                @endphp
+                <span class="mx-2">|</span>
+                Available Credit: <span class="{{ $available < 0 ? 'text-danger' : 'text-success' }}">{{ number_format($available, 2) }}</span>
+            @endif
         </div>
     </x-slot>
 

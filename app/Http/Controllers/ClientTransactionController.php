@@ -72,4 +72,20 @@ class ClientTransactionController extends Controller
 
         return redirect()->route('clients.show', $client)->with('success', 'Transaction updated successfully!');
     }
+
+    public function destroy(Client $client, ClientTransaction $transaction)
+    {
+        $amount = $transaction->amount;
+        $type = $transaction->transaction_type;
+        $transaction->delete();
+
+        // Log Activity
+        ActivityLog::log(
+            auth()->id(),
+            'client_transaction_delete',
+            "Deleted {$type} Transaction #{$transaction->id} of {$amount} for {$client->name}. Balance restored."
+        );
+
+        return redirect()->route('clients.show', $client)->with('success', 'Transaction deleted successfully. Balance updated.');
+    }
 }
