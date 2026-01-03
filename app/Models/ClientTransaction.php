@@ -8,6 +8,7 @@ class ClientTransaction extends Model
 {
     protected $fillable = [
         'client_id',
+        'gate_pass_id',
         'transaction_type',
         'amount',
         'payment_mode',
@@ -27,5 +28,10 @@ class ClientTransaction extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function gatePass()
+    {
+        return $this->belongsTo(GatePass::class);
     }
 }

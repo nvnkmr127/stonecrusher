@@ -150,6 +150,47 @@ Get a bird's-eye view of your receivables.
 
 ---
 
+## 🚛 Gate Pass & Sales Management (New)
+
+A complete system to track vehicle movements, calculate weights, and record sales automatically.
+
+### 1. Creating a Gate Pass (Entry)
+- **Navigate**: Go to **Gate Passes** > **New Gate Pass**.
+- **Entry Details**:
+  - **Vehicle**: Select the truck.
+  - **Client**: Choose the customer. (Note the **Current Balance** displayed below).
+  - **Weights**: Enter **Tare Weight** (Empty Truck) if known, or leave blank to weigh later.
+- **Save**: Click **"Create Gate Pass"**. The status will be `Pending`.
+
+### 2. Completing a Sale (Exit)
+When the loaded truck leaves:
+1. **Edit**: Open the pending Gate Pass.
+2. **Material**: Select the product (e.g., 20mm Aggregate). Rate is auto-fetched.
+3. **Weighing**: Enter **Gross Weight** (Loaded Truck). The system auto-calculates **Net Weight**.
+   - *Alternative*: For volume sales, enter **Loading Quantity (CFT)**.
+4. **Financials**:
+   - **Diesel Amount**: Enter if diesel was provided to the driver (added to total).
+   - **Driver Advance**: Enter any cash given to the driver (recorded for tracking).
+5. **Status**: Change to `Completed`.
+6. **Save**: This action **automatically creates a Debit Transaction** in the Client's Ledger.
+
+### 3. Payments & Receipts
+- **Record Payment**: On the Gate Pass List, click the **"Pay"** button on any completed entry.
+- **Modal**: Enter Amount, Date, and Payment Mode (Cash/UPI/Bank).
+- **Status**: The Gate Pass payment status updates to `Paid` naturally.
+
+### 4. Admin Controls
+- **Edit**: Admins can edit completed passes but **must** provide a reason in the Remarks (Audit Log).
+- **Cancel**: Only Admins can cancel a pass. This **immediately deletes** the corresponding financial transaction, reversing the charge to the client.
+
+### 5. Reports
+- **Daily Sales Report**: Click **"Daily Report"** on the Gate Pass list to see:
+   - Total Sales Value.
+   - Total Diesel & Outstanding.
+   - Metal-wise quantity breakdown.
+
+---
+
 ## 🚛 Distance Calculation Service
 
 The system automatically calculates distances between your **Crusher Location** (set in Settings) and project sites if coordinates are available.

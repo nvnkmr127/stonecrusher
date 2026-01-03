@@ -6,6 +6,7 @@ use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\GatePassController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\MetalTypeController;
 use App\Http\Controllers\ProjectController;
@@ -37,7 +38,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     // Attendance (Policy handled in controller, but route access mainly Admin)
     Route::get('attendance/report', [App\Http\Controllers\AttendanceReportController::class, 'index'])->name('attendance.report');
     Route::get('attendance/report/export', [App\Http\Controllers\AttendanceReportController::class, 'export'])->name('attendance.report.export');
-    Route::resource('attendance', AttendanceController::class);
+    Route::resource('attendance', AttendanceController::class)->except(['show']);
 
     // Restricted Transaction Edits (Admin Only)
     Route::get('clients/{client}/transactions/{transaction}/edit', [App\Http\Controllers\ClientTransactionController::class, 'edit'])->name('clients.transactions.edit');
@@ -45,8 +46,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::delete('clients/{client}/transactions/{transaction}', [App\Http\Controllers\ClientTransactionController::class, 'destroy'])->name('clients.transactions.destroy');
 });
 
-// Admin & Manager Routes
-Route::middleware(['auth', 'verified', 'role:admin|manager'])->group(function () {
+// Admin & Manager & Accountant Routes
+Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(function () {
 
     // Client Reports (Placed before resource to avoid ID collision)
     Route::get('clients/reports/outstanding', [App\Http\Controllers\ClientReportController::class, 'index'])->name('clients.reports.outstanding');
@@ -54,8 +55,12 @@ Route::middleware(['auth', 'verified', 'role:admin|manager'])->group(function ()
 
     // Master Data
     Route::resource('clients', ClientController::class);
-    Route::resource('vehicles', VehicleController::class); // Assuming managers need this too? Keep it here for consistency if needed, else leave in Admin. 
-    // Actually, stick to just Clients for now to be safe.
+    Route::get('gate-passes/daily-report', [GatePassController::class, 'dailyReport'])->name('gate-passes.daily-report');
+    Route::post('gate-passes/{gate_pass}/payment', [GatePassController::class, 'recordPayment'])->name('gate-passes.payment');
+    Route::resource('gate-passes', GatePassController::class);
+    Route::resource('vehicles', VehicleController::class);
+    Route::resource('projects', ProjectController::class);
+    Route::resource('metal-types', MetalTypeController::class);
 
     // Client Transactions
     Route::get('clients/{client}/transactions/create', [App\Http\Controllers\ClientTransactionController::class, 'create'])->name('clients.transactions.create');

@@ -26,6 +26,15 @@ class AdminDashboardController extends Controller
             'active' => \App\Models\Vehicle::where('is_active', true)->count(),
         ];
 
-        return view('admin.dashboard', compact('projectStats', 'recentProjects', 'totalClients', 'vehicleStats'));
+        $todayStart = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
+
+        $dailyStats = [
+            'loads' => \App\Models\GatePass::whereBetween('date', [$todayStart, $todayEnd])->count(),
+            'tonnage' => \App\Models\GatePass::whereBetween('date', [$todayStart, $todayEnd])->sum('net_weight'),
+            'amount' => \App\Models\GatePass::whereBetween('date', [$todayStart, $todayEnd])->sum('total_amount'),
+        ];
+
+        return view('admin.dashboard', compact('projectStats', 'recentProjects', 'totalClients', 'vehicleStats', 'dailyStats'));
     }
 }

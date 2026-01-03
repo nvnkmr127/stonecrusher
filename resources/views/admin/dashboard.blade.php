@@ -12,6 +12,37 @@
         </div>
     </x-slot>
 
+    <!-- Daily Sales Stats -->
+    <div class="row row-deck row-cards mb-3">
+        <div class="col-sm-6 col-lg-4">
+            <x-card>
+                <div class="subheader">Today's Loads</div>
+                <div class="h1 mb-3">{{ $dailyStats['loads'] }}</div>
+                <div class="d-flex mb-2">
+                    <div>Vehicle Trips</div>
+                </div>
+            </x-card>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <x-card>
+                <div class="subheader">Today's Tonnage</div>
+                <div class="h1 mb-3 text-primary">{{ number_format($dailyStats['tonnage'], 2) }} Tons</div>
+                <div class="d-flex mb-2">
+                    <div>Material Out</div>
+                </div>
+            </x-card>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <x-card>
+                <div class="subheader">Today's Sales Value</div>
+                <div class="h1 mb-3 text-success">₹ {{ number_format($dailyStats['amount'], 2) }}</div>
+                <div class="d-flex mb-2">
+                    <div>Est. Revenue</div>
+                </div>
+            </x-card>
+        </div>
+    </div>
+
     <!-- Resources Stats Row -->
     <div class="row row-deck row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
