@@ -23,13 +23,29 @@ else PHP_BIN="php"; fi
 
 log "🐘 Using PHP: $($PHP_BIN -v | head -n 1)"
 
-# 2. Update Code from Git
+# 2. Update Code from Git (Force Sync)
 if [ -d ".git" ]; then
-    log "📥 Pulling latest code from Git..."
-    git pull origin main || log "⚠️  Git pull failed. Continuing with existing code..."
+    # Detect default branch (main or master)
+    BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+    [ -z "$BRANCH" ] && BRANCH="main"
+    
+    log "📥 Fetching latest code from Git (Branch: $BRANCH)..."
+    git fetch origin "$BRANCH"
+    
+    log "🧹 Cleaning up local changes and syncing with origin/$BRANCH..."
+    # This ensures the server version exactly matches the repo
+    git reset --hard "origin/$BRANCH"
+    
+    log "✨ Git sync complete. Current version: $(git log -1 --format='%h - %s')"
 else
     log "ℹ️  Not a git repository. Skipping git pull."
+    log "⚠️  To enable auto-pull, clone the repo instead of uploading zip: git clone <url> ."
 fi
+
+# 2.5 Force Clear Route Cache
+# This helps if previous deployments left a stale cache
+log "🗑️  Clearing old route cache..."
+$PHP_BIN artisan route:clear || true
 
 # 3. --- CRITICAL: Clear Bootstrap Cache ---
 # This fixes "Class not found" errors for dev packages like Laravel\Pail

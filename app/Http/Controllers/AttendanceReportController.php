@@ -171,4 +171,3 @@ class AttendanceReportController extends Controller
         return $pdf->download("attendance_report_{$month}_{$year}.pdf");
     }
 }
-    }
