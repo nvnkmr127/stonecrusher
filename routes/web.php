@@ -29,6 +29,20 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
+    // Audit Logs
+    Route::get('/audit-logs', [App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
+
+    // Backups
+    Route::get('/backups', [App\Http\Controllers\BackupController::class, 'index'])->name('backups.index');
+    Route::post('/backups', [App\Http\Controllers\BackupController::class, 'create'])->name('backups.create');
+    Route::get('/backups/download', [App\Http\Controllers\BackupController::class, 'download'])->name('backups.download');
+    Route::post('/backups/restore', [App\Http\Controllers\BackupController::class, 'restore'])->name('backups.restore');
+    Route::delete('/backups', [App\Http\Controllers\BackupController::class, 'destroy'])->name('backups.destroy');
+
+    // Google Drive OAuth
+    Route::get('/google-drive/redirect', [App\Http\Controllers\GoogleDriveController::class, 'redirect'])->name('google-drive.redirect');
+    Route::get('/google-drive/callback', [App\Http\Controllers\GoogleDriveController::class, 'callback'])->name('google-drive.callback');
+
     // User Management
     Route::resource('users', UserController::class);
     Route::post('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');

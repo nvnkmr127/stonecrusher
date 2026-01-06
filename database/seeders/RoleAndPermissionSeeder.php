@@ -25,6 +25,19 @@ class RoleAndPermissionSeeder extends Seeder
         $roleAccountant = Role::firstOrCreate(['name' => 'accountant']);
         $roleUser = Role::firstOrCreate(['name' => 'user']);
 
+        // Permissions
+        $permissions = [
+            'view-audit-logs',
+            'manage-backups',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        // Assign permissions to Admin
+        $roleAdmin->givePermissionTo($permissions);
+
         // Create Admin User
         $admin = User::firstOrCreate(
             ['email' => 'admin@example.com'],

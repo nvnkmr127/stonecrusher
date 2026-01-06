@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\User;
 use Carbon\Carbon;
-use App\Models\ActivityLog;
+
 
 class AttendanceController extends Controller
 {
@@ -191,11 +191,7 @@ class AttendanceController extends Controller
         $attendance->update($data);
 
         // Log Activity
-        ActivityLog::log(
-            $attendance->user_id,
-            'attendance_update',
-            "Attendance updated by " . auth()->user()->name . ". Reason: " . $request->remarks
-        );
+
 
         return redirect()->route('attendance.index')->with('success', 'Attendance updated successfully.');
     }

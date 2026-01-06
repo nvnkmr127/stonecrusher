@@ -35,6 +35,30 @@ class AdminDashboardController extends Controller
             'amount' => \App\Models\GatePass::whereBetween('date', [$todayStart, $todayEnd])->sum('total_amount'),
         ];
 
-        return view('admin.dashboard', compact('projectStats', 'recentProjects', 'totalClients', 'vehicleStats', 'dailyStats'));
+        $systemHealth = [
+            'database' => 'Online', // Default
+            'disk_free' => $this->humanFileSize(disk_free_space(base_path())),
+            'disk_total' => $this->humanFileSize(disk_total_space(base_path())),
+            'server_time' => now()->format('Y-m-d H:i:s'),
+        ];
+
+        try {
+            \Illuminate\Support\Facades\DB::connection()->getPdo();
+        } catch (\Exception $e) {
+            $systemHealth['database'] = 'Offline';
+        }
+
+        return view('admin.dashboard', compact('projectStats', 'recentProjects', 'totalClients', 'vehicleStats', 'dailyStats', 'systemHealth'));
+    }
+
+    private function humanFileSize($size, $unit = "")
+    {
+        if ((!$unit && $size >= 1 << 30) || $unit == "GB")
+            return number_format($size / (1 << 30), 2) . "GB";
+        if ((!$unit && $size >= 1 << 20) || $unit == "MB")
+            return number_format($size / (1 << 20), 2) . "MB";
+        if ((!$unit && $size >= 1 << 10) || $unit == "KB")
+            return number_format($size / (1 << 10), 2) . "KB";
+        return number_format($size) . " bytes";
     }
 }

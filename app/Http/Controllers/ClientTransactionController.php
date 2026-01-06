@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\ClientTransaction;
 use Illuminate\Http\Request;
-use App\Models\ActivityLog;
+
 
 class ClientTransactionController extends Controller
 {
@@ -30,11 +30,7 @@ class ClientTransactionController extends Controller
         $transaction = $client->transactions()->create($validated);
 
         // Log Activity
-        ActivityLog::log(
-            auth()->id(),
-            'client_transaction',
-            "Recorded {$validated['transaction_type']} of {$validated['amount']} for Client: {$client->name}. Description: {$validated['description']}"
-        );
+
 
         return redirect()->route('clients.show', $client)->with('success', 'Transaction recorded successfully!');
     }
@@ -69,11 +65,7 @@ class ClientTransactionController extends Controller
         ]);
 
         // Log Activity
-        ActivityLog::log(
-            auth()->id(),
-            'client_transaction_update',
-            "Updated Transaction #{$transaction->id} for {$client->name}. Old Amount: {$oldAmount}, New Amount: {$validated['amount']}. Reason: {$validated['edit_reason']}"
-        );
+
 
         return redirect()->route('clients.show', $client)->with('success', 'Transaction updated successfully!');
     }
@@ -87,11 +79,7 @@ class ClientTransactionController extends Controller
         $transaction->delete();
 
         // Log Activity
-        ActivityLog::log(
-            auth()->id(),
-            'client_transaction_delete',
-            "Deleted {$type} Transaction #{$transaction->id} of {$amount} for {$client->name}. Balance restored."
-        );
+
 
         return redirect()->route('clients.show', $client)->with('success', 'Transaction deleted successfully. Balance updated.');
     }

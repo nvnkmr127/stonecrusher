@@ -12,6 +12,35 @@
         </div>
     </x-slot>
 
+    <!-- System Health -->
+    <div class="row row-deck row-cards mb-3">
+        <div class="col-12">
+            <x-card>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="subheader">System Status</div>
+                        <div class="d-flex align-items-center mt-2">
+                            <span class="status-indicator {{ $systemHealth['database'] == 'Online' ? 'status-green' : 'status-red' }} me-2">
+                                <span class="status-indicator-circle"></span>
+                                <span class="status-indicator-animated"></span>
+                            </span>
+                            <span class="fw-bold me-3">Database: {{ $systemHealth['database'] }}</span>
+                            
+                            <span class="mx-2 text-muted">|</span>
+                            
+                            <span class="me-3">Disk Usage: <strong>{{ $systemHealth['disk_free'] }}</strong> free of {{ $systemHealth['disk_total'] }}</span>
+                            
+                            <span class="mx-2 text-muted">|</span>
+                            
+                            <span class="text-muted">Server Time: {{ $systemHealth['server_time'] }}</span>
+                        </div>
+                    </div>
+                </div>
+            </x-card>
+        </div>
+    </div>
+
+
     <!-- Daily Sales Stats -->
     <div class="row row-deck row-cards mb-3">
         <div class="col-sm-6 col-lg-4">

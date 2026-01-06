@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class GatePass extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'gate_pass_number',
         'date',
@@ -65,5 +68,13 @@ class GatePass extends Model
     public function transaction()
     {
         return $this->hasOne(ClientTransaction::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['*'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

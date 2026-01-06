@@ -26,5 +26,20 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
             return $user->hasRole('admin') ? true : null;
         });
+
+        // Log IP Address
+        \Spatie\Activitylog\Models\Activity::creating(function (\Spatie\Activitylog\Models\Activity $activity) {
+            $activity->ip_address = request()->ip();
+        });
+
+        // Config Overrides for Google Drive
+        try {
+            $refreshToken = \App\Models\Setting::get('google_drive_refresh_token');
+            if ($refreshToken) {
+                config(['filesystems.disks.google.refreshToken' => $refreshToken]);
+            }
+        } catch (\Exception $e) {
+            // Setup might not be ready (e.g. migration not run)
+        }
     }
 }

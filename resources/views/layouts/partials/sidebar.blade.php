@@ -158,7 +158,7 @@
                     </a>
                     <div class="dropdown-menu">
                         <a class="dropdown-item" href="{{ route('reports.index') }}">
-                           <strong>Reports Dashboard</strong>
+                            <strong>Reports Dashboard</strong>
                         </a>
                         <div class="dropdown-divider"></div>
                         <div class="dropdown-header">Sales Reports</div>
@@ -198,6 +198,8 @@
                     </a>
                     <div class="dropdown-menu">
                         <a class="dropdown-item" href="{{ route('users.index') }}">Staff Management</a>
+                        <a class="dropdown-item" href="{{ route('audit-logs.index') }}">Audit Logs</a>
+                        <a class="dropdown-item" href="{{ route('backups.index') }}">Backups</a>
                         <a class="dropdown-item" href="{{ route('settings.index') }}">System Settings</a>
                     </div>
                 </li>

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use Illuminate\Http\Request;
-use App\Models\ActivityLog;
+
 
 class ClientController extends Controller
 {
@@ -54,7 +54,7 @@ class ClientController extends Controller
 
         $client = Client::create($validated);
 
-        ActivityLog::log(auth()->id(), 'client_created', "Created client: {$client->name}");
+
 
         return redirect()->route('clients.index')->with('success', 'Client created successfully!');
     }
@@ -78,7 +78,7 @@ class ClientController extends Controller
 
         $client->update($validated);
 
-        ActivityLog::log(auth()->id(), 'client_updated', "Updated profile for client: {$client->name}");
+
 
         return redirect()->route('clients.index')->with('success', 'Client updated successfully!');
     }
@@ -88,7 +88,7 @@ class ClientController extends Controller
         $name = $client->name;
         $client->delete();
 
-        ActivityLog::log(auth()->id(), 'client_deleted', "Deleted client: {$name}");
+
 
         return redirect()->route('clients.index')->with('success', 'Client deleted successfully!');
     }

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -83,7 +82,7 @@ class UserController extends Controller
         $user->assignRole($validated['role']);
 
         // Log activity
-        ActivityLog::log($user->id, 'created', "User {$user->name} was created");
+
 
         return redirect()
             ->route('users.index')
@@ -133,7 +132,7 @@ class UserController extends Controller
         $user->syncRoles([$validated['role']]);
 
         // Log activity
-        ActivityLog::log($user->id, 'updated', "User {$user->name} was updated");
+
 
         return redirect()
             ->route('users.index')
@@ -150,7 +149,7 @@ class UserController extends Controller
             return back()->with('error', 'You cannot delete your own account!');
         }
 
-        ActivityLog::log($user->id, 'deleted', "User {$user->name} was deleted");
+
 
         $user->delete();
 
@@ -172,7 +171,7 @@ class UserController extends Controller
         $user->update(['is_active' => !$user->is_active]);
 
         $action = $user->is_active ? 'activated' : 'deactivated';
-        ActivityLog::log($user->id, $action, "User {$user->name} was {$action}");
+
 
         return back()->with('success', "User {$action} successfully!");
     }
@@ -190,7 +189,7 @@ class UserController extends Controller
             'password' => Hash::make($validated['new_password']),
         ]);
 
-        ActivityLog::log($user->id, 'password_reset', "Password was reset for user {$user->name}");
+
 
         return back()->with('success', 'Password reset successfully!');
     }
