@@ -102,6 +102,10 @@
                 <x-responsive-nav-link :href="route('settings.index')" :active="request()->routeIs('settings.index')">
                     {{ __('Settings') }}
                 </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('gate-passes.calculator')"
+                    :active="request()->routeIs('gate-passes.calculator')">
+                    {{ __('Distance Calculator') }}
+                </x-responsive-nav-link>
             @else
                 <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                     {{ __('Dashboard') }}

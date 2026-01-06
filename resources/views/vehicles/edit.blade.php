@@ -19,6 +19,8 @@
                         :value="$vehicle->registration_number" required />
                     <x-form.input name="type" label="Type" :value="$vehicle->type" placeholder="e.g., Truck, Dumper" />
                     <x-form.input name="model" label="Model" :value="$vehicle->model" />
+                    <x-form.input name="transport_multiplier" label="Transport Multiplier" type="number" step="0.01"
+                        :value="$vehicle->transport_multiplier" />
                     <x-form.checkbox name="is_active" label="Active" :checked="$vehicle->is_active" />
 
                     <hr class="my-4">

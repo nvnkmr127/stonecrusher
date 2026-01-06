@@ -98,12 +98,19 @@
 
                             <x-form.input 
                                 name="rate_per_km" 
-                                label="Rate per KM" 
+                                label="Transport Rate per KM" 
                                 type="number"
                                 step="0.01"
                                 :value="$settings['rate_per_km'] ?? '10.00'"
                                 required 
                             />
+
+                            <div class="mb-3">
+                                <label class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="default_round_trip" value="1" {{ ($settings['default_round_trip'] ?? false) ? 'checked' : '' }}>
+                                    <span class="form-check-label">Default to Round Trip Calculation?</span>
+                                </label>
+                            </div>
 
                             <x-form.input 
                                 name="google_maps_api_key" 

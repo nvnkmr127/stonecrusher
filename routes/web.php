@@ -56,6 +56,8 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
     // Master Data
     Route::resource('clients', ClientController::class);
     Route::get('gate-passes/daily-report', [GatePassController::class, 'dailyReport'])->name('gate-passes.daily-report');
+    Route::get('gate-passes/distance-report', [GatePassController::class, 'distanceReport'])->name('gate-passes.distance-report');
+    Route::get('gate-passes/calculator', [GatePassController::class, 'calculator'])->name('gate-passes.calculator');
     Route::post('gate-passes/{gate_pass}/payment', [GatePassController::class, 'recordPayment'])->name('gate-passes.payment');
     Route::resource('gate-passes', GatePassController::class);
     Route::resource('vehicles', VehicleController::class);

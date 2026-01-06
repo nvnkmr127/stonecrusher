@@ -191,12 +191,42 @@ When the loaded truck leaves:
 
 ---
 
-## 🚛 Distance Calculation Service
+## 🌍 Distance & Transport Management (New)
+The system now features a robust engine for calculating, tracking, and billing transport costs.
 
-The system automatically calculates distances between your **Crusher Location** (set in Settings) and project sites if coordinates are available.
-- **Dual Mode**:
-  - Uses **Google Maps** if an API key is provided (Recommended for accuracy).
-  - Fallback to **OpenStreetMap** (Free) if no key is present.
+### 1. Delivery Locations
+- **Auto-Save**: When you create a Gate Pass for a new location, checking "Save this location" stores its coordinates.
+- **Reuse**: Next time, simply select the location from the dropdown to auto-fill the distance.
+- **Accuracy**: Distances are precise and calculated using geolocation coordinates.
+
+### 2. Transport Billing in Gate Passes
+- **Read-Only Distance**: To ensure accuracy, the Distance (KM) field is **read-only**. You cannot manually type a distance.
+    - **How to Set Distance**:
+        1. Select a **Saved Location** from the autocomplete list.
+        2. Or, use the **"Use Coordinates"** feature: Enter Latitude/Longitude and click **Calculate**.
+- **Transport Cost**: Automatically calculated based on `Distance × Rate per KM × Vehicle Multiplier`.
+- **Round Trip**: Check the **"Round Trip?"** box to double the billable distance (e.g., for return journey).
+- **Bill to Client**: Check **"Bill Transport to Client?"** to include the transport cost in the final invoice amount shown in the Client Ledger.
+
+### 3. Distance Calculator Tool
+Need a quick quote without creating a pass?
+- **Navigate**: Go to **Distance Calculator**.
+- **Input**: Enter Delivery Coordinates or use "Get My Location".
+- **Options**: Select Vehicle Type and Round Trip status.
+- **Result**: Instantly see the estimated transport cost.
+
+### 4. Distance Report
+- **Navigate**: Go to **Gate Passes > Distance Report** (or via the button on the index page).
+- **Insights**: View total trips, total distance covered, and total transport revenue.
+- **Breakdown**: Analyze which locations are your most frequent destinations.
+
+### 5. Admin Settings
+Admins can fine-tune the transport engine:
+- **Vehicle Multipliers**: Edit a vehicle to set its capacity multiplier (e.g., 1.5x for large dumpers).
+- **Global Settings**: Go to **Settings** to update:
+    - **Crusher Location**: The starting point for all calculations.
+    - **Rate per KM**: The base charging rate.
+    - **Default Round Trip**: Choose if new passes should default to round-trip billing.
 
 ---
 

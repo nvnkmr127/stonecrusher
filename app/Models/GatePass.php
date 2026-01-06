@@ -25,6 +25,10 @@ class GatePass extends Model
         'status',
         'payment_status',
         'remarks',
+        'delivery_location',
+        'distance_km',
+        'transport_cost',
+        'transport_is_billable',
     ];
 
     protected $casts = [
@@ -38,6 +42,9 @@ class GatePass extends Model
         'paid_amount' => 'decimal:2',
         'diesel_amount' => 'decimal:2',
         'advance_amount' => 'decimal:2',
+        'distance_km' => 'decimal:2',
+        'transport_cost' => 'decimal:2',
+        'transport_is_billable' => 'boolean',
     ];
 
     public function vehicle()

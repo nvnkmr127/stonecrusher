@@ -24,6 +24,7 @@ class VehicleController extends Controller
             'registration_number' => 'required|string|max:255|unique:vehicles',
             'type' => 'nullable|string|max:255',
             'model' => 'nullable|string|max:255',
+            'transport_multiplier' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 
@@ -43,6 +44,7 @@ class VehicleController extends Controller
             'registration_number' => 'required|string|max:255|unique:vehicles,registration_number,' . $vehicle->id,
             'type' => 'nullable|string|max:255',
             'model' => 'nullable|string|max:255',
+            'transport_multiplier' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 

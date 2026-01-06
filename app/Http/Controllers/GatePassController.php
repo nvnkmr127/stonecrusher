@@ -6,6 +6,8 @@ use App\Models\GatePass;
 use App\Models\Client;
 use App\Models\Vehicle;
 use App\Models\MetalType;
+use App\Models\Setting;
+use App\Models\DeliveryDestination;
 use Illuminate\Http\Request;
 
 class GatePassController extends Controller
@@ -42,15 +44,21 @@ class GatePassController extends Controller
         $vehicles = Vehicle::where('is_active', true)->get();
         $metalTypes = MetalType::where('is_active', true)->get();
 
-        $gpNumber = 'GP-' . date('Ymd') . '-' . str_pad(GatePass::whereDate('date', now()->format('Y-m-d'))->count() + 1, 4, '0', STR_PAD_LEFT);
+        $gpNumber = 'GP-' . date('Ymd') . '-' . str_pad(GatePass::whereDate('date', '=', now()->format('Y-m-d'))->count() + 1, 4, '0', STR_PAD_LEFT);
 
-        return view('gate_passes.create', compact('clients', 'vehicles', 'metalTypes', 'gpNumber'));
+        $transportRate = Setting::get('rate_per_km', 0);
+        $crusherLat = Setting::get('crusher_latitude', 0);
+        $crusherLon = Setting::get('crusher_longitude', 0);
+        $defaultRoundTrip = (bool) Setting::get('default_round_trip', false);
+        $destinations = DeliveryDestination::orderBy('name')->get();
+
+        return view('gate_passes.create', compact('clients', 'vehicles', 'metalTypes', 'gpNumber', 'transportRate', 'crusherLat', 'crusherLon', 'destinations', 'defaultRoundTrip'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, \App\Services\SalesService $salesService)
     {
         $status = $request->input('status', 'pending');
 
@@ -61,6 +69,10 @@ class GatePassController extends Controller
             'client_id' => 'required|exists:clients,id', // Based on use case, client is selected
             'status' => 'required|in:pending,completed,cancelled',
             'remarks' => 'nullable|string',
+            'delivery_location' => 'nullable|string|max:255',
+            'distance_km' => 'nullable|numeric|min:0',
+            'transport_cost' => 'nullable|numeric|min:0',
+            'transport_is_billable' => 'nullable|boolean',
         ];
 
         // Conditional Validation
@@ -70,6 +82,7 @@ class GatePassController extends Controller
             $rules['gross_weight'] = 'required|numeric|min:0';
             $rules['tare_weight'] = 'required|numeric|min:0';
             $rules['net_weight'] = 'required|numeric|min:0';
+            $rules['total_amount'] = 'required|numeric|min:0';
         } else {
             // For pending, these are optional
             $rules['metal_type_id'] = 'nullable|exists:metal_types,id';
@@ -77,6 +90,7 @@ class GatePassController extends Controller
             $rules['gross_weight'] = 'nullable|numeric|min:0';
             $rules['tare_weight'] = 'nullable|numeric|min:0';
             $rules['net_weight'] = 'nullable|numeric|min:0';
+            $rules['total_amount'] = 'nullable|numeric|min:0'; // Ensure total_amount is validated
         }
 
         $validated = $request->validate($rules);
@@ -86,9 +100,24 @@ class GatePassController extends Controller
         $validated['tare_weight'] = $validated['tare_weight'] ?? 0;
         $validated['net_weight'] = $validated['net_weight'] ?? 0;
 
-        GatePass::create($validated);
+        $gatePass = GatePass::create($validated);
 
-        return redirect()->route('gate_passes.index')->with('success', 'Gate Pass created successfully.');
+        if ($gatePass->status === 'completed' && $gatePass->client_id) {
+            $salesService->createOrUpdateTransaction($gatePass);
+        }
+
+        if ($request->boolean('save_location') && !empty($validated['delivery_location'])) {
+            DeliveryDestination::firstOrCreate(
+                ['name' => $validated['delivery_location']],
+                [
+                    'latitude' => $request->input('dest_lat'), // We need to check if these names match form inputs
+                    'longitude' => $request->input('dest_lon'),
+                    'distance_km' => $validated['distance_km'] ?? 0
+                ]
+            );
+        }
+
+        return redirect()->route('gate-passes.index')->with('success', 'Gate Pass created successfully.');
     }
 
     /**
@@ -102,20 +131,26 @@ class GatePassController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(GatePass $gatePass)
+    public function edit(GatePass $gate_pass)
     {
         $clients = Client::where('is_active', true)->get();
         $vehicles = Vehicle::where('is_active', true)->get();
         $metalTypes = MetalType::all();
+        $transportRate = Setting::get('rate_per_km', 0);
+        $crusherLat = Setting::get('crusher_latitude', 0);
+        $crusherLon = Setting::get('crusher_longitude', 0);
+        $destinations = DeliveryDestination::orderBy('name')->get();
 
-        return view('gate_passes.edit', compact('gatePass', 'clients', 'vehicles', 'metalTypes'));
+        return view('gate_passes.edit', compact('gate_pass', 'clients', 'vehicles', 'metalTypes', 'transportRate', 'crusherLat', 'crusherLon', 'destinations'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, GatePass $gatePass, \App\Services\SalesService $salesService)
+    public function update(Request $request, $id, \App\Services\SalesService $salesService)
     {
+        $gate_pass = GatePass::findOrFail($id);
+
         $validated = $request->validate([
             'date' => 'required|date',
             'vehicle_id' => 'required|exists:vehicles,id',
@@ -132,6 +167,10 @@ class GatePassController extends Controller
             'advance_amount' => 'nullable|numeric|min:0',
             'status' => 'required|in:pending,completed,cancelled',
             'remarks' => 'nullable|string',
+            'delivery_location' => 'nullable|string|max:255',
+            'distance_km' => 'nullable|numeric|min:0',
+            'transport_cost' => 'nullable|numeric|min:0',
+            'transport_is_billable' => 'nullable|boolean',
         ]);
 
         // Default values
@@ -141,7 +180,7 @@ class GatePassController extends Controller
         $validated['loading_quantity'] = $validated['loading_quantity'] ?? 0;
 
         // Check if editing a completed pass
-        if ($gatePass->status === 'completed' && !$gatePass->wasChanged('status')) {
+        if ($gate_pass->status === 'completed' && !$gate_pass->wasChanged('status')) {
             // If already completed and staying completed, this is an Edit.
             // Requirement: Mandatory audit log.
             // We'll require 'correction_reason' in comments or strict validation.
@@ -152,19 +191,30 @@ class GatePassController extends Controller
         }
 
         // Restrict Cancellation to Admin
-        if ($validated['status'] === 'cancelled' && $gatePass->status !== 'cancelled' && !auth()->user()->hasRole('admin')) {
+        if ($validated['status'] === 'cancelled' && $gate_pass->status !== 'cancelled' && !auth()->user()->hasRole('admin')) {
             return back()->with('error', 'Only Admins can cancel a Gate Pass.');
         }
 
-        $gatePass->update($validated);
+        $gate_pass->update($validated);
 
-        if ($gatePass->status === 'completed' && $gatePass->client_id) {
-            $salesService->createOrUpdateTransaction($gatePass);
-        } elseif ($gatePass->status === 'cancelled') {
-            $salesService->cancelTransaction($gatePass);
+        if ($gate_pass->status === 'completed' && $gate_pass->client_id) {
+            $salesService->createOrUpdateTransaction($gate_pass);
+        } elseif ($gate_pass->status === 'cancelled') {
+            $salesService->cancelTransaction($gate_pass);
         }
 
-        return redirect()->route('gate_passes.index')->with('success', 'Gate Pass updated successfully.');
+        if ($request->boolean('save_location') && !empty($validated['delivery_location'])) {
+            DeliveryDestination::firstOrCreate(
+                ['name' => $validated['delivery_location']],
+                [
+                    'latitude' => $request->input('dest_lat'),
+                    'longitude' => $request->input('dest_lon'),
+                    'distance_km' => $validated['distance_km'] ?? 0
+                ]
+            );
+        }
+
+        return redirect()->route('gate-passes.index')->with('success', 'Gate Pass updated successfully.');
     }
 
     public function dailyReport(Request $request)
@@ -203,7 +253,7 @@ class GatePassController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function recordPayment(Request $request, GatePass $gatePass, \App\Services\SalesService $salesService)
+    public function recordPayment(Request $request, GatePass $gate_pass, \App\Services\SalesService $salesService)
     {
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
@@ -213,7 +263,7 @@ class GatePassController extends Controller
         ]);
 
         $salesService->recordPayment(
-            $gatePass,
+            $gate_pass,
             $validated['amount'],
             $validated['date'],
             $validated['payment_mode'],
@@ -223,15 +273,79 @@ class GatePassController extends Controller
         return back()->with('success', 'Payment recorded successfully.');
     }
 
-    public function destroy(GatePass $gatePass)
+    public function destroy(GatePass $gate_pass)
     {
         // Check if there is a transaction and maybe prevent delete or delete transaction?
-        if ($gatePass->transaction) {
-            $gatePass->transaction->delete();
+        if ($gate_pass->transaction) {
+            $gate_pass->transaction->delete();
         }
 
-        $gatePass->delete();
+        $gate_pass->delete();
 
-        return redirect()->route('gate_passes.index')->with('success', 'Gate Pass deleted successfully.');
+        return redirect()->route('gate-passes.index')->with('success', 'Gate Pass deleted successfully.');
+    }
+
+    public function calculator(Request $request, \App\Services\DistanceService $distanceService)
+    {
+        $defaultRate = Setting::get('rate_per_km', 10);
+        $crusherLat = Setting::get('crusher_latitude', 0);
+        $crusherLon = Setting::get('crusher_longitude', 0);
+
+        $distance = 0;
+        $cost = 0;
+
+        if ($request->has(['lat', 'lon'])) {
+            $destLat = $request->input('lat');
+            $destLon = $request->input('lon');
+            $roundTrip = $request->boolean('round_trip');
+            $multiplier = $request->input('multiplier', 1.0);
+
+            $distance = $distanceService->calculateDistance($crusherLat, $crusherLon, $destLat, $destLon);
+
+            // Cost = Distance * Rate * Multiplier * (RoundTrip ? 2 : 1)
+            $rtFactor = $roundTrip ? 2 : 1;
+            $cost = $distance * $defaultRate * $multiplier * $rtFactor;
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'distance' => $distance,
+                    'cost' => $cost,
+                    'rate' => $defaultRate
+                ]);
+            }
+        }
+
+        $vehicles = Vehicle::where('is_active', true)->select('id', 'registration_number', 'model', 'transport_multiplier')->get();
+        return view('gate_passes.calculator', compact('defaultRate', 'crusherLat', 'crusherLon', 'vehicles'));
+    }
+
+    public function distanceReport(Request $request)
+    {
+        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
+
+        $query = GatePass::whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->where('status', 'completed');
+
+        // Overall Summary
+        $summary = [
+            'total_trips' => (clone $query)->count(),
+            'total_distance' => (clone $query)->sum('distance_km'),
+            'total_cost' => (clone $query)->sum('transport_cost'),
+        ];
+
+        // Location-wise Breakdown
+        $reportData = (clone $query)
+            ->select(
+                'delivery_location',
+                \DB::raw('COUNT(*) as trip_count'),
+                \DB::raw('SUM(distance_km) as total_distance'),
+                \DB::raw('SUM(transport_cost) as total_cost')
+            )
+            ->groupBy('delivery_location')
+            ->orderByDesc('total_cost')
+            ->get();
+
+        return view('gate_passes.distance_report', compact('summary', 'reportData', 'startDate', 'endDate'));
     }
 }

@@ -17,6 +17,8 @@
                     <x-form.input name="registration_number" label="Registration Number" required />
                     <x-form.input name="type" label="Type" placeholder="e.g., Truck, Dumper" />
                     <x-form.input name="model" label="Model" />
+                    <x-form.input name="transport_multiplier" label="Transport Multiplier" type="number" step="0.01"
+                        value="1.00" />
                     <x-form.checkbox name="is_active" label="Active" :checked="true" />
 
                     <hr class="my-4">

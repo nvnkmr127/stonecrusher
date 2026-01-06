@@ -13,6 +13,7 @@ class Vehicle extends Model
         'registration_number',
         'type',
         'model',
+        'transport_multiplier',
         'is_active',
     ];
 
@@ -20,6 +21,7 @@ class Vehicle extends Model
     {
         return [
             'is_active' => 'boolean',
+            'transport_multiplier' => 'decimal:2',
         ];
     }
 }

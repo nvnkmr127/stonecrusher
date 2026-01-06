@@ -35,6 +35,7 @@ class SettingsController extends Controller
             'google_maps_api_key' => 'nullable|string|max:255',
             'attendance_shift_start' => 'required|date_format:H:i',
             'attendance_shift_end' => 'required|date_format:H:i|after:attendance_shift_start',
+            'default_round_trip' => 'nullable|boolean',
         ]);
 
         foreach ($validated as $key => $value) {
