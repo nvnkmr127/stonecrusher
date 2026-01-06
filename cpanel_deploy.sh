@@ -1,62 +1,114 @@
 #!/bin/bash
-
-# Stone Crusher ERP - cPanel Deployment Script
-# This script automates the common deployment steps for a Laravel application on cPanel.
-
 set -e
 
-echo "🚀 Starting Deployment..."
+# Stone Crusher ERP - cPanel Deployment Script
+# Optimized for shared hosting environments
 
-# 1. Check for .env file
-if [ ! -f .env ]; then
-    echo "⚠️  .env file not found. Copying .env.example..."
-    cp .env.example .env
-    echo "❗ Please update your .env file with production settings (DB, URL, etc.) before proceeding if you haven't already."
-fi
+# --- Configuration ---
+BUILD_ASSETS=false # We built assets locally, so skip this on server
 
-# 2. Install/Update Dependencies
-echo "📦 Installing PHP dependencies..."
-# Trying to detect the best PHP version or fallback to default 'php'
-if command -v php82 &> /dev/null; then
-    PHP_BIN="php82"
-elif command -v /usr/local/bin/ea-php83 &> /dev/null; then
-    PHP_BIN="/usr/local/bin/ea-php83"
-elif command -v /usr/local/bin/ea-php82 &> /dev/null; then
-    PHP_BIN="/usr/local/bin/ea-php82"
+log() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+}
+
+log "� Starting cPanel Deployment..."
+
+# 1. Detect PHP
+log "🔍 Detecting PHP..."
+if command -v php83 &> /dev/null; then PHP_BIN="php83"
+elif command -v php82 &> /dev/null; then PHP_BIN="php82"
+elif command -v /usr/local/bin/ea-php83 &> /dev/null; then PHP_BIN="/usr/local/bin/ea-php83"
+elif command -v /usr/local/bin/ea-php82 &> /dev/null; then PHP_BIN="/usr/local/bin/ea-php82"
+else PHP_BIN="php"; fi
+
+log "🐘 Using PHP: $($PHP_BIN -v | head -n 1)"
+
+# 2. Update Code from Git
+if [ -d ".git" ]; then
+    log "📥 Pulling latest code from Git..."
+    git pull origin main || log "⚠️  Git pull failed. Continuing with existing code..."
 else
-    PHP_BIN="php"
+    log "ℹ️  Not a git repository. Skipping git pull."
 fi
 
-$PHP_BIN /usr/local/bin/composer install --optimize-autoloader --no-dev
+# 3. --- CRITICAL: Clear Bootstrap Cache ---
+# This fixes "Class not found" errors for dev packages like Laravel\Pail
+log "🧹 Clearing bootstrap discovery cache..."
+rm -f bootstrap/cache/packages.php
+rm -f bootstrap/cache/services.php
+rm -f bootstrap/cache/config.php
+rm -f bootstrap/cache/routes.php
 
-# 3. Generate App Key if missing
+# 3. Detect/Setup Composer
+log "📦 Setting up Composer..."
+COMPOSER_BIN=""
+if command -v composer &> /dev/null && composer --version &> /dev/null; then
+    COMPOSER_BIN="composer"
+elif [ -f composer.phar ] && $PHP_BIN composer.phar --version &> /dev/null; then
+    COMPOSER_BIN="$PHP_BIN composer.phar"
+else
+    log "📥 Downloading local composer.phar..."
+    $PHP_BIN -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    $PHP_BIN composer-setup.php --quiet
+    $PHP_BIN -r "unlink('composer-setup.php');"
+    COMPOSER_BIN="$PHP_BIN composer.phar"
+fi
+
+# 4. Install Dependencies
+log "🚀 Installing dependencies..."
+$COMPOSER_BIN install --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
+
+# 5. Application Setup
+log "🏗️  Configuring application..."
+
+# Detect Laravel Version for Maintenance Mode
+# Using a simpler grep for compatibility
+IS_L11=$($PHP_BIN artisan --version | grep "11." || true)
+if [ -n "$IS_L11" ]; then
+    DOWN_CMD="app:down"
+    UP_CMD="app:up"
+else
+    DOWN_CMD="down"
+    UP_CMD="up"
+fi
+
+$PHP_BIN artisan $DOWN_CMD || log "Application is already down."
+
+if [ ! -f .env ]; then
+    log "📄 Creating .env from template..."
+    cp .env.example .env
+fi
+
 if ! grep -q "APP_KEY=base64" .env; then
-    echo "🔑 Generating Application Key..."
+    log "🔑 Generating Application Key..."
     $PHP_BIN artisan key:generate
 fi
 
-# 4. Database Setup (SQLite)
+# 6. Database
 if [ ! -f database/database.sqlite ]; then
-    echo "🗄️  Creating SQLite database..."
+    log "�️  Creating SQLite database..."
     touch database/database.sqlite
 fi
 
-echo "🔄 Running migrations..."
+log "🔄 Running migrations..."
 $PHP_BIN artisan migrate --force
 
-echo "🌱 Seeding initial data..."
+log "🌱 Seeding roles/permissions..."
 $PHP_BIN artisan db:seed --class=RoleAndPermissionSeeder --force
 
-# 5. Production Optimizations
-echo "⚡ Optimizing for production..."
+# 7. Optimization
+log "⚡ Optimizing application..."
+$PHP_BIN artisan optimize:clear
 $PHP_BIN artisan config:cache
 $PHP_BIN artisan route:cache
 $PHP_BIN artisan view:cache
-$PHP_BIN artisan storage:link
+$PHP_BIN artisan storage:link --force
 
-# 6. Final Permissions
-echo "🔐 Setting permissions..."
+# 8. Permissions & Cleanup
+log "🔐 Setting permissions..."
 chmod -R 775 storage bootstrap/cache
 
-echo "✅ Deployment Complete!"
-echo "🌐 Your application is ready. Ensure your Document Root points to the 'public' folder."
+log "🔓 Exiting maintenance mode..."
+$PHP_BIN artisan $UP_CMD
+
+log "✅ Deployment Complete!"
