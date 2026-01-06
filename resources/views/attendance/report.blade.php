@@ -9,7 +9,14 @@
         <div class="col-12">
             <x-card>
                 <div class="card-header">
-                    <h3 class="card-title">Report Filters</h3>
+                    <ul class="nav nav-pills card-header-pills">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('attendance.report.daily') }}">Daily Report</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">Monthly Summary</a>
+                        </li>
+                    </ul>
                     <div class="card-actions">
                         <div class="d-flex gap-2">
                             <a href="{{ route('attendance.report.export', ['month' => $month, 'year' => $year]) }}"
@@ -26,6 +33,10 @@
                                     <path d="M11 11v7" />
                                 </svg>
                                 Export CSV
+                            </a>
+                            <a href="{{ route('attendance.report.export-pdf', ['month' => $month, 'year' => $year]) }}" class="btn btn-danger">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-type-pdf" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /><path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6" /></svg>
+                                Export PDF
                             </a>
                             <button onclick="window.print()" class="btn btn-secondary">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-printer"

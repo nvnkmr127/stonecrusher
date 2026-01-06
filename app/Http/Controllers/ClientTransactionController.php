@@ -25,6 +25,8 @@ class ClientTransactionController extends Controller
             'reference_number' => 'nullable|string',
         ]);
 
+        \App\Services\DayClosureService::checkAllowed($validated['transaction_date']);
+
         $transaction = $client->transactions()->create($validated);
 
         // Log Activity
@@ -53,6 +55,9 @@ class ClientTransactionController extends Controller
             'edit_reason' => 'required|string|min:5', // Mandatory reason
         ]);
 
+        \App\Services\DayClosureService::checkAllowed($validated['transaction_date']);
+        \App\Services\DayClosureService::checkAllowed($transaction->transaction_date);
+
         $oldAmount = $transaction->amount;
 
         $transaction->update([
@@ -75,6 +80,8 @@ class ClientTransactionController extends Controller
 
     public function destroy(Client $client, ClientTransaction $transaction)
     {
+        \App\Services\DayClosureService::checkAllowed($transaction->transaction_date);
+
         $amount = $transaction->amount;
         $type = $transaction->transaction_type;
         $transaction->delete();

@@ -36,14 +36,20 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
     // Master Data
     // Attendance (Policy handled in controller, but route access mainly Admin)
+    Route::get('attendance/report/daily', [App\Http\Controllers\AttendanceReportController::class, 'daily'])->name('attendance.report.daily');
     Route::get('attendance/report', [App\Http\Controllers\AttendanceReportController::class, 'index'])->name('attendance.report');
     Route::get('attendance/report/export', [App\Http\Controllers\AttendanceReportController::class, 'export'])->name('attendance.report.export');
+    Route::get('attendance/report/export-pdf', [App\Http\Controllers\AttendanceReportController::class, 'exportPdf'])->name('attendance.report.export-pdf');
     Route::resource('attendance', AttendanceController::class)->except(['show']);
 
     // Restricted Transaction Edits (Admin Only)
     Route::get('clients/{client}/transactions/{transaction}/edit', [App\Http\Controllers\ClientTransactionController::class, 'edit'])->name('clients.transactions.edit');
     Route::put('clients/{client}/transactions/{transaction}', [App\Http\Controllers\ClientTransactionController::class, 'update'])->name('clients.transactions.update');
     Route::delete('clients/{client}/transactions/{transaction}', [App\Http\Controllers\ClientTransactionController::class, 'destroy'])->name('clients.transactions.destroy');
+
+    // Daily Closing
+    Route::resource('daily-closings', App\Http\Controllers\DailyClosingController::class)->only(['index', 'create', 'store']);
+    Route::post('daily-closings/{daily_closing}/reopen', [App\Http\Controllers\DailyClosingController::class, 'reopen'])->name('daily-closings.reopen');
 });
 
 // Admin & Manager & Accountant Routes
@@ -52,11 +58,27 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
     // Client Reports (Placed before resource to avoid ID collision)
     Route::get('clients/reports/outstanding', [App\Http\Controllers\ClientReportController::class, 'index'])->name('clients.reports.outstanding');
     Route::get('clients/reports/outstanding/export', [App\Http\Controllers\ClientReportController::class, 'export'])->name('clients.reports.outstanding.export');
+    Route::get('clients/reports/outstanding/export-pdf', [App\Http\Controllers\ClientReportController::class, 'exportPdf'])->name('clients.reports.outstanding.export-pdf');
 
     // Master Data
     Route::resource('clients', ClientController::class);
+
+    // Reports (General)
+    Route::get('reports', [App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/daily', [App\Http\Controllers\ReportController::class, 'daily'])->name('reports.daily');
+    Route::get('reports/daily/export', [App\Http\Controllers\ReportController::class, 'exportDaily'])->name('reports.daily.export');
+    Route::get('reports/outstanding', [App\Http\Controllers\ReportController::class, 'outstanding'])->name('reports.outstanding');
+    Route::get('reports/monthly', [App\Http\Controllers\ReportController::class, 'monthly'])->name('reports.monthly');
+    Route::get('reports/monthly/export', [App\Http\Controllers\ReportController::class, 'exportMonthly'])->name('reports.monthly.export');
+    Route::get('reports/custom', [App\Http\Controllers\ReportController::class, 'custom'])->name('reports.custom');
+    Route::get('reports/custom/export', [App\Http\Controllers\ReportController::class, 'exportCustom'])->name('reports.custom.export');
+    Route::get('reports/summary/{type}', [App\Http\Controllers\ReportController::class, 'summary'])->name('reports.summary');
+    Route::get('reports/summary/{type}/export', [App\Http\Controllers\ReportController::class, 'exportSummary'])->name('reports.summary.export');
+
+    // Gate Pass Reports
     Route::get('gate-passes/daily-report', [GatePassController::class, 'dailyReport'])->name('gate-passes.daily-report');
     Route::get('gate-passes/distance-report', [GatePassController::class, 'distanceReport'])->name('gate-passes.distance-report');
+    Route::get('gate-passes/distance-report/export', [GatePassController::class, 'exportDistanceReport'])->name('gate-passes.distance-report.export');
     Route::get('gate-passes/calculator', [GatePassController::class, 'calculator'])->name('gate-passes.calculator');
     Route::post('gate-passes/{gate_pass}/payment', [GatePassController::class, 'recordPayment'])->name('gate-passes.payment');
     Route::resource('gate-passes', GatePassController::class);

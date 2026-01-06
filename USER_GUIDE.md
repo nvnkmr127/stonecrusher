@@ -238,6 +238,52 @@ Admins can fine-tune the transport engine:
 
 ---
 
+## 📊 Reports & Data Security (New)
+
+Phase 6 introduces robust reporting tools and strictly enforced data security measures.
+
+### 1. Daily Closing (Data Locking)
+To ensure financial integrity, the system enforces a "One Closing Per Date" rule.
+- **Closing a Day**:
+    - Go to **Daily Closings** via the sidebar.
+    - Click **"Close Day"**.
+    - Review the day's summary (Total Sales, Cash Collected).
+    - Confirm the closure.
+- **Effect**: Once a day is **Closed**, NO changes can be made to that date's records (Gate Passes, Payments, Attendance). The date is effectively locked.
+- **Reopening**: Only an **Admin** can reopen a closed day.
+    - Go to the Daily Closings list.
+    - Click **"Reopen"**.
+    - **Mandatory Reason**: You must enter a reason for auditing purposes.
+
+### 2. Exporting Reports
+All reports in the system now support one-click export options:
+- **Export CSV**: Download raw data for Excel/Google Sheets analysis.
+- **Export PDF**: Download a formatted, print-ready document.
+- **Where to find**: Look for the **"Export CSV"** and **"Export PDF"** buttons at the top right of any report page.
+
+### 3. Advanced Reporting Suite
+- **Daily Report**: (`Reports > Daily`)
+    - Comprehensive snapshot of a single day's activity.
+    - Includes: Sales Summary, Collection Summary (Cash/Online), Diesel usage, and detailed Transaction list.
+- **Monthly Summary**: (`Reports > Monthly`)
+    - Calendar view of the entire month.
+    - Tracks Daily Sales vs. Daily Collections to monitor cash flow gaps.
+- **Custom Report**: (`Reports > Custom`)
+    - Generate a report for *any* specific date range (e.g., "Last 45 Days").
+- **Analytical Summaries**: (`Reports > Summary > [Type]`)
+    - **By Metal**: Which material is selling the most?
+    - **By Client**: Who are your top buyers?
+    - **By Vehicle**: Which trucks are doing the most trips?
+- **Distance Report**: (`Gate Passes > Distance Report`)
+    - Analyze transport costs. See which routes are most profitable and which are costing too much (Cost per KM).
+- **Attendance Report**: (`Attendance > Report`)
+    - Monthly view of staff presence. Useful for payroll calculation.
+    - Export PDF for a clean attendance sheet.
+- **Outstanding Report**: (`Reports > Outstanding`)
+    - Critical for debt collection. Shows exactly how much every client owes you vs. how much advance they have paid.
+
+---
+
 ## Support
 
 For technical support or feature requests, contact your system administrator.

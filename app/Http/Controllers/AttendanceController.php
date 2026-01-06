@@ -101,6 +101,8 @@ class AttendanceController extends Controller
             'remarks' => 'nullable|string',
         ]);
 
+        \App\Services\DayClosureService::checkAllowed($request->date);
+
         $data = $request->all();
 
         // Auto-calculate status if check_in is provided
@@ -165,6 +167,9 @@ class AttendanceController extends Controller
             'remarks' => 'required|string',
         ]);
 
+        \App\Services\DayClosureService::checkAllowed($request->date);
+        \App\Services\DayClosureService::checkAllowed($attendance->date);
+
         $data = $request->all();
 
         // Auto-calculate status
@@ -197,6 +202,8 @@ class AttendanceController extends Controller
 
     public function destroy(Attendance $attendance)
     {
+        \App\Services\DayClosureService::checkAllowed($attendance->date);
+
         $attendance->delete();
         return redirect()->route('attendance.index')->with('success', 'Attendance deleted successfully.');
     }

@@ -9,6 +9,8 @@ use App\Models\MetalType;
 use App\Models\Setting;
 use App\Models\DeliveryDestination;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class GatePassController extends Controller
 {
@@ -95,6 +97,9 @@ class GatePassController extends Controller
 
         $validated = $request->validate($rules);
 
+        // Check if date is closed
+        \App\Services\DayClosureService::checkAllowed($validated['date']);
+
         // Ensure defaults strictly if null
         $validated['gross_weight'] = $validated['gross_weight'] ?? 0;
         $validated['tare_weight'] = $validated['tare_weight'] ?? 0;
@@ -172,6 +177,11 @@ class GatePassController extends Controller
             'transport_cost' => 'nullable|numeric|min:0',
             'transport_is_billable' => 'nullable|boolean',
         ]);
+
+        // Check if new date is closed
+        \App\Services\DayClosureService::checkAllowed($validated['date']);
+        // Check if original date was closed (prevent editing closed records)
+        \App\Services\DayClosureService::checkAllowed($gate_pass->date);
 
         // Default values
         $validated['gross_weight'] = $validated['gross_weight'] ?? 0;
@@ -262,6 +272,15 @@ class GatePassController extends Controller
             'remarks' => 'nullable|string',
         ]);
 
+        // Check payment date
+        \App\Services\DayClosureService::checkAllowed($validated['date']);
+        // Check Gate Pass date too? Usually payment date is what matters for cash closure.
+        // But if we modify the Gate Pass payment status, maybe we should check GP date too?
+        // Requirement says "prevent unauthorized changes". Adding payment changes GP state.
+        // But if payment is today (Open) and GP was yesterday (Closed), can we pay?
+        // Usually yes, we collect money later.
+        // So ONLY check payment date.
+
         $salesService->recordPayment(
             $gate_pass,
             $validated['amount'],
@@ -275,6 +294,8 @@ class GatePassController extends Controller
 
     public function destroy(GatePass $gate_pass)
     {
+        \App\Services\DayClosureService::checkAllowed($gate_pass->date);
+
         // Check if there is a transaction and maybe prevent delete or delete transaction?
         if ($gate_pass->transaction) {
             $gate_pass->transaction->delete();
@@ -332,20 +353,152 @@ class GatePassController extends Controller
             'total_trips' => (clone $query)->count(),
             'total_distance' => (clone $query)->sum('distance_km'),
             'total_cost' => (clone $query)->sum('transport_cost'),
+            'total_sales' => (clone $query)->sum('total_amount'), // For Cost vs Sales ratio
+            'total_volume' => (clone $query)->sum('loading_quantity'),
         ];
 
-        // Location-wise Breakdown
+        // Efficiency Metrics
+        $summary['avg_cost_per_km'] = $summary['total_distance'] > 0 ? $summary['total_cost'] / $summary['total_distance'] : 0;
+        $summary['avg_cost_per_ton'] = $summary['total_volume'] > 0 ? $summary['total_cost'] / $summary['total_volume'] : 0;
+        $summary['cost_to_sales_ratio'] = $summary['total_sales'] > 0 ? ($summary['total_cost'] / $summary['total_sales']) * 100 : 0;
+
+        // Location-wise Breakdown with efficiency
         $reportData = (clone $query)
             ->select(
                 'delivery_location',
                 \DB::raw('COUNT(*) as trip_count'),
                 \DB::raw('SUM(distance_km) as total_distance'),
-                \DB::raw('SUM(transport_cost) as total_cost')
+                \DB::raw('SUM(transport_cost) as total_cost'),
+                \DB::raw('SUM(loading_quantity) as total_qty')
             )
             ->groupBy('delivery_location')
             ->orderByDesc('total_cost')
-            ->get();
+            ->get()
+            ->map(function ($row) {
+                $row->cost_per_km = $row->total_distance > 0 ? $row->total_cost / $row->total_distance : 0;
+                $row->cost_per_ton = $row->total_qty > 0 ? $row->total_cost / $row->total_qty : 0;
+                return $row;
+            });
 
-        return view('gate_passes.distance_report', compact('summary', 'reportData', 'startDate', 'endDate'));
+        // 4. Distance Range Analysis (Using DB Raw for efficiency)
+        // Ranges: 0-10, 10-50, 50-100, 100+
+        // Note: SQLite/MySQL syntax compatible CASE WHEN
+        $rangeStats = (clone $query)
+            ->selectRaw("
+                CASE 
+                    WHEN distance_km < 10 THEN 'Short (< 10 km)'
+                    WHEN distance_km >= 10 AND distance_km < 50 THEN 'Medium (10 - 50 km)'
+                    WHEN distance_km >= 50 AND distance_km < 100 THEN 'Long (50 - 100 km)'
+                    ELSE 'Very Long (> 100 km)'
+                END as range_label
+            ")
+            ->selectRaw('COUNT(*) as count')
+            ->selectRaw('SUM(transport_cost) as total_cost')
+            ->selectRaw('SUM(distance_km) as total_dist')
+            ->groupBy('range_label')
+            ->get()
+            ->map(function ($row) {
+                $row->avg_cost_per_km = $row->total_dist > 0 ? $row->total_cost / $row->total_dist : 0;
+                return $row;
+            });
+
+        return view('gate_passes.distance_report', compact('summary', 'reportData', 'rangeStats', 'startDate', 'endDate'));
+    }
+
+    public function exportDistanceReport(Request $request)
+    {
+        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
+        $format = $request->input('format', 'csv');
+
+        $query = GatePass::whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->where('status', 'completed');
+
+        // Overall Summary
+        $summary = [
+            'total_trips' => (clone $query)->count(),
+            'total_distance' => (clone $query)->sum('distance_km'),
+            'total_cost' => (clone $query)->sum('transport_cost'),
+            'total_sales' => (clone $query)->sum('total_amount'),
+            'total_volume' => (clone $query)->sum('loading_quantity'),
+        ];
+        $summary['avg_cost_per_km'] = $summary['total_distance'] > 0 ? $summary['total_cost'] / $summary['total_distance'] : 0;
+        $summary['avg_cost_per_ton'] = $summary['total_volume'] > 0 ? $summary['total_cost'] / $summary['total_volume'] : 0;
+        $summary['cost_to_sales_ratio'] = $summary['total_sales'] > 0 ? ($summary['total_cost'] / $summary['total_sales']) * 100 : 0;
+
+        $reportData = (clone $query)
+            ->select(
+                'delivery_location',
+                \DB::raw('COUNT(*) as trip_count'),
+                \DB::raw('SUM(distance_km) as total_distance'),
+                \DB::raw('SUM(transport_cost) as total_cost'),
+                \DB::raw('SUM(loading_quantity) as total_qty')
+            )
+            ->groupBy('delivery_location')
+            ->orderByDesc('total_cost')
+            ->get()
+            ->map(function ($row) {
+                $row->cost_per_km = $row->total_distance > 0 ? $row->total_cost / $row->total_distance : 0;
+                $row->cost_per_ton = $row->total_qty > 0 ? $row->total_cost / $row->total_qty : 0;
+                return $row;
+            });
+
+        $rangeStats = (clone $query)
+            ->selectRaw("
+                CASE 
+                    WHEN distance_km < 10 THEN 'Short (< 10 km)'
+                    WHEN distance_km >= 10 AND distance_km < 50 THEN 'Medium (10 - 50 km)'
+                    WHEN distance_km >= 50 AND distance_km < 100 THEN 'Long (50 - 100 km)'
+                    ELSE 'Very Long (> 100 km)'
+                END as range_label
+            ")
+            ->selectRaw('COUNT(*) as count')
+            ->selectRaw('SUM(transport_cost) as total_cost')
+            ->selectRaw('SUM(distance_km) as total_dist')
+            ->groupBy('range_label')
+            ->get()
+            ->map(function ($row) {
+                $row->avg_cost_per_km = $row->total_dist > 0 ? $row->total_cost / $row->total_dist : 0;
+                return $row;
+            });
+
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadView('exports.gate_passes.distance', compact('summary', 'reportData', 'rangeStats', 'startDate', 'endDate'));
+            return $pdf->download("distance_report_{$startDate}_{$endDate}.pdf");
+        }
+
+        // CSV Export
+        $filename = "distance_report_{$startDate}_{$endDate}.csv";
+        $headers = [
+            "Content-type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        $callback = function () use ($summary, $reportData) {
+            $file = fopen('php://output', 'w');
+
+            fputcsv($file, ['SUMMARY']);
+            fputcsv($file, ['Total Trips', 'Total Distance (km)', 'Total CostT', 'Avg Cost/km']);
+            fputcsv($file, [$summary['total_trips'], $summary['total_distance'], $summary['total_cost'], number_format($summary['avg_cost_per_km'], 2)]);
+            fputcsv($file, []);
+
+            fputcsv($file, ['LOCATION BREAKDOWN']);
+            fputcsv($file, ['Location', 'Trips', 'Distance', 'Cost', 'Cost/km']);
+            foreach ($reportData as $row) {
+                fputcsv($file, [
+                    $row->delivery_location ?? 'Unknown',
+                    $row->trip_count,
+                    $row->total_distance,
+                    $row->total_cost,
+                    number_format($row->cost_per_km, 2)
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ClientReportController extends Controller
 {
@@ -74,5 +75,30 @@ class ClientReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+    public function exportPdf()
+    {
+        $clients = Client::with('transactions')->get();
+
+        $totalSales = 0;
+        $totalAdvances = 0;
+        $totalOutstanding = 0;
+
+        foreach ($clients as $client) {
+            $credit = $client->transactions->where('transaction_type', 'credit')->sum('amount');
+            $debit = $client->transactions->where('transaction_type', 'debit')->sum('amount');
+
+            $client->total_credit = $credit;
+            $client->total_debit = $debit; // Store for view
+
+            $totalSales += $debit;
+            $totalAdvances += $credit;
+            if ($client->balance < 0) {
+                $totalOutstanding += abs($client->balance);
+            }
+        }
+
+        $pdf = Pdf::loadView('exports.clients.outstanding', compact('clients', 'totalSales', 'totalAdvances', 'totalOutstanding'));
+        return $pdf->download('client_outstanding_report_' . date('Y-m-d_H-i') . '.pdf');
     }
 }
