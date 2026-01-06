@@ -13,7 +13,9 @@ class GoogleDriveController extends Controller
      */
     public function redirect()
     {
-        return Socialite::driver('google')
+        /** @var \Laravel\Socialite\Two\GoogleProvider $driver */
+        $driver = Socialite::driver('google');
+        return $driver
             ->scopes(['https://www.googleapis.com/auth/drive.file'])
             ->with(['access_type' => 'offline', 'prompt' => 'consent'])
             ->redirect();
@@ -25,16 +27,17 @@ class GoogleDriveController extends Controller
     public function callback()
     {
         try {
+            /** @var \Laravel\Socialite\Two\User $user */
             $user = Socialite::driver('google')->user();
 
             $refreshToken = $user->refreshToken;
 
             if ($refreshToken) {
                 Setting::set('google_drive_refresh_token', $refreshToken);
-                Setting::set('google_drive_email', $user->email);
+                Setting::set('google_drive_email', $user->getEmail());
 
                 return redirect()->route('backups.index')
-                    ->with('success', 'Google Drive connected successfully! Account: ' . $user->email);
+                    ->with('success', 'Google Drive connected successfully! Account: ' . $user->getEmail());
             }
 
             return redirect()->route('backups.index')

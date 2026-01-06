@@ -91,7 +91,12 @@ class BackupController extends Controller
             abort(404);
         }
 
-        return Storage::disk($disk)->download($path);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $adapter */
+        $adapter = Storage::disk($disk);
+        if (method_exists($adapter, 'download')) {
+            return $adapter->download($path);
+        }
+        return $adapter->response($path);
     }
 
     public function destroy(Request $request)
