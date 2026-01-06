@@ -284,6 +284,53 @@ All reports in the system now support one-click export options:
 
 ---
 
+---
+
+## 🛡️ Administration & Security (New)
+
+Phase 7 brings enterprise-grade security, auditing, and backup capabilities to protect your business data.
+
+### 1. Audit Logs (Tracing Actions)
+Every critical action in the system is now tracked.
+- **View Logs**: Go to **Administration > Audit Logs**.
+- **What is Logged?**: Login/Logout, Creating/Editing/Deleting Records (Sales, Payments, Attendance), and System Settings changes.
+- **Details**: Each log shows:
+    - **Who**: The user who performed the action.
+    - **What**: The type of action (e.g., "Updated Sale").
+    - **When**: Precise timestamp.
+    - **IP Address**: The location/network of the user.
+    - **Changes**: Technical details of what changed (Old Value vs. New Value).
+- **Filtering**: Use the filters at the top to search by User, Module, or Date Range.
+
+### 2. Backups & Disaster Recovery
+Your data is automatically protected against server failure or accidental deletion.
+- **Automatic Backups**: The system takes a full backup (Database + Files) every day at 01:00 AM.
+- **Cloud Storage**: Backups are securely uploaded to **Google Drive** for off-site safety.
+- **Manual Backup**:
+    - Go to **Administration > Backups**.
+    - Click **"Create Backup"**.
+    - The process runs in the background. Refresh the page to see the new backup.
+- **Download**: You can download any backup ZIP file to your local computer.
+
+### 3. Restore (Disaster Recovery)
+**⚠️ DANGER ZONE**: This feature allows you to roll back the system to a previous state.
+- **How to Restore**:
+    1. Go to the **Backups** list.
+    2. Click the **"Restore"** button next to any backup file.
+    3. **Confirm**: You will be asked to confirm. **THIS WILL OVERWRITE CURRENT DATA**.
+    4. **Result**: The system database will be replaced with the data from that specific backup file.
+    - *Use Case*: Use this only if data is corrupted or completely lost.
+
+### 4. Google Drive Connection
+To enable cloud backups:
+1. Go to **Administration > Backups**.
+2. Click **"Connect Google Drive"**.
+3. Sign in with your company Google account.
+4. Grant permission.
+5. Status will change to **"Drive Connected"**.
+
+---
+
 ## Support
 
 For technical support or feature requests, contact your system administrator.
