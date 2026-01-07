@@ -11,7 +11,8 @@ class ClientTransactionController extends Controller
 {
     public function create(Client $client)
     {
-        return view('clients.transactions.create', compact('client'));
+        $availableCredit = $client->credit_limit > 0 ? $client->credit_limit + $client->balance : 0;
+        return view('clients.transactions.create', compact('client', 'availableCredit'));
     }
 
     public function store(Request $request, Client $client)
@@ -19,7 +20,7 @@ class ClientTransactionController extends Controller
         $validated = $request->validate([
             'transaction_type' => 'required|in:credit,debit',
             'amount' => 'required|numeric|min:0.01',
-            'payment_mode' => 'nullable|string|in:Cash,Bank Transfer,UPI,Check,Other',
+            'payment_mode' => ['nullable', \Illuminate\Validation\Rule::enum(\App\Enums\PaymentMode::class)],
             'transaction_date' => 'required|date',
             'description' => 'nullable|string',
             'reference_number' => 'nullable|string',
@@ -27,10 +28,7 @@ class ClientTransactionController extends Controller
 
         \App\Services\DayClosureService::checkAllowed($validated['transaction_date']);
 
-        $transaction = $client->transactions()->create($validated);
-
-        // Log Activity
-
+        $client->transactions()->create($validated);
 
         return redirect()->route('clients.show', $client)->with('success', 'Transaction recorded successfully!');
     }
@@ -45,7 +43,7 @@ class ClientTransactionController extends Controller
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'transaction_date' => 'required|date',
-            'payment_mode' => 'nullable|string|in:Cash,Bank Transfer,UPI,Check,Other',
+            'payment_mode' => ['nullable', \Illuminate\Validation\Rule::enum(\App\Enums\PaymentMode::class)],
             'reference_number' => 'nullable|string',
             'description' => 'nullable|string',
             'edit_reason' => 'required|string|min:5', // Mandatory reason
@@ -53,8 +51,6 @@ class ClientTransactionController extends Controller
 
         \App\Services\DayClosureService::checkAllowed($validated['transaction_date']);
         \App\Services\DayClosureService::checkAllowed($transaction->transaction_date);
-
-        $oldAmount = $transaction->amount;
 
         $transaction->update([
             'amount' => $validated['amount'],
@@ -64,9 +60,6 @@ class ClientTransactionController extends Controller
             'description' => $validated['description'],
         ]);
 
-        // Log Activity
-
-
         return redirect()->route('clients.show', $client)->with('success', 'Transaction updated successfully!');
     }
 
@@ -74,12 +67,7 @@ class ClientTransactionController extends Controller
     {
         \App\Services\DayClosureService::checkAllowed($transaction->transaction_date);
 
-        $amount = $transaction->amount;
-        $type = $transaction->transaction_type;
         $transaction->delete();
-
-        // Log Activity
-
 
         return redirect()->route('clients.show', $client)->with('success', 'Transaction deleted successfully. Balance updated.');
     }

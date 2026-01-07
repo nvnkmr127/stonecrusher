@@ -101,9 +101,7 @@
                 </thead>
                 <tbody>
                     @foreach($clients as $client)
-                        @php
-                            $bal = $client->balance;
-                        @endphp
+
                         <tr>
                             <td><a href="{{ route('clients.show', $client) }}">{{ $client->name }}</a></td>
                             <td>{{ $client->phone ?? '-' }}</td>
@@ -113,11 +111,11 @@
                             <td class="text-end">
                                 {{ number_format($client->total_credit ?? $client->transactions->where('transaction_type', 'credit')->sum('amount'), 2) }}
                             </td>
-                            <td class="text-end font-weight-bold {{ $bal >= 0 ? 'text-green' : 'text-red' }}">
-                                {{ number_format(abs($bal), 2) }}
+                            <td class="text-end font-weight-bold {{ $client->current_balance >= 0 ? 'text-green' : 'text-red' }}">
+                                {{ number_format(abs($client->current_balance), 2) }}
                             </td>
                             <td>
-                                @if($bal >= 0)
+                                @if($client->current_balance >= 0)
                                     <span class="badge bg-green-lt">Advance</span>
                                 @else
                                     <span class="badge bg-red-lt">Outstanding</span>

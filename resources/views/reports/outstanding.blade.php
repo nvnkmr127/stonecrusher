@@ -1,54 +1,46 @@
-<x-app-layout>
+<x-tabler-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="page-title">
             {{ __('Outstanding & Advance Report') }}
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+    <div class="row row-cards">
 
-            <!-- Outstanding Receivables (Values are Negative) -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
-                    <h3 class="text-lg font-bold text-red-600 mb-4">Outstanding Receivables (Clients Owe Us)</h3>
-
+        <!-- Outstanding Receivables (Values are Negative) -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title text-danger">Outstanding Receivables (Clients Owe Us)</h3>
+                </div>
+                <div class="card-body border-bottom py-3">
                     @if($outstandingClients->isEmpty())
-                        <p class="text-gray-500 italic">No outstanding balances.</p>
+                        <p class="text-muted fst-italic">No outstanding balances.</p>
                     @else
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                        <div class="table-responsive">
+                            <table class="table table-vcenter card-table">
+                                <thead>
                                     <tr>
-                                        <th
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Client Name</th>
-                                        <th
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Contact</th>
-                                        <th
-                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Outstanding Amount</th>
+                                        <th>Client Name</th>
+                                        <th>Contact</th>
+                                        <th class="text-end">Outstanding Amount</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody>
                                     @foreach($outstandingClients as $client)
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                                                {{ $client->name }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-gray-500">{{ $client->phone }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-red-600 font-bold">
+                                            <td class="fw-medium">{{ $client->name }}</td>
+                                            <td class="text-muted">{{ $client->phone }}</td>
+                                            <td class="text-end text-danger fw-bold">
                                                 {{ number_format(abs($client->current_balance), 2) }}
                                             </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
-                                <tfoot class="bg-gray-50">
+                                <tfoot class="bg-light">
                                     <tr>
-                                        <th colspan="2"
-                                            class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase">Total
-                                            Outstanding</th>
-                                        <th class="px-6 py-3 text-right text-md font-bold text-red-700">
+                                        <th colspan="2" class="text-end">Total Outstanding</th>
+                                        <th class="text-end text-danger fw-bold fs-4">
                                             {{ number_format(abs($outstandingClients->sum('current_balance')), 2) }}
                                         </th>
                                     </tr>
@@ -58,48 +50,42 @@
                     @endif
                 </div>
             </div>
+        </div>
 
-            <!-- Advance Balances (Values are Positive) -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
-                    <h3 class="text-lg font-bold text-green-600 mb-4">Advance Balances (Credit Available)</h3>
-
+        <!-- Advance Balances (Values are Positive) -->
+        <div class="col-12 mt-3">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title text-success">Advance Balances (Credit Available)</h3>
+                </div>
+                <div class="card-body border-bottom py-3">
                     @if($advanceClients->isEmpty())
-                        <p class="text-gray-500 italic">No advance balances.</p>
+                        <p class="text-muted fst-italic">No advance balances.</p>
                     @else
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                        <div class="table-responsive">
+                            <table class="table table-vcenter card-table">
+                                <thead>
                                     <tr>
-                                        <th
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Client Name</th>
-                                        <th
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Contact</th>
-                                        <th
-                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Credit Balance</th>
+                                        <th>Client Name</th>
+                                        <th>Contact</th>
+                                        <th class="text-end">Credit Balance</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody>
                                     @foreach($advanceClients as $client)
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                                                {{ $client->name }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-gray-500">{{ $client->phone }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-green-600 font-bold">
+                                            <td class="fw-medium">{{ $client->name }}</td>
+                                            <td class="text-muted">{{ $client->phone }}</td>
+                                            <td class="text-end text-success fw-bold">
                                                 {{ number_format($client->current_balance, 2) }}
                                             </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
-                                <tfoot class="bg-gray-50">
+                                <tfoot class="bg-light">
                                     <tr>
-                                        <th colspan="2"
-                                            class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase">Total
-                                            Advances</th>
-                                        <th class="px-6 py-3 text-right text-md font-bold text-green-700">
+                                        <th colspan="2" class="text-end">Total Advances</th>
+                                        <th class="text-end text-success fw-bold fs-4">
                                             {{ number_format($advanceClients->sum('current_balance'), 2) }}
                                         </th>
                                     </tr>
@@ -109,7 +95,7 @@
                     @endif
                 </div>
             </div>
-
         </div>
+
     </div>
-</x-app-layout>
+</x-tabler-layout>

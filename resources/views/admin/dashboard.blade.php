@@ -190,17 +190,9 @@
                                 </div>
                             </td>
                             <td>
-                                @php
-                                    $statusColors = [
-                                        'pending' => 'secondary',
-                                        'active' => 'primary',
-                                        'completed' => 'success',
-                                        'cancelled' => 'danger'
-                                    ];
-                                @endphp
-                                <span class="badge bg-{{ $statusColors[$project->status] ?? 'secondary' }} text-white">
-                                    {{ ucfirst($project->status) }}
-                                </span>
+                                    <span class="badge bg-{{ match($project->status) { 'pending' => 'secondary', 'active' => 'primary', 'completed' => 'success', 'cancelled' => 'danger', default => 'secondary' } }}">
+                                        {{ ucfirst($project->status) }}
+                                    </span>
                             </td>
                         </tr>
                         @empty
@@ -340,7 +332,7 @@
                 </x-slot>
 
                 <div class="list-group list-group-flush">
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{{ route('users.index') }}" class="list-group-item list-group-item-action">
                         <div class="row align-items-center">
                             <div class="col-auto">
                                 <span class="avatar">U</span>
@@ -366,7 +358,7 @@
                             </div>
                         </div>
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{{ route('settings.index') }}" class="list-group-item list-group-item-action">
                         <div class="row align-items-center">
                             <div class="col-auto">
                                 <span class="avatar">S</span>

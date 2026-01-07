@@ -28,12 +28,14 @@
                 </x-slot>
 
                 <div class="card-body border-bottom py-3">
-                    <div class="d-flex">
-                        <div class="ms-auto text-muted">
+                    <div class="d-flex flex-column flex-md-row align-items-center gap-2">
+                        <div class="ms-md-auto text-muted">
                             Search:
-                            <div class="ms-2 d-inline-block">
+                            <div class="d-inline-block">
                                 <form method="GET" action="{{ route('clients.index') }}">
-                                    <input type="text" name="search" value="{{ request('search') }}" class="form-control form-control-sm" aria-label="Search client" placeholder="Name, Phone, or Email...">
+                                    <input type="text" name="search" value="{{ request('search') }}"
+                                        class="form-control form-control-sm" aria-label="Search client"
+                                        placeholder="Name, Phone, or Email...">
                                 </form>
                             </div>
                         </div>
@@ -62,11 +64,9 @@
                                 <td>{{ $client->email ?? '-' }}</td>
                                 <td>{{ $client->phone ?? '-' }}</td>
                                 <td>
-                                    @php
-                                        $bal = $client->balance;
-                                    @endphp
-                                    <span class="{{ $bal >= 0 ? 'text-success' : 'text-danger' }}">
-                                        {{ number_format(abs($bal), 2) }} {{ $bal >= 0 ? 'Cr' : 'Dr' }}
+                                    <span class="{{ $client->balance >= 0 ? 'text-success' : 'text-danger' }}">
+                                        {{ number_format(abs($client->balance), 2) }}
+                                        {{ $client->balance >= 0 ? 'Cr' : 'Dr' }}
                                     </span>
                                 </td>
                                 <td>
@@ -94,7 +94,11 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center">No clients found</td>
+                                <td colspan="7">
+                                    <x-empty-state title="No Clients Found"
+                                        description="Start by adding a new client to the system."
+                                        action='<a href="{{ route("clients.create") }}" class="btn btn-primary">Add Client</a>' />
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

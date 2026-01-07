@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Services\ReportExportService;
 
 class ReportController extends Controller
 {
@@ -98,97 +99,9 @@ class ReportController extends Controller
         return view('reports.daily', compact('date', 'gatePasses', 'salesSummary', 'metalStats', 'collections', 'collectionSummary'));
     }
 
-    public function exportDaily(Request $request)
+    public function exportDaily(Request $request, ReportExportService $exportService)
     {
-        $date = $request->input('date', Carbon::today()->toDateString());
-        $format = $request->input('format', 'csv');
-
-        $gatePasses = GatePass::with(['client', 'vehicle', 'metalType'])
-            ->whereDate('date', $date)
-            ->where('status', 'completed')
-            ->get();
-
-        $collections = ClientTransaction::with('client')
-            ->whereDate('transaction_date', $date)
-            ->where('transaction_type', 'credit')
-            ->get();
-
-        if ($format === 'pdf') {
-            $salesSummary = [
-                'count' => $gatePasses->count(),
-                'total_amount' => $gatePasses->sum('total_amount'),
-                'total_volume' => $gatePasses->sum('loading_quantity'),
-                'total_diesel' => $gatePasses->sum('diesel_amount'),
-                'total_advance' => $gatePasses->sum('advance_amount'),
-                'total_paid' => $gatePasses->sum('paid_amount'),
-            ];
-            $salesSummary['outstanding'] = $salesSummary['total_amount'] - $salesSummary['total_paid'];
-
-            $metalStats = $gatePasses->groupBy('metal_type_id')->map(function ($rows) {
-                return [
-                    'name' => $rows->first()->metalType->name ?? 'Unknown',
-                    'count' => $rows->count(),
-                    'quantity' => $rows->sum('loading_quantity'),
-                    'amount' => $rows->sum('total_amount'),
-                ];
-            });
-
-            $collectionSummary = [
-                'total_collected' => $collections->sum('amount'),
-                'by_mode' => $collections->groupBy('payment_mode')->map->sum('amount'),
-            ];
-
-            $pdf = Pdf::loadView('exports.reports.daily', compact('date', 'gatePasses', 'salesSummary', 'metalStats', 'collections', 'collectionSummary'));
-            return $pdf->download("daily_report_{$date}.pdf");
-        }
-
-        // CSV Export
-        $filename = "daily_report_{$date}.csv";
-        $headers = [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
-        ];
-
-        $callback = function () use ($gatePasses, $collections) {
-            $file = fopen('php://output', 'w');
-
-            // Sales Section
-            fputcsv($file, ['SALES REPORT']);
-            fputcsv($file, ['GP Number', 'Client', 'Vehicle', 'Metal', 'Qty', 'Amount', 'Paid', 'Payment Mode']);
-            foreach ($gatePasses as $gp) {
-                $payment = $gp->transaction ? $gp->transaction->amount : ($gp->paid_amount > 0 ? $gp->paid_amount : 0);
-                // Note: paid_amount in GatePass vs Transaction amount. Using simplified view.
-                fputcsv($file, [
-                    $gp->gate_pass_number,
-                    $gp->client->name ?? 'N/A',
-                    $gp->vehicle->vehicle_number,
-                    $gp->metalType->name,
-                    $gp->loading_quantity,
-                    $gp->total_amount,
-                    $gp->paid_amount,
-                    $gp->payment_mode ?? '-'
-                ]);
-            }
-            fputcsv($file, []);
-
-            // Collections Section
-            fputcsv($file, ['COLLECTIONS REPORT']);
-            fputcsv($file, ['Client', 'Amount', 'Mode', 'Notes']);
-            foreach ($collections as $col) {
-                fputcsv($file, [
-                    $col->client->name ?? 'N/A',
-                    $col->amount,
-                    $col->payment_mode,
-                    $col->remarks
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $exportService->exportDaily($request);
     }
 
     /**
@@ -235,81 +148,15 @@ class ReportController extends Controller
             $current->addDay();
         }
 
-        return view('reports.monthly', compact('reportData', 'month', 'year'));
+        $totalSales = collect($reportData)->sum('sales');
+        $totalCollections = collect($reportData)->sum('collections');
+
+        return view('reports.monthly', compact('reportData', 'month', 'year', 'totalSales', 'totalCollections'));
     }
 
-    public function exportMonthly(Request $request)
+    public function exportMonthly(Request $request, ReportExportService $exportService)
     {
-        $month = $request->input('month', Carbon::now()->month);
-        $year = $request->input('year', Carbon::now()->year);
-        $format = $request->input('format', 'csv');
-
-        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
-        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
-
-        // Re-fetch data logic (duplicated from index for now, could be refactored to service)
-        $dailySales = GatePass::whereBetween('date', [$startDate, $endDate])
-            ->where('status', 'completed')
-            ->selectRaw('DATE(date) as date, SUM(total_amount) as total_sales, COUNT(*) as count')
-            ->groupBy('date')
-            ->get()
-            ->keyBy('date');
-
-        $dailyCollections = ClientTransaction::whereBetween('transaction_date', [$startDate, $endDate])
-            ->where('transaction_type', 'credit')
-            ->selectRaw('DATE(transaction_date) as date, SUM(amount) as total_collections')
-            ->groupBy('date')
-            ->get()
-            ->keyBy('date');
-
-        $reportData = [];
-        $current = $startDate->copy();
-        while ($current <= $endDate) {
-            $d = $current->toDateString();
-            $sales = $dailySales[$d] ?? null;
-            $col = $dailyCollections[$d] ?? null;
-
-            if ($sales || $col) {
-                $reportData[$d] = [
-                    'date' => $d,
-                    'sales' => $sales ? $sales->total_sales : 0,
-                    'sales_count' => $sales ? $sales->count : 0,
-                    'collections' => $col ? $col->total_collections : 0,
-                ];
-            }
-            $current->addDay();
-        }
-
-        if ($format === 'pdf') {
-            $pdf = Pdf::loadView('exports.reports.monthly', compact('reportData', 'month', 'year'));
-            return $pdf->download("monthly_report_{$month}_{$year}.pdf");
-        }
-
-        $filename = "monthly_report_{$month}_{$year}.csv";
-        $headers = [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
-        ];
-
-        $callback = function () use ($reportData) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['Date', 'Sales Count', 'Total Sales', 'Total Collections']);
-
-            foreach ($reportData as $row) {
-                fputcsv($file, [
-                    $row['date'],
-                    $row['sales_count'],
-                    $row['sales'],
-                    $row['collections']
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $exportService->exportMonthly($request);
     }
 
     /**
@@ -423,94 +270,9 @@ class ReportController extends Controller
         return view('reports.summary', compact('data', 'type', 'startDate', 'endDate', 'title'));
     }
 
-    public function exportSummary(Request $request, $type)
+    public function exportSummary(Request $request, $type, ReportExportService $exportService)
     {
-        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
-        $format = $request->input('format', 'csv');
-        $title = ucfirst($type) . ' Summary';
-
-        $data = [];
-        if ($type === 'metal') {
-            $data = GatePass::with('metalType')
-                ->whereBetween('date', [$startDate, $endDate])
-                ->where('status', 'completed')
-                ->selectRaw('metal_type_id, SUM(total_amount) as total_sales, SUM(loading_quantity) as total_qty, COUNT(*) as count')
-                ->groupBy('metal_type_id')
-                ->get();
-        } elseif ($type === 'client') {
-            $data = GatePass::with('client')
-                ->whereBetween('date', [$startDate, $endDate])
-                ->where('status', 'completed')
-                ->selectRaw('client_id, SUM(total_amount) as total_sales, COUNT(*) as count, SUM(transport_cost) as transport')
-                ->groupBy('client_id')
-                ->orderByDesc('total_sales')
-                ->get();
-        } elseif ($type === 'vehicle') {
-            $data = GatePass::with('vehicle')
-                ->whereBetween('date', [$startDate, $endDate])
-                ->where('status', 'completed')
-                ->selectRaw('vehicle_id, SUM(total_amount) as total_sales, COUNT(*) as count, SUM(distance_km) as total_km')
-                ->groupBy('vehicle_id')
-                ->orderByDesc('total_sales')
-                ->get();
-        } else {
-            abort(404);
-        }
-
-        if ($format === 'pdf') {
-            $pdf = Pdf::loadView('exports.reports.summary', compact('data', 'type', 'startDate', 'endDate', 'title'));
-            return $pdf->download("{$type}_summary_{$startDate}_{$endDate}.pdf");
-        }
-
-        $filename = "{$type}_summary_{$startDate}_{$endDate}.csv";
-        $headers = [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
-        ];
-
-        $callback = function () use ($data, $type) {
-            $file = fopen('php://output', 'w');
-
-            if ($type === 'metal') {
-                fputcsv($file, ['Metal Type', 'Count', 'Total Qty', 'Total Sales']);
-                foreach ($data as $row) {
-                    fputcsv($file, [
-                        $row->metalType->name ?? 'Unknown',
-                        $row->count,
-                        $row->total_qty,
-                        $row->total_sales
-                    ]);
-                }
-            } elseif ($type === 'client') {
-                fputcsv($file, ['Client', 'Trip Count', 'Transport Cost', 'Total Purchase']);
-                foreach ($data as $row) {
-                    fputcsv($file, [
-                        $row->client->name ?? 'Unknown',
-                        $row->count,
-                        $row->transport,
-                        $row->total_sales
-                    ]);
-                }
-            } elseif ($type === 'vehicle') {
-                fputcsv($file, ['Vehicle', 'Trip Count', 'Total KM', 'Total Revenue']);
-                foreach ($data as $row) {
-                    fputcsv($file, [
-                        $row->vehicle->vehicle_number ?? 'Unknown',
-                        $row->count,
-                        $row->total_km,
-                        $row->total_sales
-                    ]);
-                }
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $exportService->exportSummary($request, $type);
     }
     /**
      * Outstanding & Advance Report

@@ -1,0 +1,3 @@
+<ol class="breadcrumb" aria-label="breadcrumbs">
+    {{ $slot }}
+</ol>

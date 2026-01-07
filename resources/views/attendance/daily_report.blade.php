@@ -60,22 +60,10 @@
                                     <td>{{ $data['check_out'] ? \Carbon\Carbon::parse($data['check_out'])->format('h:i A') : '-' }}
                                     </td>
                                     <td class="text-center">
-                                        @php
-                                            $color = 'secondary';
-                                            $status = strtolower($data['status_label']);
-                                            if ($status === 'present')
-                                                $color = 'success';
-                                            elseif ($status === 'late')
-                                                $color = 'warning';
-                                            elseif ($status === 'half day')
-                                                $color = 'orange';
-                                            elseif ($status === 'absent')
-                                                $color = 'danger';
-                                            elseif ($status === 'leave')
-                                                $color = 'primary';
-                                        @endphp
                                         <span
-                                            class="badge bg-{{ $color }} text-{{ $color }}-fg">{{ $data['status_label'] }}</span>
+                                            class="badge bg-{{ match (strtolower($data['status_label'])) { 'present' => 'success', 'late' => 'warning', 'half day' => 'orange', 'absent' => 'danger', 'leave' => 'primary', default => 'secondary'} }} text-white">
+                                            {{ $data['status_label'] }}
+                                        </span>
                                     </td>
                                     <td class="text-muted">{{ $data['remarks'] ?? '-' }}</td>
                                 </tr>

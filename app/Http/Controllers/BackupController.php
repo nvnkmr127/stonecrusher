@@ -23,23 +23,29 @@ class BackupController extends Controller
         $backups = [];
 
         foreach ($diskNames as $diskName) {
-            $disk = Storage::disk($diskName);
 
-            // Assume default path 'Laravel' (app name)
-            $appName = config('backup.backup.name');
-            $files = $disk->allFiles($appName);
+            try {
+                $disk = Storage::disk($diskName);
+                // Assume default path 'Laravel' (app name)
+                $appName = config('backup.backup.name');
+                $files = $disk->allFiles($appName);
 
-            foreach ($files as $file) {
-                // only zip files
-                if (substr($file, -4) == '.zip') {
-                    $backups[] = [
-                        'path' => $file,
-                        'name' => basename($file),
-                        'size' => $this->humanFileSize($disk->size($file)),
-                        'date' => date('Y-m-d H:i:s', $disk->lastModified($file)),
-                        'disk' => $diskName,
-                    ];
+                foreach ($files as $file) {
+                    // only zip files
+                    if (substr($file, -4) == '.zip') {
+                        $backups[] = [
+                            'path' => $file,
+                            'name' => basename($file),
+                            'size' => $this->humanFileSize($disk->size($file)),
+                            'date' => date('Y-m-d H:i:s', $disk->lastModified($file)),
+                            'disk' => $diskName,
+                        ];
+                    }
                 }
+            } catch (\Exception $e) {
+                // Disk might be misconfigured or unreachable (e.g. Google Drive not connected)
+                // Log error but continue
+                \Illuminate\Support\Facades\Log::warning("Backup disk {$diskName} unreachable: " . $e->getMessage());
             }
         }
 

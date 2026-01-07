@@ -24,6 +24,7 @@ class ClientTransaction extends Model
         return [
             'amount' => 'decimal:2',
             'transaction_date' => 'date',
+            'payment_mode' => \App\Enums\PaymentMode::class,
         ];
     }
 

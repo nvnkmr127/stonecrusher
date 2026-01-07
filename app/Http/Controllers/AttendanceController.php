@@ -49,16 +49,15 @@ class AttendanceController extends Controller
         $shiftStart = Carbon::createFromTimeString($shiftStartStr);
         $shiftEnd = Carbon::createFromTimeString($shiftEndStr);
 
-        $status = 'present';
+        $status = \App\Enums\AttendanceStatus::PRESENT->value;
 
         if ($checkIn) {
             $checkInTime = Carbon::parse($checkIn);
-            // Ignore date part for comparison, verify same day logic if needed but Carbon::parse of H:i uses today's date
-            // We need to compare strict time components.
+            // Ignore date part for comparison
             $checkInTime = Carbon::createFromTime($checkInTime->hour, $checkInTime->minute, 0);
 
             if ($checkInTime->gt($shiftStart)) {
-                $status = 'late';
+                $status = \App\Enums\AttendanceStatus::LATE->value;
             }
         }
 
@@ -67,13 +66,9 @@ class AttendanceController extends Controller
             $checkOutTime = Carbon::createFromTime($checkOutTime->hour, $checkOutTime->minute, 0);
 
             if ($checkOutTime->lt($shiftEnd)) {
-                $status = 'half_day';
+                $status = \App\Enums\AttendanceStatus::HALF_DAY->value;
             }
         }
-
-        // If late AND early exit? usually half_day takes precedence as it's less than full day
-        // Status is already half_day if checkOut < shiftEnd.
-        // What if Late but CheckOut is OK? Status is 'late'. Correct.
 
         return $status;
     }
@@ -97,7 +92,7 @@ class AttendanceController extends Controller
             ],
             'check_in' => 'nullable|date_format:H:i',
             'check_out' => 'nullable|date_format:H:i|after:check_in',
-            'status' => 'nullable|in:present,late,half_day,leave,absent', // Made nullable as auto-calc will fill it
+            'status' => ['nullable', \Illuminate\Validation\Rule::enum(\App\Enums\AttendanceStatus::class)],
             'remarks' => 'nullable|string',
         ]);
 
@@ -109,21 +104,15 @@ class AttendanceController extends Controller
         if (isset($data['check_in'])) {
             $data['status'] = $this->calculateStatus($data['check_in'], $data['check_out'] ?? null);
 
-            // Allow manual override if status was explicitly provided in form? 
-            // Requirement says "System automatically determines". 
-            // Let's stick to auto-calc for now, or maybe only if status is NOT 'leave' or 'absent' manually set?
-            // Use Case 2.1 said "User enters check-in time... Save attendance... Outcome: Employee marked as Present..."
-            // Use Case 2.3 says "System automatically determines...".
-            // We will enforce auto-calc unless data['status'] corresponds to 'leave' or 'absent' which might be manually set without times?
-            // But if times are present, status should reflect them.
-            if (in_array($request->status, ['leave', 'absent'])) {
+            // Allow manual override only for Leave/Absent
+            if (in_array($request->status, [\App\Enums\AttendanceStatus::LEAVE->value, \App\Enums\AttendanceStatus::ABSENT->value])) {
                 $data['status'] = $request->status;
             }
         } elseif ($request->status) {
             // If no times but status provided (e.g. absent/leave)
             $data['status'] = $request->status;
         } else {
-            $data['status'] = 'absent'; // Default if nothing provided?
+            $data['status'] = \App\Enums\AttendanceStatus::ABSENT->value;
         }
 
         Attendance::create($data);
@@ -163,7 +152,7 @@ class AttendanceController extends Controller
                     }
                 },
             ],
-            'status' => 'nullable|in:present,late,half_day,leave,absent',
+            'status' => ['nullable', \Illuminate\Validation\Rule::enum(\App\Enums\AttendanceStatus::class)],
             'remarks' => 'required|string',
         ]);
 
@@ -179,9 +168,7 @@ class AttendanceController extends Controller
         if ($checkIn) {
             $calculatedStatus = $this->calculateStatus($checkIn, $checkOut);
 
-            // Apply calculated status unless manual override to leave/absent preferred? 
-            // Usually updates should follow strict rules if times are changing.
-            if (!in_array($request->status, ['leave', 'absent'])) {
+            if (!in_array($request->status, [\App\Enums\AttendanceStatus::LEAVE->value, \App\Enums\AttendanceStatus::ABSENT->value])) {
                 $data['status'] = $calculatedStatus;
             } else {
                 $data['status'] = $request->status;
@@ -189,9 +176,6 @@ class AttendanceController extends Controller
         }
 
         $attendance->update($data);
-
-        // Log Activity
-
 
         return redirect()->route('attendance.index')->with('success', 'Attendance updated successfully.');
     }

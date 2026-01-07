@@ -23,4 +23,23 @@ class MetalType extends Model
             'is_active' => 'boolean',
         ];
     }
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('metal_types_active');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('metal_types_active');
+        });
+    }
+
+    public static function getCached()
+    {
+        return \Illuminate\Support\Facades\Cache::rememberForever('metal_types_active', function () {
+            return static::where('is_active', true)->get();
+        });
+    }
 }

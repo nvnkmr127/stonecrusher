@@ -21,6 +21,13 @@ class Attendance extends Model
         'remarks',
     ];
 
+    protected $casts = [
+        'status' => \App\Enums\AttendanceStatus::class,
+        'date' => 'date',
+    ];
+
+
+
     public function user()
     {
         return $this->belongsTo(User::class);

@@ -6,9 +6,19 @@
                 <div class="page-subtitle">{{ $gatePass->gate_pass_number }}</div>
             </div>
             <div class="col-auto">
-                <a href="{{ route('gate-passes.index') }}" class="btn btn-secondary">
-                    Cancel
-                </a>
+                <div class="btn-list">
+                    <a href="{{ route('gate-passes.index') }}" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                    @if(auth()->user()->hasRole('admin'))
+                    <form action="{{ route('gate-passes.destroy', $gatePass) }}" method="POST" class="d-inline"
+                        onsubmit="return confirm('Are you sure you want to delete this Gate Pass? This action cannot be undone.');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                    @endif
+                </div>
             </div>
         </div>
     </x-slot>

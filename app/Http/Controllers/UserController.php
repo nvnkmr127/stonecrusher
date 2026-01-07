@@ -11,7 +11,7 @@ use Spatie\Permission\Models\Role;
 class UserController extends Controller
 {
     /**
-     * Display a listing of users.
+     * Display a listing of the users.
      */
     public function index(Request $request)
     {
@@ -71,22 +71,21 @@ class UserController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'department' => $validated['department'] ?? null,
-            'is_active' => $validated['is_active'] ?? true,
-        ]);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'department' => $validated['department'] ?? null,
+                'is_active' => $validated['is_active'] ?? true,
+            ]);
 
-        $user->assignRole($validated['role']);
+            $user->assignRole($validated['role']);
 
-        // Log activity
-
-
-        return redirect()
-            ->route('users.index')
-            ->with('success', 'User created successfully!');
+            return redirect()
+                ->route('users.index')
+                ->with('success', 'User created successfully!');
+        });
     }
 
     /**
@@ -117,26 +116,25 @@ class UserController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        $user->update([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'department' => $validated['department'] ?? null,
-            'is_active' => $validated['is_active'] ?? $user->is_active,
-        ]);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $validated, $request) {
+            $user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'department' => $validated['department'] ?? null,
+                'is_active' => $validated['is_active'] ?? $user->is_active,
+            ]);
 
-        if ($request->filled('password')) {
-            $user->update(['password' => Hash::make($validated['password'])]);
-        }
+            if ($request->filled('password')) {
+                $user->update(['password' => Hash::make($validated['password'])]);
+            }
 
-        // Update role
-        $user->syncRoles([$validated['role']]);
+            // Update role
+            $user->syncRoles([$validated['role']]);
 
-        // Log activity
-
-
-        return redirect()
-            ->route('users.index')
-            ->with('success', 'User updated successfully!');
+            return redirect()
+                ->route('users.index')
+                ->with('success', 'User updated successfully!');
+        });
     }
 
     /**
@@ -149,13 +147,13 @@ class UserController extends Controller
             return back()->with('error', 'You cannot delete your own account!');
         }
 
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($user) {
+            $user->delete();
 
-
-        $user->delete();
-
-        return redirect()
-            ->route('users.index')
-            ->with('success', 'User deleted successfully!');
+            return redirect()
+                ->route('users.index')
+                ->with('success', 'User deleted successfully!');
+        });
     }
 
     /**

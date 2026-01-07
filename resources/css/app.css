@@ -1,7 +1,5 @@
 @import "@tabler/core/dist/css/tabler.min.css";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
 
 /* Fix sidebar visibility on desktop */
 @media (min-width: 992px) {

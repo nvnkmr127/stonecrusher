@@ -8,6 +8,7 @@
     <title>{{ config('app.name', 'Laravel') }}</title>
     <!-- Tabler Core -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
 </head>
 
 <body>
@@ -64,6 +65,7 @@
             @include('layouts.partials.footer')
         </div>
     </div>
+    @stack('scripts')
 </body>
 
 </html>

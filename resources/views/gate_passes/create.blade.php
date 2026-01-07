@@ -2,6 +2,13 @@
     <x-slot name="header">
         <div class="row align-items-center">
             <div class="col">
+                <div class="mb-1">
+                    <x-breadcrumb>
+                        <x-breadcrumb-item href="{{ route('dashboard') }}">Dashboard</x-breadcrumb-item>
+                        <x-breadcrumb-item href="{{ route('gate-passes.index') }}">Gate Passes</x-breadcrumb-item>
+                        <x-breadcrumb-item active>Create</x-breadcrumb-item>
+                    </x-breadcrumb>
+                </div>
                 <h2 class="page-title">New Gate Pass</h2>
                 <div class="page-subtitle">Create a new entry for vehicle movement</div>
             </div>
@@ -64,7 +71,10 @@
                                         name="vehicle_id" required @change="updateVehicleMultiplier()">
                                         <option value="">Select Vehicle</option>
                                         @foreach($vehicles as $vehicle)
-                                            <option value="{{ $vehicle->id }}" data-multiplier="{{ $vehicle->transport_multiplier }}" {{ old('vehicle_id') == $vehicle->id ? 'selected' : '' }}>{{ $vehicle->vehicle_number }}</option>
+                                            <option value="{{ $vehicle->id }}"
+                                                data-multiplier="{{ $vehicle->transport_multiplier }}" {{ old('vehicle_id') == $vehicle->id ? 'selected' : '' }}>
+                                                {{ $vehicle->vehicle_number }}
+                                            </option>
                                         @endforeach
                                     </select>
                                     <x-input-error :messages="$errors->get('vehicle_id')" />
@@ -155,14 +165,15 @@
                         <div class="mb-3">
                             <label class="form-label">Delivery Location</label>
                             <input type="text" class="form-control @error('delivery_location') is-invalid @enderror"
-                                name="delivery_location" list="destinationsList" x-model="deliveryLocation" @input="checkLocation()">
+                                name="delivery_location" list="destinationsList" x-model="deliveryLocation"
+                                @input="checkLocation()">
                             <datalist id="destinationsList">
                                 <template x-for="dest in destinations" :key="dest.id">
                                     <option :value="dest.name"></option>
                                 </template>
                             </datalist>
                             <x-input-error :messages="$errors->get('delivery_location')" />
-                            
+
                             <div class="mt-2" x-show="deliveryLocation && !isKnownLocation">
                                 <label class="form-check">
                                     <input class="form-check-input" type="checkbox" name="save_location" value="1">
@@ -181,7 +192,8 @@
 
                             <div class="mt-2">
                                 <label class="form-check">
-                                    <input class="form-check-input" type="checkbox" x-model="isRoundTrip" @change="calculateTransportCost()">
+                                    <input class="form-check-input" type="checkbox" x-model="isRoundTrip"
+                                        @change="calculateTransportCost()">
                                     <span class="form-check-label">Round Trip? (2x)</span>
                                 </label>
                             </div>
@@ -206,7 +218,11 @@
                                         @click.prevent="validGeo ? getUserLocation() : null"
                                         :class="{'disabled': !validGeo}">My Location</a>
                                     <button type="button" class="btn btn-sm btn-outline-primary"
-                                        @click="fetchDistance()" :disabled="!destLat || !destLon">Calculate</button>
+                                        @click="fetchDistance()" :disabled="!destLat || !destLon || isLoading">
+                                        <span x-show="isLoading" class="spinner-border spinner-border-sm" role="status"
+                                            aria-hidden="true"></span>
+                                        <span x-show="!isLoading">Calculate</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -218,7 +234,8 @@
                                 class="form-control @error('transport_cost') is-invalid @enderror" name="transport_cost"
                                 x-model.number="transportCost" readonly>
                             <div class="form-check mt-2">
-                                <input class="form-check-input" type="checkbox" name="transport_is_billable" value="1" id="billTransport" x-model="isBillable" @change="calculateTotal()">
+                                <input class="form-check-input" type="checkbox" name="transport_is_billable" value="1"
+                                    id="billTransport" x-model="isBillable" @change="calculateTotal()">
                                 <label class="form-check-label" for="billTransport">
                                     Bill Transport to Client?
                                 </label>
@@ -259,7 +276,8 @@
                     deliveryLocation: '{{ old('delivery_location') }}',
                     isKnownLocation: false,
                     isBillable: false,
-                    
+                    isLoading: false,
+
                     init() {
                         if (this.clientId) {
                             this.updateBalance();
@@ -311,7 +329,7 @@
                         const rate = parseFloat(this.ratePerTon) || 0;
                         const diesel = parseFloat(this.dieselAmount) || 0;
                         let transport = 0;
-                        
+
                         if (this.isBillable) {
                             transport = parseFloat(this.transportCost) || 0;
                         }
@@ -333,6 +351,7 @@
                         if (!this.destLat || !this.destLon) return;
 
                         try {
+                            this.isLoading = true;
                             let response = await fetch(`{{ route('gate-passes.calculator') }}?lat=${this.destLat}&lon=${this.destLon}&json=1`, {
                                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                             });
@@ -344,6 +363,8 @@
                         } catch (error) {
                             console.error('Error:', error);
                             alert('Calculation failed');
+                        } finally {
+                            this.isLoading = false;
                         }
                     },
 

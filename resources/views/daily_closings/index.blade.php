@@ -1,94 +1,85 @@
-<x-app-layout>
+<x-tabler-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="page-title">
                 {{ __('Daily Closings') }}
             </h2>
             @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
-                <a href="{{ route('daily-closings.create') }}"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                <a href="{{ route('daily-closings.create') }}" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                        stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M12 5l0 14" />
+                        <path d="M5 12l14 0" />
+                    </svg>
                     Perform Closing
                 </a>
             @endif
         </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
+    <div class="row row-cards">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body border-bottom py-3">
 
                     @if(session('success'))
-                        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
-                            role="alert">
-                            <span class="block sm:inline">{{ session('success') }}</span>
+                        <div class="alert alert-success alert-dismissible" role="alert">
+                            {{ session('success') }}
+                            <a href="#" class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
                         </div>
                     @endif
                     @if(session('error'))
-                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-                            role="alert">
-                            <span class="block sm:inline">{{ session('error') }}</span>
+                        <div class="alert alert-danger alert-dismissible" role="alert">
+                            {{ session('error') }}
+                            <a href="#" class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
                         </div>
                     @endif
 
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                    <div class="table-responsive">
+                        <table class="table table-vcenter card-table">
+                            <thead>
                                 <tr>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Date</th>
-                                    <th
-                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Total Sales</th>
-                                    <th
-                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Total Collections</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Closed By</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Notes</th>
-                                    <th
-                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions</th>
+                                    <th>Date</th>
+                                    <th class="text-end">Total Sales</th>
+                                    <th class="text-end">Total Collections</th>
+                                    <th>Closed By</th>
+                                    <th>Notes</th>
+                                    <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 @forelse($closings as $closing)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $closing->date->format('d M Y') }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right">
-                                            {{ number_format($closing->total_sales, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right">
-                                            {{ number_format($closing->total_cash, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $closing->closedBy->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4">{{ Str::limit($closing->notes, 30) }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <td>{{ $closing->date->format('d M Y') }}</td>
+                                        <td class="text-end">{{ number_format($closing->total_sales, 2) }}</td>
+                                        <td class="text-end">{{ number_format($closing->total_cash, 2) }}</td>
+                                        <td>{{ $closing->closedBy->name ?? 'N/A' }}</td>
+                                        <td>{{ Str::limit($closing->notes, 30) }}</td>
+                                        <td class="text-center">
                                             @if(auth()->user()->hasRole('admin'))
                                                 @if($closing->status === 'closed')
-                                                    <button type="button" 
-                                                        onclick="openReopenModal('{{ $closing->date->format('Y-m-d') }}', '{{ route('daily-closings.reopen', $closing) }}')"
-                                                        class="text-red-500 hover:text-red-700 ml-4 font-semibold text-xs uppercase tracking-widest">
+                                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                                        data-bs-toggle="modal" data-bs-target="#reopenModal"
+                                                        data-date="{{ $closing->date->format('Y-m-d') }}"
+                                                        data-action="{{ route('daily-closings.reopen', $closing) }}">
                                                         Reopen
                                                     </button>
                                                 @else
-                                                    <span class="text-gray-400 ml-4 text-xs italic">Reopened</span>
+                                                    <span class="badge bg-secondary-lt">Reopened</span>
                                                 @endif
                                             @endif
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">No closings found.</td>
+                                        <td colspan="6" class="text-center text-muted">No closings found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
+
                     <div class="mt-4">
                         {{ $closings->links() }}
                     </div>
@@ -97,40 +88,49 @@
         </div>
     </div>
 
-    <!-- Reopen Modal -->
-    <div id="reopenModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full"
-        x-data="{ open: false }">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3 text-center">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Reopen Day</h3>
-                <div class="mt-2 px-7 py-3">
-                    <p class="text-sm text-gray-500">Provide a reason to reopen <span id="modalDate"
-                            class="font-bold"></span>.</p>
-                    <form id="reopenForm" method="POST">
-                        @csrf
-                        <textarea name="reason" rows="3" class="mt-2 w-full border rounded-md p-2"
-                            placeholder="Reason for reopening..." required minlength="5"></textarea>
-                        <div class="items-center px-4 py-3">
-                            <button type="submit"
-                                class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300">
-                                Confirm Reopen
-                            </button>
+    <!-- Reopen Modal (Bootstrap) -->
+    <div class="modal modal-blur fade" id="reopenModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <form id="reopenForm" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title">Reopen Day</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-secondary">Provide a reason to reopen <span id="modalDate"
+                                class="fw-bold"></span>.</p>
+                        <div class="mb-3">
+                            <label class="form-label">Reason</label>
+                            <textarea name="reason" class="form-control" rows="3" placeholder="Reason for reopening..."
+                                required minlength="5"></textarea>
                         </div>
-                    </form>
-                    <button type="button" onclick="document.getElementById('reopenModal').classList.add('hidden')"
-                        class="mt-2 px-4 py-2 bg-gray-100 text-gray-700 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-200">
-                        Cancel
-                    </button>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-link link-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger ms-auto">Confirm Reopen</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <script>
-        function openReopenModal(date, actionUrl) {
-            document.getElementById('modalDate').innerText = date;
-            document.getElementById('reopenForm').action = actionUrl;
-            document.getElementById('reopenModal').classList.remove('hidden');
-        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var reopenModal = document.getElementById('reopenModal');
+            reopenModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var date = button.getAttribute('data-date');
+                var action = button.getAttribute('data-action');
+
+                var modalDate = reopenModal.querySelector('#modalDate');
+                var modalForm = reopenModal.querySelector('#reopenForm');
+
+                modalDate.textContent = date;
+                modalForm.action = action;
+            });
+        });
     </script>
-</x-app-layout>
+</x-tabler-layout>

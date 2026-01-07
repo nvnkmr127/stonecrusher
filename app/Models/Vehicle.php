@@ -34,4 +34,23 @@ class Vehicle extends Model
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('vehicles_active');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('vehicles_active');
+        });
+    }
+
+    public static function getCached()
+    {
+        return \Illuminate\Support\Facades\Cache::rememberForever('vehicles_active', function () {
+            return static::where('is_active', true)->get();
+        });
+    }
 }

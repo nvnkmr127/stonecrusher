@@ -2,6 +2,12 @@
     <x-slot name="header">
         <div class="row align-items-center">
             <div class="col">
+                <div class="mb-1">
+                    <x-breadcrumb>
+                        <x-breadcrumb-item href="{{ route('dashboard') }}">Dashboard</x-breadcrumb-item>
+                        <x-breadcrumb-item active>Gate Passes</x-breadcrumb-item>
+                    </x-breadcrumb>
+                </div>
                 <h2 class="page-title">Gate Passes</h2>
                 <div class="page-subtitle">Track vehicle movements and sales</div>
             </div>
@@ -16,8 +22,17 @@
                     </svg>
                     New Gate Pass
                 </a>
-                 <a href="{{ route('gate-passes.daily-report') }}" class="btn btn-secondary ms-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg>
+                <a href="{{ route('gate-passes.daily-report') }}" class="btn btn-secondary ms-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                        stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                        <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+                        <path d="M9 9l1 0" />
+                        <path d="M9 13l6 0" />
+                        <path d="M9 17l6 0" />
+                    </svg>
                     Daily Report
                 </a>
             </div>
@@ -32,10 +47,10 @@
                 </x-slot>
 
                 <div class="card-body border-bottom py-3">
-                    <div class="d-flex">
-                        <div class="ms-auto text-muted">
+                    <div class="d-flex flex-column flex-md-row align-items-center gap-2">
+                        <div class="ms-md-auto text-muted">
                             Search:
-                            <div class="ms-2 d-inline-block">
+                            <div class="d-inline-block">
                                 <form method="GET" action="{{ route('gate-passes.index') }}">
                                     <input type="text" name="search" value="{{ request('search') }}"
                                         class="form-control form-control-sm" aria-label="Search gate pass"
@@ -115,7 +130,7 @@
                                 <td>
                                     <div class="btn-list">
                                         @if($gp->status == 'completed' && $gp->paid_amount < $gp->total_amount)
-                                            <button type="button" class="btn btn-sm btn-outline-success" 
+                                            <button type="button" class="btn btn-sm btn-outline-success"
                                                 onclick="openPaymentModal('{{ $gp->id }}', '{{ $gp->gate_pass_number }}', '{{ $gp->total_amount - $gp->paid_amount }}')">
                                                 Pay
                                             </button>
@@ -128,7 +143,13 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">No gate passes found</td>
+                                <td colspan="10">
+                                    <x-empty-state
+                                        title="No Gate Passes Found"
+                                        description="Try adjusting your search or create a new gate pass."
+                                        action='<a href="{{ route("gate-passes.create") }}" class="btn btn-primary">Create Gate Pass</a>'
+                                    />
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -154,7 +175,8 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Amount Received</label>
-                            <input type="number" step="0.01" class="form-control" name="amount" id="modalAmount" required>
+                            <input type="number" step="0.01" class="form-control" name="amount" id="modalAmount"
+                                required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Date</label>
@@ -184,17 +206,17 @@
     </div>
 
     @push('scripts')
-    <script>
-        function openPaymentModal(id, number, balance) {
-            const form = document.getElementById('paymentForm');
-            form.action = `/gate-passes/${id}/payment`;
-            
-            document.getElementById('modalGpNumber').textContent = number;
-            document.getElementById('modalAmount').value = balance; // Auto-fill balance
-            
-            const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
-            modal.show();
-        }
-    </script>
+        <script>
+            function openPaymentModal(id, number, balance) {
+                const form = document.getElementById('paymentForm');
+                form.action = `/gate-passes/${id}/payment`;
+
+                document.getElementById('modalGpNumber').textContent = number;
+                document.getElementById('modalAmount').value = balance; // Auto-fill balance
+
+                const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+                modal.show();
+            }
+        </script>
     @endpush
 </x-tabler-layout>

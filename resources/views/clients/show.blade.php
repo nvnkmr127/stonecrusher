@@ -80,20 +80,38 @@
                     <h3 class="card-title">Transaction Ledger</h3>
                     <div class="card-actions d-flex gap-2 align-items-center">
                         <form method="GET" action="{{ route('clients.show', $client) }}" class="d-flex gap-2">
-                             <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}" placeholder="Start Date">
-                             <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}" placeholder="End Date">
-                             <button type="submit" class="btn btn-sm btn-ghost-primary">
-                                 <!-- SVG Filter Icon -->
-                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5.5 5h13a1 1 0 0 1 .5 1.5l-5 5.5l0 7l-4 -3l0 -4l-5 -5.5a1 1 0 0 1 .5 -1.5" /></svg>
-                                 Filter
-                             </button>
-                             @if(request('start_date'))
-                                <a href="{{ route('clients.show', $client) }}" class="btn btn-sm btn-ghost-secondary" title="Reset">x</a>
-                             @endif
+                            <input type="date" name="start_date" class="form-control form-control-sm"
+                                value="{{ request('start_date') }}" placeholder="Start Date">
+                            <input type="date" name="end_date" class="form-control form-control-sm"
+                                value="{{ request('end_date') }}" placeholder="End Date">
+                            <button type="submit" class="btn btn-sm btn-ghost-primary">
+                                <!-- SVG Filter Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path
+                                        d="M5.5 5h13a1 1 0 0 1 .5 1.5l-5 5.5l0 7l-4 -3l0 -4l-5 -5.5a1 1 0 0 1 .5 -1.5" />
+                                </svg>
+                                Filter
+                            </button>
+                            @if(request('start_date'))
+                                <a href="{{ route('clients.show', $client) }}" class="btn btn-sm btn-ghost-secondary"
+                                    title="Reset">x</a>
+                            @endif
                         </form>
                         <button onclick="window.print()" class="btn btn-sm btn-outline-secondary d-print-none">
                             <!-- SVG Printer Icon -->
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path
+                                    d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
+                                <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
+                                <path
+                                    d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" />
+                            </svg>
                             Print
                         </button>
                     </div>
@@ -108,7 +126,8 @@
                                 <th>Ref #</th>
                                 <th>Description</th>
                                 <th class="text-end">Amount</th>
-                                @if(auth()->user()->hasRole('admin')) <th>Actions</th> @endif
+                                @if(auth()->user()->hasRole('admin'))
+                                <th>Actions</th> @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -123,23 +142,26 @@
                                     </td>
                                     <td>{{ $txn->payment_mode ?? '-' }}</td>
                                     <td>{{ $txn->reference_number ?? '-' }}</td>
-                                    <td>{{ $txn->description }}</td>
+                                    <td>{{ $txn->description ?? '-' }}</td>
                                     <td
                                         class="text-end font-weight-bold {{ $txn->transaction_type === 'credit' ? 'text-green' : 'text-red' }}">
                                         {{ $txn->transaction_type === 'credit' ? '+' : '-' }}
                                         {{ number_format($txn->amount, 2) }}
                                     </td>
                                     @if(auth()->user()->hasRole('admin'))
-                                    <td>
-                                        <div class="d-flex gap-1">
-                                            <a href="{{ route('clients.transactions.edit', [$client, $txn]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-                                            <form action="{{ route('clients.transactions.destroy', [$client, $txn]) }}" method="POST" onsubmit="return confirm('Are you sure? This will adjust the client balance.')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                            </form>
-                                        </div>
-                                    </td>
+                                        <td>
+                                            <div class="d-flex gap-1">
+                                                <a href="{{ route('clients.transactions.edit', [$client, $txn]) }}"
+                                                    class="btn btn-sm btn-outline-primary">Edit</a>
+                                                <form action="{{ route('clients.transactions.destroy', [$client, $txn]) }}"
+                                                    method="POST"
+                                                    onsubmit="return confirm('Are you sure? This will adjust the client balance.')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </td>
                                     @endif
                                 </tr>
                             @empty

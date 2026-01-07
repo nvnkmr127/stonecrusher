@@ -18,7 +18,19 @@ class ClientController extends Controller
                 ->orWhere('email', 'like', "%{$search}%");
         }
 
-        $clients = $query->latest()->paginate(15)->withQueryString();
+        $clients = $query->withSum([
+            'transactions as total_credit' => function ($query) {
+                $query->where('transaction_type', 'credit');
+            }
+        ], 'amount')
+            ->withSum([
+                'transactions as total_debit' => function ($query) {
+                    $query->where('transaction_type', 'debit');
+                }
+            ], 'amount')
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
 
         return view('clients.index', compact('clients'));
     }

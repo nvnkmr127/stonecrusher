@@ -1,107 +1,109 @@
-<x-app-layout>
+<x-tabler-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="page-title">
                 {{ __('Backups') }}
             </h2>
-            <form action="{{ route('backups.create') }}" method="POST">
-                @csrf
-                <x-primary-button
-                    onclick="return confirm('Are you sure you want to start a new backup? This might take a while.')">
-                    {{ __('Create New Backup') }}
-                </x-primary-button>
-            </form>
+            <div class="d-flex gap-2">
+                <a href="{{ route('google-drive.redirect') }}" class="btn btn-outline-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 15l-3.5 -5h7z" /><path d="M9 7l-3.5 5h7z" /><path d="M15 7l-3.5 5h7z" /><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /></svg>
+                    Connect Google Drive
+                </a>
+                <form action="{{ route('backups.create') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-primary"
+                        onclick="return confirm('Are you sure you want to start a new backup? This might take a while.')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                            stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M12 5l0 14" />
+                            <path d="M5 12l14 0" />
+                        </svg>
+                        {{ __('Create New Backup') }}
+                    </button>
+                </form>
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="row row-cards">
+        <div class="col-12">
             <!-- Messages -->
             @if (session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
-                    role="alert">
-                    <span class="block sm:inline">{{ session('success') }}</span>
+                <div class="alert alert-success alert-dismissible" role="alert">
+                    {{ session('success') }}
+                    <a href="#" class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
                 </div>
             @endif
             @if (session('error'))
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <span class="block sm:inline">{{ session('error') }}</span>
+                <div class="alert alert-danger alert-dismissible" role="alert">
+                    {{ session('error') }}
+                    <a href="#" class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Size</th>
+                                <th>Date</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($backups as $backup)
                                 <tr>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        File Name</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Size</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Date</th>
-                                    <th
-                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions</th>
+                                    <td class="fw-medium text-break">
+                                        {{ $backup['name'] }}
+                                    </td>
+                                    <td class="text-muted">
+                                        {{ $backup['size'] }}
+                                    </td>
+                                    <td class="text-muted">
+                                        {{ $backup['date'] }}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <a href="{{ route('backups.download', ['disk' => $backup['disk'], 'path' => $backup['path']]) }}"
+                                                class="btn btn-sm btn-outline-primary">Download</a>
+
+                                            <!-- Restore Button -->
+                                            <form action="{{ route('backups.restore') }}" method="POST"
+                                                onsubmit="return confirm('DANGER: This will overwrite your current database with the backup. Are you sure?');">
+                                                @csrf
+                                                <input type="hidden" name="disk" value="{{ $backup['disk'] }}">
+                                                <input type="hidden" name="path" value="{{ $backup['path'] }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                    Restore
+                                                </button>
+                                            </form>
+
+                                            <form action="{{ route('backups.destroy') }}" method="POST"
+                                                onsubmit="return confirm('Are you sure you want to delete this backup?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <input type="hidden" name="disk" value="{{ $backup['disk'] }}">
+                                                <input type="hidden" name="path" value="{{ $backup['path'] }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse ($backups as $backup)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {{ $backup['name'] }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $backup['size'] }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $backup['date'] }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div class="flex justify-end space-x-2">
-                                                <div class="flex items-center space-x-2">
-                                                    <a href="{{ route('backups.download', ['disk' => $backup['disk'], 'path' => $backup['path']]) }}"
-                                                        class="text-indigo-600 hover:text-indigo-900 text-sm">Download</a>
-
-                                                    <!-- Restore Button -->
-                                                    <form action="{{ route('backups.restore') }}" method="POST"
-                                                        onsubmit="return confirm('DANGER: This will overwrite your current database with the backup. Are you sure?');">
-                                                        @csrf
-                                                        <input type="hidden" name="disk" value="{{ $backup['disk'] }}">
-                                                        <input type="hidden" name="path" value="{{ $backup['path'] }}">
-                                                        <button type="submit" class="text-yellow-600 hover:text-yellow-900 text-sm">
-                                                            Restore
-                                                        </button>
-                                                    </form>
-
-                                                    <form action="{{ route('backups.destroy') }}" method="POST"
-                                                        onsubmit="return confirm('Are you sure you want to delete this backup?');">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <input type="hidden" name="disk" value="{{ $backup['disk'] }}">
-                                                        <input type="hidden" name="path" value="{{ $backup['path'] }}">
-                                                        <button type="submit" class="text-red-600 hover:text-red-900 text-sm ml-2">
-                                                            Delete
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">No backups found.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No backups found.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-tabler-layout>

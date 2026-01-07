@@ -42,7 +42,10 @@
                     <tbody>
                         @forelse($projects as $project)
                             <tr>
-                                <td><strong>{{ $project->name }}</strong></td>
+                                <td>
+                                    <a href="{{ route('projects.show', $project) }}"
+                                        class="text-reset fw-bold">{{ $project->name }}</a>
+                                </td>
                                 <td>{{ $project->client->name }}</td>
                                 <td>{{ $project->location ?? '-' }}</td>
                                 <td>{{ $project->estimated_quantity ? number_format($project->estimated_quantity, 2) : '-' }}
@@ -59,15 +62,8 @@
                                     </div>
                                 </td>
                                 <td>
-                                    @php
-                                        $statusColors = [
-                                            'pending' => 'secondary',
-                                            'active' => 'primary',
-                                            'completed' => 'success',
-                                            'cancelled' => 'danger'
-                                        ];
-                                    @endphp
-                                    <span class="badge bg-{{ $statusColors[$project->status] ?? 'secondary' }}">
+                                    <span
+                                        class="badge bg-{{ match ($project->status) { 'pending' => 'secondary', 'active' => 'primary', 'completed' => 'success', 'cancelled' => 'danger', default => 'secondary'} }}">
                                         {{ ucfirst($project->status) }}
                                     </span>
                                 </td>

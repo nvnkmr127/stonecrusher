@@ -41,5 +41,33 @@ class AppServiceProvider extends ServiceProvider
         } catch (\Exception $e) {
             // Setup might not be ready (e.g. migration not run)
         }
+
+        // Dynamically remove 'google' from backup destinations if not configured
+        $googleToken = config('filesystems.disks.google.refreshToken');
+        if (empty($googleToken)) {
+            $destinations = config('backup.backup.destination.disks', []);
+            $destinations = array_filter($destinations, function ($disk) {
+                return $disk !== 'google';
+            });
+            config(['backup.backup.destination.disks' => array_values($destinations)]);
+        }
+
+
+        // Register Google Drive Driver
+        try {
+            \Illuminate\Support\Facades\Storage::extend('google', function ($app, $config) {
+                $client = new \Google\Client();
+                $client->setClientId($config['clientId']);
+                $client->setClientSecret($config['clientSecret']);
+                $client->refreshToken($config['refreshToken']);
+
+                $service = new \Google\Service\Drive($client);
+                $adapter = new \Masbug\Flysystem\GoogleDriveAdapter($service, $config['folderId'] ?? '/');
+
+                return new \League\Flysystem\Filesystem($adapter);
+            });
+        } catch (\Exception $e) {
+            // handle exception if needed
+        }
     }
 }

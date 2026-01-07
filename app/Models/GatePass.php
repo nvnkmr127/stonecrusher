@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
 class GatePass extends Model
 {
-    use LogsActivity;
+    use LogsActivity, SoftDeletes;
     protected $fillable = [
         'gate_pass_number',
         'date',
@@ -48,6 +49,7 @@ class GatePass extends Model
         'distance_km' => 'decimal:2',
         'transport_cost' => 'decimal:2',
         'transport_is_billable' => 'boolean',
+        'status' => \App\Enums\GatePassStatus::class,
     ];
 
     public function vehicle()

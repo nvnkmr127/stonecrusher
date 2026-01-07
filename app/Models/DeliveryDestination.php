@@ -18,4 +18,23 @@ class DeliveryDestination extends Model
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
     ];
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('destinations_all');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('destinations_all');
+        });
+    }
+
+    public static function getCached()
+    {
+        return \Illuminate\Support\Facades\Cache::rememberForever('destinations_all', function () {
+            return static::orderBy('name')->get();
+        });
+    }
 }

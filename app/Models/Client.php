@@ -37,6 +37,11 @@ class Client extends Model
         // Balance = Total Credit (Advance) - Total Debit (Sales)
         // Positive Balance means Client has paid extra (Advance)
         // Negative Balance means Client owes money
+        // Check if aggregates were eager loaded
+        if (isset($this->attributes['total_credit']) && isset($this->attributes['total_debit'])) {
+            return $this->attributes['total_credit'] - $this->attributes['total_debit'];
+        }
+
         $credit = $this->transactions()->where('transaction_type', 'credit')->sum('amount');
         $debit = $this->transactions()->where('transaction_type', 'debit')->sum('amount');
 
