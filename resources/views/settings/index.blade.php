@@ -23,6 +23,7 @@
                         <div class="col-md-6">
                             <h3 class="mb-3">Company Information</h3>
                             
+                            <x-form.input 
                                 name="company_name" 
                                 label="Company Name" 
                                 :value="$settings['company_name'] ?? ''"
