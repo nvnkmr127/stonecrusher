@@ -15,8 +15,46 @@ class SettingsController extends Controller
     {
         $settings = Setting::all()->pluck('value', 'key');
         $timezones = \DateTimeZone::listIdentifiers();
+        $indianStates = [
+            'Andhra Pradesh',
+            'Arunachal Pradesh',
+            'Assam',
+            'Bihar',
+            'Chhattisgarh',
+            'Goa',
+            'Gujarat',
+            'Haryana',
+            'Himachal Pradesh',
+            'Jharkhand',
+            'Karnataka',
+            'Kerala',
+            'Madhya Pradesh',
+            'Maharashtra',
+            'Manipur',
+            'Meghalaya',
+            'Mizoram',
+            'Nagaland',
+            'Odisha',
+            'Punjab',
+            'Rajasthan',
+            'Sikkim',
+            'Tamil Nadu',
+            'Telangana',
+            'Tripura',
+            'Uttar Pradesh',
+            'Uttarakhand',
+            'West Bengal',
+            'Andaman and Nicobar Islands',
+            'Chandigarh',
+            'Dadra and Nagar Haveli and Daman and Diu',
+            'Delhi',
+            'Jammu and Kashmir',
+            'Ladakh',
+            'Lakshadweep',
+            'Puducherry'
+        ];
 
-        return view('settings.index', compact('settings', 'timezones'));
+        return view('settings.index', compact('settings', 'timezones', 'indianStates'));
     }
 
     /**
@@ -27,6 +65,8 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'company_name' => 'required|string|max:255',
             'app_timezone' => 'required|string|max:255',
+            'allowed_states' => 'nullable|array',
+            'allowed_states.*' => 'string',
             'currency_symbol' => 'required|string|max:10',
             'financial_year' => 'required|string|max:20',
             'crusher_latitude' => 'required|numeric',
@@ -41,6 +81,9 @@ class SettingsController extends Controller
         ]);
 
         foreach ($validated as $key => $value) {
+            if (is_array($value)) {
+                $value = json_encode($value);
+            }
             Setting::set($key, $value);
         }
 

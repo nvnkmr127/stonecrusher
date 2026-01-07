@@ -318,6 +318,7 @@
                     isSearching: false,
                     searchResults: [],
                     showResults: false,
+                    allowedStates: @json(json_decode(\App\Models\Setting::get('allowed_states', '[]'))) || [],
 
                     init() {
                         if (this.clientId) {
@@ -440,9 +441,17 @@
 
                         try {
                             // Using Nominatim API (OpenStreetMap)
-                            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.deliveryLocation)}&limit=5`);
+                            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.deliveryLocation)}&limit=50&countrycodes=in&addressdetails=1`);
                             let data = await response.json();
-                            this.searchResults = data;
+
+                            // Filter by allowed states if configured
+                            if (this.allowedStates.length > 0) {
+                                data = data.filter(result => {
+                                    return this.allowedStates.includes(result.address.state);
+                                });
+                            }
+
+                            this.searchResults = data.slice(0, 5);
                             this.showResults = true;
                         } catch (error) {
                             console.error('Error searching address:', error);

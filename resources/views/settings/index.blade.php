@@ -131,6 +131,21 @@
                                 placeholder="Leave empty to use free OpenStreetMap"
                             />
 
+                            <div class="mb-3">
+                                <label class="form-label">Allowed States (Limit Search Results)</label>
+                                <select class="form-select" name="allowed_states[]" multiple size="8">
+                                    @php
+                                        $selectedStates = json_decode($settings['allowed_states'] ?? '[]', true) ?? [];
+                                    @endphp
+                                    @foreach($indianStates as $state)
+                                        <option value="{{ $state }}" {{ in_array($state, $selectedStates) ? 'selected' : '' }}>
+                                            {{ $state }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="form-hint">Hold Ctrl (Windows) or Cmd (Mac) to select multiple states. Leave empty to allow all.</small>
+                            </div>
+
                             <h3 class="mb-3 mt-4">Attendance Settings</h3>
                             <div class="row">
                                 <div class="col-md-6">

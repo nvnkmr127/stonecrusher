@@ -12,6 +12,8 @@
     showResults: false,
     isSearching: false,
     
+    allowedStates: @json(json_decode(\App\Models\Setting::get('allowed_states', '[]'))) || [],
+    
     async searchAddress() {
         if (this.searchQuery.length < 3) {
             this.searchResults = [];
@@ -22,9 +24,17 @@
         this.isSearching = true;
 
         try {
-            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.searchQuery)}&limit=5`);
+            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.searchQuery)}&limit=50&countrycodes=in&addressdetails=1`);
             let data = await response.json();
-            this.searchResults = data;
+            
+            // Filter by allowed states if configured
+            if (this.allowedStates.length > 0) {
+                data = data.filter(result => {
+                    return this.allowedStates.includes(result.address.state);
+                });
+            }
+            
+            this.searchResults = data.slice(0, 5); // Limit to 5 after filtering
             this.showResults = true;
         } catch (error) {
             console.error('Error searching address:', error);
