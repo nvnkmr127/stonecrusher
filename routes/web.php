@@ -95,7 +95,7 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
     Route::get('gate-passes/distance-report/export', [GatePassController::class, 'exportDistanceReport'])->name('gate-passes.distance-report.export');
     Route::get('gate-passes/calculator', [GatePassController::class, 'calculator'])->name('gate-passes.calculator');
     Route::post('gate-passes/{gate_pass}/payment', [GatePassController::class, 'recordPayment'])->name('gate-passes.payment');
-    Route::resource('gate-passes', GatePassController::class)->except(['show']);
+    Route::resource('gate-passes', GatePassController::class);
     Route::resource('vehicles', VehicleController::class);
     Route::resource('projects', ProjectController::class);
     Route::resource('metal-types', MetalTypeController::class);

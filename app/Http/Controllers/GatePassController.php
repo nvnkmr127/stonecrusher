@@ -128,6 +128,14 @@ class GatePassController extends Controller
     }
 
     /**
+     * Display the specified resource.
+     */
+    public function show(GatePass $gate_pass)
+    {
+        return redirect()->route('gate-passes.edit', $gate_pass);
+    }
+
+    /**
      * Show the form for editing the specified resource.
      */
     public function edit(GatePass $gate_pass)
