@@ -2,63 +2,114 @@
 
 :root {
   --tblr-font-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
-  
-  /* Modern Palette - HSL Tailored */
-  --tblr-primary: #206bc4; /* Refined Blue */
-  --tblr-primary-rgb: 32, 107, 196;
-  --tblr-body-bg: #f5f7fb; /* Lighter, cleaner background */
+
+  /* Clean Minimal Palette */
+  --tblr-primary: #0f172a;
+  /* Slate 900 - High Contrast Black/Dark */
+  --tblr-primary-rgb: 15, 23, 42;
+  --tblr-body-bg: #f8fafc;
+  /* Slate 50 - Very clean white/gray */
   --tblr-card-bg: #ffffff;
-  
-  /* Modern UI Elements */
-  --tblr-border-radius: 8px; /* Softer corners */
-  --tblr-box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --tblr-border-color: #e2e8f0;
+  /* Subtle border */
+
+  /* UI Elements */
+  --tblr-border-radius: 6px;
+  /* Tighter radius for minimal look */
+  --tblr-box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
 body {
   font-family: var(--tblr-font-sans-serif);
   background-color: var(--tblr-body-bg);
+  color: #334155;
+  /* Slate 700 text */
   -webkit-font-smoothing: antialiased;
 }
 
-/* Navbar Tweaks */
-.navbar {
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.95);
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-
+/* Navbar & Sidebar - Clean White */
+.navbar,
 .navbar-vertical {
-  background: #1e293b; /* Dark Slate default for sidebar */
+  background: #ffffff !important;
+  border-right: 1px solid var(--tblr-border-color);
+  border-bottom: 1px solid var(--tblr-border-color);
 }
 
-/* Card Modernization */
+/* Sidebar Links */
+.navbar-vertical .nav-link {
+  color: #64748b;
+  /* Slate 500 */
+}
+
+.navbar-vertical .nav-link:hover,
+.navbar-vertical .nav-link.active {
+  color: #0f172a;
+  /* Slate 900 */
+  background: #f1f5f9;
+  /* Slate 100 */
+}
+
+/* Buttons - High Contrast */
+.btn-primary {
+  background-color: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: #334155;
+  /* Slate 700 */
+  border-color: #334155;
+}
+
+/* Cards - Flat Minimal */
 .card {
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  border: 1px solid var(--tblr-border-color);
   box-shadow: var(--tblr-box-shadow);
   border-radius: var(--tblr-border-radius);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: #ffffff;
 }
 
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+.card-header {
+  background: transparent;
+  border-bottom: 1px solid var(--tblr-border-color);
 }
 
-/* Input Refining */
+/* Mobile Responsiveness & Tables */
+@media (max-width: 991px) {
+  .container-xl {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Ensure tables scroll horizontally on mobile */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Fix sidebar z-index for mobile overlay */
+  .navbar-vertical.navbar-expand-lg {
+    z-index: 1050;
+  }
+}
+
+/* Inputs */
 .form-control:focus {
-  border-color: #a5c3eb;
-  box-shadow: 0 0 0 0.25rem rgba(32, 107, 196, 0.15);
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
+  /* Slate ring */
 }
 
 /* Fix sidebar visibility on desktop */
 @media (min-width: 992px) {
-    .navbar-vertical .navbar-collapse {
-        display: block !important;
-        visibility: visible !important;
-    }
+  .navbar-vertical .navbar-collapse {
+    display: block !important;
+    visibility: visible !important;
+  }
 
-    .navbar-vertical .nav-item,
-    .navbar-vertical .nav-link {
-        visibility: visible !important;
-    }
+  .navbar-vertical .nav-item,
+  .navbar-vertical .nav-link {
+    visibility: visible !important;
+  }
 }

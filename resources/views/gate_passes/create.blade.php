@@ -68,7 +68,8 @@
                                 <div class="mb-3">
                                     <label class="form-label required">Vehicle</label>
                                     <select class="form-select @error('vehicle_id') is-invalid @enderror"
-                                        name="vehicle_id" required @change="updateVehicleMultiplier()">
+                                        name="vehicle_id" required @change="updateVehicleMultiplier()"
+                                        style="border: 1px solid #0f172a; background-color: #f8fafc;">
                                         <option value="">Select Vehicle</option>
                                         @foreach($vehicles as $vehicle)
                                             <option value="{{ $vehicle->id }}"
