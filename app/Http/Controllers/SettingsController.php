@@ -14,8 +14,9 @@ class SettingsController extends Controller
     public function index()
     {
         $settings = Setting::all()->pluck('value', 'key');
+        $timezones = \DateTimeZone::listIdentifiers();
 
-        return view('settings.index', compact('settings'));
+        return view('settings.index', compact('settings', 'timezones'));
     }
 
     /**
@@ -25,6 +26,7 @@ class SettingsController extends Controller
     {
         $validated = $request->validate([
             'company_name' => 'required|string|max:255',
+            'app_timezone' => 'required|string|max:255',
             'currency_symbol' => 'required|string|max:10',
             'financial_year' => 'required|string|max:20',
             'crusher_latitude' => 'required|numeric',

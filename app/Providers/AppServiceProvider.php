@@ -32,6 +32,17 @@ class AppServiceProvider extends ServiceProvider
             $activity->ip_address = request()->ip();
         });
 
+        // Set App Timezone
+        try {
+            $timezone = \App\Models\Setting::get('app_timezone');
+            if ($timezone) {
+                config(['app.timezone' => $timezone]);
+                date_default_timezone_set($timezone);
+            }
+        } catch (\Exception $e) {
+            // Ignore if settings table doesn't exist yet
+        }
+
         // Config Overrides for Google Drive
         try {
             $refreshToken = \App\Models\Setting::get('google_drive_refresh_token');

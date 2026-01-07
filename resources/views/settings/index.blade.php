@@ -23,12 +23,22 @@
                         <div class="col-md-6">
                             <h3 class="mb-3">Company Information</h3>
                             
-                            <x-form.input 
                                 name="company_name" 
                                 label="Company Name" 
                                 :value="$settings['company_name'] ?? ''"
                                 required 
                             />
+
+                            <div class="mb-3">
+                                <label class="form-label required">App Timezone</label>
+                                <select class="form-select" name="app_timezone" required>
+                                    @foreach($timezones as $timezone)
+                                        <option value="{{ $timezone }}" {{ ($settings['app_timezone'] ?? config('app.timezone')) == $timezone ? 'selected' : '' }}>
+                                            {{ $timezone }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
 
                             <x-form.input 
                                 name="currency_symbol" 

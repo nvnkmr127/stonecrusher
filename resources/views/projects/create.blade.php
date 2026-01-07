@@ -19,7 +19,7 @@
                     <x-form.select name="client_id" label="Client" :options="$clients->pluck('name', 'id')->toArray()"
                         required />
 
-                    <x-form.input name="location" label="Project Location" placeholder="e.g., Site Address, City" />
+                    <x-form.address name="location" label="Project Location" placeholder="e.g., Site Address, City" />
 
                     <x-form.textarea name="description" label="Description" rows="3" />
 

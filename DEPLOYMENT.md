@@ -237,3 +237,37 @@ echo "Permissions: " . implode(', ', $u->getAllPermissions()->pluck('name')->toA
 - **500 Server Error**: Check `storage/logs/laravel.log` and verify permissions.
 - **Assets 404**: Ensure `npm run build` was run and the `public/build` directory exists.
 - **Database Error**: Ensure the database file (SQLite) or connection (MySQL) is correct and migrations ran.
+
+## 9. Automated Deployment via cPanel
+
+This project includes a script (`cpanel_deploy.sh`) and a webhook (`public/deploy.php`) to automate updates from GitHub.
+
+### Setup Instructions
+
+1.  **Configure Deployment Key**:
+    - Add a secret key to your `.env` file (on the server):
+      ```ini
+      DEPLOY_KEY="your-secret-deploy-key-here"
+      ```
+
+2.  **Setup GitHub Webhook**:
+    - Go to your GitHub Repository -> **Settings** -> **Webhooks**.
+    - Click **Add webhook**.
+    - **Payload URL**: `https://your-domain.com/deploy.php?key=your-secret-deploy-key-here`
+    - **Content type**: `application/json` (or just leave default, the script doesn't parse the body).
+    - **Events**: Just the `push` event.
+    - Click **Add webhook**.
+
+3.  **Manual Trigger**:
+    - You can also trigger a deployment manually by visiting the URL in your browser:
+      `https://your-domain.com/deploy.php?key=your-secret-deploy-key-here`
+
+### How it Works
+- The `public/deploy.php` script receives the request and verifies the `key`.
+- It executes `cpanel_deploy.sh` which:
+    - Pulls the latest code from GitHub.
+    - Installs dependencies (`composer install`).
+    - Runs migrations (`php artisan migrate`).
+    - Clears caches.
+    - Maintenance mode is handled automatically.
+

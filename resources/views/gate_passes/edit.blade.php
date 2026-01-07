@@ -230,24 +230,49 @@
                                 <h3 class="card-title">Delivery & Transport</h3>
                             </div>
                             <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label class="form-label">Delivery Location</label>
-                                    <input type="text" class="form-control @error('delivery_location') is-invalid @enderror"
-                                        name="delivery_location" list="destinationsList" x-model="deliveryLocation" @input="checkLocation()">
-                                    <datalist id="destinationsList">
-                                        <template x-for="dest in destinations" :key="dest.id">
-                                            <option :value="dest.name"></option>
-                                        </template>
-                                    </datalist>
-                                    <x-input-error :messages="$errors->get('delivery_location')" />
+                        <div class="mb-3">
+                            <label class="form-label">Delivery Location</label>
+                            <div class="input-icon">
+                                <span class="input-icon-addon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M21 21l-6 -6" /></svg>
+                                </span>
+                                <input type="text" class="form-control @error('delivery_location') is-invalid @enderror"
+                                    name="delivery_location" 
+                                    x-model="deliveryLocation" 
+                                    @input.debounce.500ms="searchAddress()"
+                                    @keydown.escape="showResults = false"
+                                    @click.away="showResults = false"
+                                    placeholder="Search specific location..."
+                                    autocomplete="off">
+                                <span class="input-icon-addon" x-show="isSearching" style="display: none;">
+                                    <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                                </span>
+                            </div>
+                            
+                            <!-- Search Results Dropdown -->
+                            <div class="dropdown-menu show w-100" x-show="showResults && searchResults.length > 0" style="display: none; max-height: 200px; overflow-y: auto;">
+                                <template x-for="result in searchResults" :key="result.place_id">
+                                    <a href="#" class="dropdown-item icon-link" @click.prevent="selectAddress(result)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-map-pin" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" /></svg>
+                                        <span class="text-truncate" x-text="result.display_name"></span>
+                                    </a>
+                                </template>
+                            </div>
 
-                                    <div class="mt-2" x-show="deliveryLocation && !isKnownLocation">
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="save_location" value="1">
-                                            <span class="form-check-label">Save this location for future use</span>
-                                        </label>
-                                    </div>
-                                </div>
+                            <datalist id="destinationsList">
+                                <template x-for="dest in destinations" :key="dest.id">
+                                    <option :value="dest.name"></option>
+                                </template>
+                            </datalist>
+                            <x-input-error :messages="$errors->get('delivery_location')" />
+
+                            <div class="mt-2" x-show="deliveryLocation && !isKnownLocation">
+                                <label class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="save_location" value="1">
+                                    <span class="form-check-label">Save this location for future use</span>
+                                </label>
+                            </div>
+                        </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="mb-3">
@@ -339,6 +364,9 @@
                     deliveryLocation: '{{ old('delivery_location', $gatePass->delivery_location) }}',
                     isKnownLocation: false,
                     isBillable: {{ old('transport_is_billable', $gatePass->transport_is_billable ?? 0) ? 'true' : 'false' }},
+                    isSearching: false,
+                    searchResults: [],
+                    showResults: false,
 
                     init() {
                        if (!this.ratePerTon && this.metalTypeId) {
@@ -451,6 +479,37 @@
                         } else {
                             this.isKnownLocation = false;
                         }
+                    },
+
+                    async searchAddress() {
+                        if (this.deliveryLocation.length < 3) {
+                            this.searchResults = [];
+                            this.showResults = false;
+                            this.checkLocation();
+                            return;
+                        }
+
+                        this.isSearching = true;
+
+                        try {
+                            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.deliveryLocation)}&limit=5`);
+                            let data = await response.json();
+                            this.searchResults = data;
+                            this.showResults = true;
+                        } catch (error) {
+                            console.error('Error searching address:', error);
+                            this.searchResults = [];
+                        } finally {
+                            this.isSearching = false;
+                        }
+                    },
+
+                    selectAddress(result) {
+                        this.deliveryLocation = result.display_name;
+                        this.destLat = result.lat;
+                        this.destLon = result.lon;
+                        this.showResults = false;
+                        this.fetchDistance();
                     }
                 }));
             });
