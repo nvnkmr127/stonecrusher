@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import "@tabler/core/dist/css/tabler.min.css";
 
 :root {
@@ -27,12 +28,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Navbar & Sidebar - Clean White */
-.navbar,
-.navbar-vertical {
-  background: #ffffff !important;
-  border-right: 1px solid var(--tblr-border-color);
+/* Navbar & Sidebar - Clean White (General) */
+.navbar:not(.navbar-vertical) {
+  background: #ffffff;
   border-bottom: 1px solid var(--tblr-border-color);
+}
+
+.navbar-vertical {
+  border-right: 1px solid var(--tblr-border-color);
 }
 
 /* Sidebar Links */
@@ -108,8 +111,98 @@ body {
     visibility: visible !important;
   }
 
-  .navbar-vertical .nav-item,
   .navbar-vertical .nav-link {
     visibility: visible !important;
+  }
+}
+
+/* Header Enhancements */
+.header-search-input {
+  background: #f1f5f9;
+  /* Slate 100 */
+  border: none;
+  border-radius: 9999px;
+  /* Pill shape */
+  padding-left: 2.5rem;
+  transition: all 0.2s ease;
+  min-width: 250px;
+}
+
+.header-search-input:focus {
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
+  width: 300px;
+  /* Expand on focus */
+}
+
+.header-search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  /* Slate 500 */
+  pointer-events: none;
+}
+
+.avatar-initials {
+  background-color: #0f172a;
+  color: #ffffff;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hover-light:hover {
+  color: #fff !important;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Custom Mobile Side Drawer */
+@media (max-width: 991.98px) {
+  .mobile-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 280px;
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    z-index: 1200;
+    transform: translateX(-100%) !important;
+    visibility: hidden;
+    /* Ensure it's not painted when closed */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.3s;
+    /* Delay visibility change */
+    overflow-y: auto;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .mobile-sidebar.show {
+    transform: translateX(0) !important;
+    visibility: visible;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0s;
+    /* Instant visibility on open */
+  }
+
+  .mobile-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 1100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+  }
+
+  .mobile-backdrop.show {
+    opacity: 1;
+    visibility: visible;
   }
 }

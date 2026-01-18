@@ -69,6 +69,68 @@
         </div>
     </div>
     @stack('scripts')
+
+    <!-- Mobile Backdrop -->
+    <div class="mobile-backdrop" id="mobile-menu-backdrop"></div>
+
+    <!-- Mobile Menu Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const trigger = document.getElementById('mobile-menu-trigger');
+            const closeBtn = document.getElementById('mobile-menu-close');
+            const backdrop = document.getElementById('mobile-menu-backdrop');
+            const sidebar = document.getElementById('sidebar-menu');
+
+            // Global State helpers
+            window.closeMobileMenu = function () {
+                if (sidebar) sidebar.classList.remove('show');
+                if (backdrop) backdrop.classList.remove('show');
+                document.body.style.overflow = '';
+            };
+
+            window.openMobileMenu = function () {
+                if (sidebar) sidebar.classList.add('show');
+                if (backdrop) backdrop.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            };
+
+            if (trigger) {
+                trigger.onclick = function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Mobile menu trigger clicked');
+                    window.openMobileMenu();
+                };
+            }
+
+            if (closeBtn) {
+                closeBtn.onclick = function (e) {
+                    e.preventDefault();
+                    console.log('Mobile menu close clicked');
+                    window.closeMobileMenu();
+                };
+            }
+
+            if (backdrop) {
+                backdrop.onclick = function () {
+                    console.log('Mobile menu backdrop clicked');
+                    window.closeMobileMenu();
+                };
+            }
+
+            // Link handling
+            if (sidebar) {
+                sidebar.addEventListener('click', function (e) {
+                    // Check if clicked element is a link
+                    const link = e.target.closest('a.nav-link');
+                    if (link && !link.getAttribute('data-bs-toggle')) {
+                        // Close menu for normal links
+                        window.closeMobileMenu();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>

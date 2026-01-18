@@ -1,21 +1,29 @@
-<aside class="navbar navbar-vertical navbar-expand-lg" style="background-color: #1e293b; color: #fff;">
-    <div class="container-fluid">
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu"
-            aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <h1 class="navbar-brand navbar-brand-autodark">
-            <a href="{{ route('admin.dashboard') }}" class="text-decoration-none text-white">
-                {{ config('app.name', 'StoneCrusher') }}
+<aside class="navbar navbar-vertical navbar-expand-lg navbar-dark border-end-0 bg-dark" data-bs-theme="dark"
+    style="background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); color: #fff; box-shadow: 4px 0 24px 0 rgba(0,0,0,0.1);">
+    <div class="container-fluid px-3 py-2">
+
+        <h1 class="navbar-brand navbar-brand-autodark mb-3 mt-2 d-none d-lg-block">
+            <a href="{{ route('admin.dashboard') }}"
+                class="text-decoration-none text-white d-flex align-items-center gap-2">
+                <!-- Optional Logo Icon can go here -->
+                <span class="fw-bold tracking-wide"
+                    style="letter-spacing: 0.5px;">{{ config('app.name', 'StoneCrusher') }}</span>
             </a>
         </h1>
-        <div class="collapse navbar-collapse" id="sidebar-menu">
-            <ul class="navbar-nav pt-lg-3">
+        <div class="mobile-sidebar" id="sidebar-menu">
+            <!-- Mobile Sidebar Header (Logo + Close) -->
+            <div class="d-lg-none d-flex align-items-center justify-content-between p-3 border-bottom border-white-10">
+                <div class="h3 mb-0 fw-bold text-white tracking-wide">{{ config('app.name', 'StoneCrusher') }}</div>
+                <button type="button" class="btn-close btn-close-white" id="mobile-menu-close"
+                    aria-label="Close"></button>
+            </div>
+
+            <ul class="navbar-nav pt-lg-2 d-flex flex-column gap-1">
                 <!-- Dashboard -->
-                <li class="nav-item {{ request()->routeIs('admin.dashboard') || request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <a class="nav-link text-white-50 {{ request()->routeIs('admin.dashboard') || request()->routeIs('dashboard') ? 'text-white' : '' }}" href="{{ route('admin.dashboard') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: home -->
+                <li class="nav-item">
+                    <a class="nav-link px-3 py-2 rounded-pill {{ request()->routeIs('admin.dashboard') || request()->routeIs('dashboard') ? 'bg-primary text-white shadow-sm' : 'text-white-50 hover-light' }}"
+                        href="{{ route('admin.dashboard') }}">
+                        <span class="nav-link-icon d-inline-block me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round">
@@ -25,25 +33,26 @@
                                 <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">
+                        <span class="nav-link-title fw-medium">
                             Dashboard
                         </span>
                     </a>
                 </li>
 
-                <hr class="my-2 border-white-50">
+                <div class="my-2 border-top border-white-10 opacity-25"></div>
 
                 <!-- Operations -->
-                <li class="nav-item">
-                    <div class="nav-link text-white fw-bold disabled">
-                        OPERATIONS
-                    </div>
+                <li class="nav-item mb-1">
+                    <span class="nav-link text-uppercase fw-bold text-white-50 fs-6 ps-3 tracking-wider"
+                        style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                        Operations
+                    </span>
                 </li>
-                <li class="nav-item dropdown {{ request()->routeIs('gate-passes.*') ? 'active' : '' }}">
-                    <a class="nav-link dropdown-toggle text-white-50 {{ request()->routeIs('gate-passes.*') ? 'text-white show' : '' }}" href="#navbar-operations" data-bs-toggle="dropdown"
-                        data-bs-auto-close="false" role="button" aria-expanded="{{ request()->routeIs('gate-passes.*') ? 'true' : 'false' }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: package -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle px-3 py-2 rounded-pill {{ request()->routeIs('gate-passes.*') ? 'bg-white-10 text-white' : 'text-white-50 hover-light' }}"
+                        href="#navbar-operations" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button"
+                        aria-expanded="{{ request()->routeIs('gate-passes.*') ? 'true' : 'false' }}">
+                        <span class="nav-link-icon d-inline-block me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round">
@@ -54,90 +63,88 @@
                                 <path d="M12 12l-8 -4.5" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">
+                        <span class="nav-link-title fw-medium">
                             Gate Passes
                         </span>
                     </a>
-                    <div class="dropdown-menu text-bg-dark border-0 bg-transparent ps-3 {{ request()->routeIs('gate-passes.*') ? 'show' : '' }}">
-                        <a class="dropdown-item text-white-50 {{ request()->routeIs('gate-passes.create') ? 'text-white active' : '' }}" href="{{ route('gate-passes.create') }}">Create New</a>
-                        <a class="dropdown-item text-white-50 {{ request()->routeIs('gate-passes.index') ? 'text-white active' : '' }}" href="{{ route('gate-passes.index') }}">Check List</a>
-                        <a class="dropdown-item text-white-50 {{ request()->routeIs('gate-passes.calculator') ? 'text-white active' : '' }}" href="{{ route('gate-passes.calculator') }}">Calculator</a>
+                    <div
+                        class="dropdown-menu text-bg-dark border-0 bg-transparent ps-4 {{ request()->routeIs('gate-passes.*') ? 'show' : '' }}">
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('gate-passes.create') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('gate-passes.create') }}">Create New</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('gate-passes.index') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('gate-passes.index') }}">All Records</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('gate-passes.calculator') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('gate-passes.calculator') }}">Calculator</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('gate-passes.daily-report') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('gate-passes.daily-report') }}">Daily Report</a>
                     </div>
                 </li>
-                <li class="nav-item {{ request()->routeIs('daily-closings.*') ? 'active' : '' }}">
-                    <a class="nav-link text-white-50 {{ request()->routeIs('daily-closings.*') ? 'text-white' : '' }}" href="{{ route('daily-closings.index') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: lock-open -->
+                <li class="nav-item">
+                    <a class="nav-link px-3 py-2 rounded-pill {{ request()->routeIs('daily-closings.*') ? 'bg-white-10 text-white' : 'text-white-50 hover-light' }}"
+                        href="{{ route('daily-closings.index') }}">
+                        <span class="nav-link-icon d-inline-block me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M5 11m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" />
+                                <path
+                                    d="M5 11m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" />
                                 <path d="M12 16m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
                                 <path d="M8 11v-4a4 4 0 1 1 8 0" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">
+                        <span class="nav-link-title fw-medium">
                             Daily Closing
                         </span>
                     </a>
                 </li>
 
                 <!-- CRM -->
-                <li class="nav-item mt-3">
-                    <div class="nav-link text-white fw-bold disabled">
-                        CRM
-                    </div>
+                <li class="nav-item mb-1 mt-3">
+                    <span class="nav-link text-uppercase fw-bold text-white-50 fs-6 ps-3 tracking-wider"
+                        style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                        CRM & Sales
+                    </span>
                 </li>
-                <li class="nav-item {{ request()->routeIs('clients.*') ? 'active' : '' }}">
-                    <a class="nav-link text-white-50 {{ request()->routeIs('clients.*') ? 'text-white' : '' }}" href="{{ route('clients.index') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: users -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle px-3 py-2 rounded-pill {{ request()->routeIs('clients.*') ? 'bg-white-10 text-white' : 'text-white-50 hover-light' }}"
+                        href="#navbar-crm" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button"
+                        aria-expanded="{{ request()->routeIs('clients.*') ? 'true' : 'false' }}">
+                        <span class="nav-link-icon d-inline-block me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                 <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
                                 <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                <path d="M21 21v-2a4 4 0 0 0 -3 -3.85" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">
-                            Clients
+                        <span class="nav-link-title fw-medium">
+                            Clients & Projects
                         </span>
                     </a>
-                </li>
-                <li class="nav-item {{ request()->routeIs('projects.*') ? 'active' : '' }}">
-                    <a class="nav-link text-white-50 {{ request()->routeIs('projects.*') ? 'text-white' : '' }}" href="{{ route('projects.index') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: briefcase -->
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M3 7m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z" />
-                                <path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2" />
-                                <path d="M12 12l0 .01" />
-                                <path d="M3 13a20 20 0 0 0 18 0" />
-                            </svg>
-                        </span>
-                        <span class="nav-link-title">
-                            Projects
-                        </span>
-                    </a>
-                </li>
-
-                <!-- Fleet -->
-                <li class="nav-item mt-3">
-                    <div class="nav-link text-white fw-bold disabled">
-                        FLEET & INVENTORY
+                    <div
+                        class="dropdown-menu text-bg-dark border-0 bg-transparent ps-4 {{ request()->routeIs('clients.*') || request()->routeIs('projects.*') ? 'show' : '' }}">
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('clients.index') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('clients.index') }}">Client Directory</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('clients.create') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('clients.create') }}">Add Client</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('projects.index') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('projects.index') }}">Projects</a>
                     </div>
                 </li>
-                <li class="nav-item {{ request()->routeIs('vehicles.*') ? 'active' : '' }}">
-                    <a class="nav-link text-white-50 {{ request()->routeIs('vehicles.*') ? 'text-white' : '' }}" href="{{ route('vehicles.index') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: truck -->
+
+                <!-- Fleet & Data -->
+                <li class="nav-item mb-1 mt-3">
+                    <span class="nav-link text-uppercase fw-bold text-white-50 fs-6 ps-3 tracking-wider"
+                        style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                        Fleet & Master
+                    </span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link px-3 py-2 rounded-pill {{ request()->routeIs('vehicles.*') ? 'bg-white-10 text-white' : 'text-white-50 hover-light' }}"
+                        href="{{ route('vehicles.index') }}">
+                        <span class="nav-link-icon d-inline-block me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round">
@@ -147,15 +154,15 @@
                                 <path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">
+                        <span class="nav-link-title fw-medium">
                             Vehicles
                         </span>
                     </a>
                 </li>
-                <li class="nav-item {{ request()->routeIs('metal-types.*') ? 'active' : '' }}">
-                    <a class="nav-link text-white-50 {{ request()->routeIs('metal-types.*') ? 'text-white' : '' }}" href="{{ route('metal-types.index') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: box -->
+                <li class="nav-item">
+                    <a class="nav-link px-3 py-2 rounded-pill {{ request()->routeIs('metal-types.*') ? 'bg-white-10 text-white' : 'text-white-50 hover-light' }}"
+                        href="{{ route('metal-types.index') }}">
+                        <span class="nav-link-icon d-inline-block me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round">
@@ -166,22 +173,68 @@
                                 <path d="M12 12l-8 -4.5" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">
+                        <span class="nav-link-title fw-medium">
                             Metal Types
                         </span>
                     </a>
                 </li>
 
-                <!-- HR -->
-                <li class="nav-item mt-3">
-                    <div class="nav-link text-white fw-bold disabled">
-                        HR & STAFF
+                <!-- Reporting -->
+                <li class="nav-item mb-1 mt-3">
+                    <span class="nav-link text-uppercase fw-bold text-white-50 fs-6 ps-3 tracking-wider"
+                        style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                        Analytics
+                    </span>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle px-3 py-2 rounded-pill {{ request()->routeIs('reports.*') || request()->routeIs('gate-passes.distance-report') || request()->routeIs('attendance.report') || request()->routeIs('attendance.report.*') ? 'bg-white-10 text-white' : 'text-white-50 hover-light' }}"
+                        href="#navbar-reports" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button"
+                        aria-expanded="{{ request()->routeIs('reports.*') ? 'true' : 'false' }}">
+                        <span class="nav-link-icon d-inline-block me-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path
+                                    d="M3 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+                                <path
+                                    d="M9 8m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+                                <path
+                                    d="M15 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+                                <path d="M4 20l14 0" />
+                            </svg>
+                        </span>
+                        <span class="nav-link-title fw-medium">
+                            Reports Center
+                        </span>
+                    </a>
+                    <div
+                        class="dropdown-menu text-bg-dark border-0 bg-transparent ps-4 {{ request()->routeIs('reports.*') || request()->routeIs('gate-passes.distance-report') || request()->routeIs('attendance.report') || request()->routeIs('attendance.report.*') ? 'show' : '' }}">
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('reports.daily') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('reports.daily') }}">Daily Sales</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('reports.monthly') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('reports.monthly') }}">Monthly Sales</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('reports.outstanding') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('reports.outstanding') }}">Outstanding & Advance</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('gate-passes.distance-report') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('gate-passes.distance-report') }}">Distance Report</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('reports.custom') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('reports.custom') }}">Custom Date</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('reports.summary') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('reports.summary', ['type' => 'vehicle']) }}">Summary View</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('attendance.report') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('attendance.report') }}">Attendance Report</a>
                     </div>
                 </li>
-                <li class="nav-item {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
-                    <a class="nav-link text-white-50 {{ request()->routeIs('attendance.*') ? 'text-white' : '' }}" href="{{ route('attendance.index') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: calendar-time -->
+
+                <!-- Admin & System (Footer like) -->
+                @role('admin')
+                <div class="my-2 border-top border-white-10 opacity-25"></div>
+
+                <li class="nav-item">
+                    <a class="nav-link px-3 py-2 rounded-pill {{ request()->routeIs('attendance.index') ? 'bg-white-10 text-white' : 'text-white-50 hover-light' }}"
+                        href="{{ route('attendance.index') }}">
+                        <span class="nav-link-icon d-inline-block me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round">
@@ -194,16 +247,15 @@
                                 <path d="M18 16.496v1.504l1 1" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">
-                            Attendance
+                        <span class="nav-link-title fw-medium">
+                            Attendance Mgmt
                         </span>
                     </a>
                 </li>
-                @role('admin')
-                <li class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                    <a class="nav-link text-white-50 {{ request()->routeIs('users.*') ? 'text-white' : '' }}" href="{{ route('users.index') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: user-check -->
+                <li class="nav-item">
+                    <a class="nav-link px-3 py-2 rounded-pill {{ request()->routeIs('users.index') ? 'bg-white-10 text-white' : 'text-white-50 hover-light' }}"
+                        href="{{ route('users.index') }}">
+                        <span class="nav-link-icon d-inline-block me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round">
@@ -213,110 +265,42 @@
                                 <path d="M15 19l2 2l4 -4" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">
+                        <span class="nav-link-title fw-medium">
                             Users
                         </span>
                     </a>
                 </li>
-                @endrole
 
-                <!-- Reports -->
-                <li class="nav-item mt-3">
-                    <div class="nav-link text-white fw-bold disabled">
-                        REPORTS
-                    </div>
-                </li>
-                <li class="nav-item dropdown {{ request()->routeIs('reports.*') || request()->routeIs('gate-passes.distance-report') || request()->routeIs('attendance.report') ? 'active' : '' }}">
-                    <a class="nav-link dropdown-toggle text-white-50 {{ request()->routeIs('reports.*') || request()->routeIs('gate-passes.distance-report') || request()->routeIs('attendance.report') ? 'text-white show' : '' }}" href="#navbar-reports" data-bs-toggle="dropdown"
-                        data-bs-auto-close="false" role="button" aria-expanded="{{ request()->routeIs('reports.*') || request()->routeIs('gate-passes.distance-report') || request()->routeIs('attendance.report') ? 'true' : 'false' }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: chart-bar -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle px-3 py-2 rounded-pill {{ request()->routeIs('settings.*') || request()->routeIs('backups.*') || request()->routeIs('audit-logs.*') ? 'bg-white-10 text-white' : 'text-white-50 hover-light' }}"
+                        href="#navbar-system" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button"
+                        aria-expanded="{{ request()->routeIs('settings.*') ? 'true' : 'false' }}">
+                        <span class="nav-link-icon d-inline-block me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M3 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
-                                <path d="M9 8m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
-                                <path d="M15 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
-                                <path d="M4 20l14 0" />
-                            </svg>
-                        </span>
-                        <span class="nav-link-title">
-                            Reports Center
-                        </span>
-                    </a>
-                    <div class="dropdown-menu text-bg-dark border-0 bg-transparent ps-3 {{ request()->routeIs('reports.*') || request()->routeIs('gate-passes.distance-report') || request()->routeIs('attendance.report') ? 'show' : '' }}">
-                        <a class="dropdown-item text-white-50 {{ request()->routeIs('reports.daily') ? 'text-white active' : '' }}" href="{{ route('reports.daily') }}">Daily Sales</a>
-                        <a class="dropdown-item text-white-50 {{ request()->routeIs('reports.monthly') ? 'text-white active' : '' }}" href="{{ route('reports.monthly') }}">Monthly Sales</a>
-                        <a class="dropdown-item text-white-50 {{ request()->routeIs('reports.outstanding') ? 'text-white active' : '' }}" href="{{ route('reports.outstanding') }}">Outstanding & Advance</a>
-                        <a class="dropdown-item text-white-50 {{ request()->routeIs('gate-passes.distance-report') ? 'text-white active' : '' }}" href="{{ route('gate-passes.distance-report') }}">Distance Report</a>
-                        <a class="dropdown-item text-white-50 {{ request()->routeIs('attendance.report') ? 'text-white active' : '' }}" href="{{ route('attendance.report') }}">Attendance Report</a>
-                    </div>
-                </li>
-
-                <!-- System -->
-                @role('admin')
-                <li class="nav-item mt-3">
-                    <div class="nav-link text-white fw-bold disabled">
-                        SYSTEM
-                    </div>
-                </li>
-                <li class="nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-                    <a class="nav-link text-white-50 {{ request()->routeIs('settings.*') ? 'text-white' : '' }}" href="{{ route('settings.index') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: settings -->
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" />
+                                <path
+                                    d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" />
                                 <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">
-                            Settings
+                        <span class="nav-link-title fw-medium">
+                            System
                         </span>
                     </a>
-                </li>
-                <li class="nav-item {{ request()->routeIs('backups.*') ? 'active' : '' }}">
-                    <a class="nav-link text-white-50 {{ request()->routeIs('backups.*') ? 'text-white' : '' }}" href="{{ route('backups.index') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: database -->
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M12 6m-8 0a8 3 0 1 0 16 0a8 3 0 1 0 -16 0" />
-                                <path d="M4 6v6a8 3 0 0 0 16 0v-6" />
-                                <path d="M4 12v6a8 3 0 0 0 16 0v-6" />
-                            </svg>
-                        </span>
-                        <span class="nav-link-title">
-                            Backups
-                        </span>
-                    </a>
-                </li>
-                <li class="nav-item {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
-                    <a class="nav-link text-white-50 {{ request()->routeIs('audit-logs.*') ? 'text-white' : '' }}" href="{{ route('audit-logs.index') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <!-- Icon: file-text -->
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
-                                <path d="M9 9l1 0" />
-                                <path d="M9 13l6 0" />
-                                <path d="M9 17l6 0" />
-                            </svg>
-                        </span>
-                        <span class="nav-link-title">
-                            Audit Logs
-                        </span>
-                    </a>
+                    <div
+                        class="dropdown-menu text-bg-dark border-0 bg-transparent ps-4 {{ request()->routeIs('settings.*') || request()->routeIs('backups.*') || request()->routeIs('audit-logs.*') ? 'show' : '' }}">
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('settings.index') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('settings.index') }}">Settings</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('backups.index') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('backups.index') }}">Backups</a>
+                        <a class="dropdown-item py-1 rounded-pill {{ request()->routeIs('audit-logs.index') ? 'text-white fw-bold' : 'text-white-50' }}"
+                            href="{{ route('audit-logs.index') }}">Audit Logs</a>
+                    </div>
                 </li>
                 @endrole
+
             </ul>
         </div>
     </div>
