@@ -159,6 +159,96 @@ body {
   background-color: rgba(255, 255, 255, 0.05);
 }
 
+/* Premium Sidebar Refinements */
+.navbar-vertical.navbar-dark {
+  background: #0f172a !important;
+  /* Solid sleek slate */
+}
+
+.navbar-vertical .nav-link {
+  font-size: 0.875rem;
+  padding: 0.625rem 1rem;
+  margin: 0.125rem 0.75rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #94a3b8 !important;
+  /* Slate 400 */
+}
+
+.navbar-vertical .nav-link:hover {
+  color: #f8fafc !important;
+  /* Slate 50 */
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.navbar-vertical .nav-link.active {
+  color: #ffffff !important;
+  background: #1e293b !important;
+  /* Slate 800 */
+  font-weight: 500;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.navbar-vertical .nav-link-icon {
+  margin-right: 0.75rem !important;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.navbar-vertical .nav-link:hover .nav-link-icon,
+.navbar-vertical .nav-link.active .nav-link-icon {
+  opacity: 1;
+}
+
+.navbar-vertical .nav-item .dropdown-toggle::after {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.navbar-vertical .nav-item .dropdown-toggle[aria-expanded="true"]::after {
+  transform: rotate(90deg);
+}
+
+.sidebar-section-header {
+  padding: 1.5rem 1.75rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #475569 !important;
+  /* Slate 600 */
+}
+
+.navbar-vertical .dropdown-menu {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 0 0 1.5rem !important;
+  margin: 0 !important;
+}
+
+.navbar-vertical .dropdown-item {
+  font-size: 0.825rem;
+  padding: 0.5rem 1rem;
+  margin: 0.125rem 0.75rem;
+  color: #64748b !important;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.navbar-vertical .dropdown-item:hover,
+.navbar-vertical .dropdown-item.active {
+  color: #f8fafc !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.navbar-vertical::-webkit-scrollbar {
+  width: 4px;
+}
+
+.navbar-vertical::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 10px;
+}
+
 /* Custom Mobile Side Drawer */
 @media (max-width: 991.98px) {
   .mobile-sidebar {
