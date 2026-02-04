@@ -146,10 +146,10 @@
         </div>
     </div>
 
-</x-tabler-layout>
 
-<x-modal name="payment-modal" :show="$errors->payment->isNotEmpty()" maxWidth="md" title="Record Payment">
-    <div x-data="{ 
+
+    <x-modal name="payment-modal" :show="$errors->payment->isNotEmpty()" maxWidth="md" title="Record Payment">
+        <div x-data="{ 
             gpId: '', 
             gpNumber: '', 
             amount: '',
@@ -162,46 +162,46 @@
                 });
             }
         }">
-        <form x-bind:action="`/gate-passes/${gpId}/payment`" method="POST">
-            @csrf
+            <form x-bind:action="`/gate-passes/${gpId}/payment`" method="POST">
+                @csrf
 
-            <p class="mb-4 text-sm text-secondary">
-                Recording payment for Gate Pass: <span class="font-bold text-primary" x-text="gpNumber"></span>
-            </p>
+                <p class="mb-4 text-sm text-secondary">
+                    Recording payment for Gate Pass: <span class="font-bold text-primary" x-text="gpNumber"></span>
+                </p>
 
-            <div class="mb-3">
-                <label class="form-label required">Amount Received</label>
-                <input type="number" step="0.01" class="form-control" name="amount" x-model="amount" required>
-                @error('amount', 'payment') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
-            </div>
+                <div class="mb-3">
+                    <label class="form-label required">Amount Received</label>
+                    <input type="number" step="0.01" class="form-control" name="amount" x-model="amount" required>
+                    @error('amount', 'payment') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                </div>
 
-            <div class="mb-3">
-                <label class="form-label required">Date</label>
-                <input type="date" class="form-control" name="date" value="{{ date('Y-m-d') }}" required>
-                @error('date', 'payment') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
-            </div>
+                <div class="mb-3">
+                    <label class="form-label required">Date</label>
+                    <input type="date" class="form-control" name="date" value="{{ date('Y-m-d') }}" required>
+                    @error('date', 'payment') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                </div>
 
-            <div class="mb-3">
-                <label class="form-label required">Payment Mode</label>
-                <select class="form-select" name="payment_mode" required>
-                    <option value="cash">Cash</option>
-                    <option value="bank">Bank Transfer</option>
-                    <option value="upi">UPI</option>
-                    <option value="cheque">Cheque</option>
-                </select>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label required">Payment Mode</label>
+                    <select class="form-select" name="payment_mode" required>
+                        <option value="cash">Cash</option>
+                        <option value="bank">Bank Transfer</option>
+                        <option value="upi">UPI</option>
+                        <option value="cheque">Cheque</option>
+                    </select>
+                </div>
 
-            <div class="mb-3">
-                <label class="form-label">Remarks</label>
-                <textarea class="form-control" name="remarks" rows="2"></textarea>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label">Remarks</label>
+                    <textarea class="form-control" name="remarks" rows="2"></textarea>
+                </div>
 
-            <div class="mt-4 flex justify-end gap-2">
-                <button type="button" class="btn btn-ghost"
-                    x-on:click="$dispatch('close-modal', 'payment-modal')">Cancel</button>
-                <button type="submit" class="btn btn-success">Record Payment</button>
-            </div>
-        </form>
-    </div>
-</x-modal>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button type="button" class="btn btn-ghost"
+                        x-on:click="$dispatch('close-modal', 'payment-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-success">Record Payment</button>
+                </div>
+            </form>
+        </div>
+    </x-modal>
 </x-tabler-layout>
