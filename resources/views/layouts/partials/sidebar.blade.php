@@ -1,8 +1,8 @@
-<aside class="navbar navbar-vertical navbar-expand-lg navbar-dark border-end-0 shadow-lg" style="background: #0f172a;">
+<aside class="navbar navbar-vertical navbar-expand-lg navbar-dark border-end-0 shadow-lg">
     <div class="container-fluid px-0 h-100 d-flex flex-column">
 
         <!-- Sidebar Header (Logo) -->
-        <div class="px-4 py-4 d-none d-lg-block border-bottom border-white-5">
+        <div class="px-4 py-4 d-none d-lg-block border-bottom border-white-10">
             <a href="{{ route('admin.dashboard') }}"
                 class="text-decoration-none text-white d-flex align-items-center gap-3 group">
                 <div class="bg-primary rounded-3 p-2 shadow-sm group-hover-scale transition-all">
@@ -16,17 +16,17 @@
                     </svg>
                 </div>
                 <div>
-                    <span class="lh-1 d-block fw-bold tracking-tight text-white mb-0"
-                        style="font-size: 1.1rem;">{{ config('app.name', 'StoneCrusher') }}</span>
-                    <span class="badge bg-primary-lt border-0 text-uppercase fw-bold"
-                        style="font-size: 0.55rem; letter-spacing: 0.05em;">Enterprise ERP</span>
+                    <span
+                        class="lh-1 d-block fw-bold tracking-tight text-white mb-0 fs-3">{{ config('app.name', 'StoneCrusher') }}</span>
+                    <span class="badge bg-primary-lt border-0 text-uppercase fw-bold small tracking-wide">Enterprise
+                        ERP</span>
                 </div>
             </a>
         </div>
 
         <div class="mobile-sidebar flex-fill overflow-y-auto" id="sidebar-menu">
             <!-- Mobile Sidebar Header -->
-            <div class="d-lg-none d-flex align-items-center justify-content-between p-4 border-bottom border-white-5">
+            <div class="d-lg-none d-flex align-items-center justify-content-between p-4 border-bottom border-white-10">
                 <div class="h3 mb-0 fw-bold text-white tracking-wide">{{ config('app.name', 'StoneCrusher') }}</div>
                 <button type="button" class="btn-close btn-close-white" id="mobile-menu-close"
                     aria-label="Close"></button>
@@ -53,12 +53,13 @@
 
                 <!-- Operations Section -->
                 <li class="nav-item mt-3">
-                    <div class="sidebar-section-header">Core Operations</div>
+                    <div class="sidebar-section-header">Operations</div>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle {{ request()->routeIs('gate-passes.*') ? 'active' : '' }}"
-                        href="#navbar-operations" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button"
-                        aria-expanded="{{ request()->routeIs('gate-passes.*') ? 'true' : 'false' }}">
+                <li class="nav-item dropdown"
+                    x-data="{ open: {{ request()->routeIs('gate-passes.*') ? 'true' : 'false' }} }">
+                    <a class="nav-link dropdown-toggle"
+                        :class="{ 'show': open, 'active': {{ request()->routeIs('gate-passes.*') ? 'true' : 'false' }} }"
+                        href="#navbar-operations" @click.prevent="open = !open" role="button" :aria-expanded="open">
                         <span class="nav-link-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -72,7 +73,7 @@
                         </span>
                         <span class="nav-link-title">Gate Passes</span>
                     </a>
-                    <div class="dropdown-menu {{ request()->routeIs('gate-passes.*') ? 'show' : '' }}">
+                    <div class="dropdown-menu" :class="{ 'show': open }">
                         <a class="dropdown-item {{ request()->routeIs('gate-passes.create') ? 'active' : '' }}"
                             href="{{ route('gate-passes.create') }}">Create New</a>
                         <a class="dropdown-item {{ request()->routeIs('gate-passes.index') ? 'active' : '' }}"
@@ -100,15 +101,32 @@
                         <span class="nav-link-title">Daily Closing</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('projects.*') ? 'active' : '' }}"
+                        href="{{ route('projects.index') }}">
+                        <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M3 21v-13l9 -4l9 4v13" />
+                                <path d="M13 13h4v8h-10v-6h6" />
+                                <path d="M13 21v-9a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v3" />
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">Projects</span>
+                    </a>
+                </li>
 
                 <!-- CRM Section -->
                 <li class="nav-item mt-3">
-                    <div class="sidebar-section-header">CRM & Sales</div>
+                    <div class="sidebar-section-header">CRM</div>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle {{ request()->routeIs('clients.*') || request()->routeIs('projects.*') ? 'active' : '' }}"
-                        href="#navbar-crm" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button"
-                        aria-expanded="{{ request()->routeIs('clients.*') || request()->routeIs('projects.*') ? 'true' : 'false' }}">
+                <li class="nav-item dropdown"
+                    x-data="{ open: {{ request()->routeIs('clients.*') ? 'true' : 'false' }} }">
+                    <a class="nav-link dropdown-toggle"
+                        :class="{ 'show': open, 'active': {{ request()->routeIs('clients.*') ? 'true' : 'false' }} }"
+                        href="#navbar-crm" @click.prevent="open = !open" role="button" :aria-expanded="open">
                         <span class="nav-link-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -118,22 +136,19 @@
                                 <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">Clients & Projects</span>
+                        <span class="nav-link-title">Clients</span>
                     </a>
-                    <div
-                        class="dropdown-menu {{ request()->routeIs('clients.*') || request()->routeIs('projects.*') ? 'show' : '' }}">
+                    <div class="dropdown-menu" :class="{ 'show': open }">
                         <a class="dropdown-item {{ request()->routeIs('clients.index') ? 'active' : '' }}"
                             href="{{ route('clients.index') }}">Client Directory</a>
                         <a class="dropdown-item {{ request()->routeIs('clients.create') ? 'active' : '' }}"
                             href="{{ route('clients.create') }}">Add Client</a>
-                        <a class="dropdown-item {{ request()->routeIs('projects.index') ? 'active' : '' }}"
-                            href="{{ route('projects.index') }}">Projects</a>
                     </div>
                 </li>
 
                 <!-- Fleet Section -->
                 <li class="nav-item mt-3">
-                    <div class="sidebar-section-header">Fleet & Masters</div>
+                    <div class="sidebar-section-header">Fleet & Inventory</div>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('vehicles.*') ? 'active' : '' }}"
@@ -173,10 +188,11 @@
                 <li class="nav-item mt-3">
                     <div class="sidebar-section-header">Analytics</div>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle {{ request()->routeIs('reports.*') || request()->routeIs('gate-passes.distance-report') || request()->routeIs('attendance.report') || request()->routeIs('attendance.report.*') ? 'active' : '' }}"
-                        href="#navbar-reports" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button"
-                        aria-expanded="{{ request()->routeIs('reports.*') ? 'true' : 'false' }}">
+                <li class="nav-item dropdown"
+                    x-data="{ open: {{ (request()->routeIs('reports.*') || request()->routeIs('gate-passes.distance-report') || request()->routeIs('attendance.report') || request()->routeIs('attendance.report.*')) ? 'true' : 'false' }} }">
+                    <a class="nav-link dropdown-toggle"
+                        :class="{ 'show': open, 'active': {{ (request()->routeIs('reports.*') || request()->routeIs('gate-passes.distance-report') || request()->routeIs('attendance.report') || request()->routeIs('attendance.report.*')) ? 'true' : 'false' }} }"
+                        href="#navbar-reports" @click.prevent="open = !open" role="button" :aria-expanded="open">
                         <span class="nav-link-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -193,8 +209,7 @@
                         </span>
                         <span class="nav-link-title">Reports Center</span>
                     </a>
-                    <div
-                        class="dropdown-menu {{ request()->routeIs('reports.*') || request()->routeIs('gate-passes.distance-report') || request()->routeIs('attendance.report') || request()->routeIs('attendance.report.*') ? 'show' : '' }}">
+                    <div class="dropdown-menu" :class="{ 'show': open }">
                         <a class="dropdown-item {{ request()->routeIs('reports.daily') ? 'active' : '' }}"
                             href="{{ route('reports.daily') }}">Daily Sales</a>
                         <a class="dropdown-item {{ request()->routeIs('reports.monthly') ? 'active' : '' }}"
@@ -215,47 +230,13 @@
                 <!-- Admin Section -->
                 @role('admin')
                 <li class="nav-item mt-3">
-                    <div class="sidebar-section-header">System</div>
+                    <div class="sidebar-section-header">Administration</div>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('attendance.index') ? 'active' : '' }}"
-                        href="{{ route('attendance.index') }}">
-                        <span class="nav-link-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
-                                <path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
-                                <path d="M15 3v4" />
-                                <path d="M7 3v4" />
-                                <path d="M3 11h16" />
-                                <path d="M18 16.496v1.504l1 1" />
-                            </svg>
-                        </span>
-                        <span class="nav-link-title">Attendance Mgmt</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('users.index') ? 'active' : '' }}"
-                        href="{{ route('users.index') }}">
-                        <span class="nav-link-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
-                                <path d="M6 21v-2a4 4 0 0 1 4 -4h4" />
-                                <path d="M15 19l2 2l4 -4" />
-                            </svg>
-                        </span>
-                        <span class="nav-link-title">Users</span>
-                    </a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle {{ request()->routeIs('settings.*') || request()->routeIs('backups.*') || request()->routeIs('audit-logs.*') ? 'active' : '' }}"
-                        href="#navbar-system" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button"
-                        aria-expanded="{{ request()->routeIs('settings.*') ? 'true' : 'false' }}">
+                <li class="nav-item dropdown"
+                    x-data="{ open: {{ (request()->routeIs('users.*') || request()->routeIs('attendance.index') || request()->routeIs('settings.*') || request()->routeIs('backups.*') || request()->routeIs('audit-logs.*')) ? 'true' : 'false' }} }">
+                    <a class="nav-link dropdown-toggle"
+                        :class="{ 'show': open, 'active': {{ (request()->routeIs('users.*') || request()->routeIs('attendance.index') || request()->routeIs('settings.*') || request()->routeIs('backups.*') || request()->routeIs('audit-logs.*')) ? 'true' : 'false' }} }"
+                        href="#navbar-system" @click.prevent="open = !open" role="button" :aria-expanded="open">
                         <span class="nav-link-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -266,10 +247,17 @@
                                 <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">System Management</span>
+                        <span class="nav-link-title">Administration</span>
                     </a>
-                    <div
-                        class="dropdown-menu {{ request()->routeIs('settings.*') || request()->routeIs('backups.*') || request()->routeIs('audit-logs.*') ? 'show' : '' }}">
+                    <div class="dropdown-menu" :class="{ 'show': open }">
+                        <div class="dropdown-header">HR & Users</div>
+                        <a class="dropdown-item {{ request()->routeIs('users.index') ? 'active' : '' }}"
+                            href="{{ route('users.index') }}">User Management</a>
+                        <a class="dropdown-item {{ request()->routeIs('attendance.index') ? 'active' : '' }}"
+                            href="{{ route('attendance.index') }}">Attendance Logs</a>
+
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-header">System</div>
                         <a class="dropdown-item {{ request()->routeIs('settings.index') ? 'active' : '' }}"
                             href="{{ route('settings.index') }}">General Settings</a>
                         <a class="dropdown-item {{ request()->routeIs('backups.index') ? 'active' : '' }}"
@@ -283,10 +271,10 @@
         </div>
 
         <!-- Sidebar Footer (Optional user info or logout could go here) -->
-        <div class="px-4 py-3 border-top border-white-5 mt-auto">
+        <div class="px-4 py-3 border-top border-white-10 mt-auto">
             <div class="d-flex align-items-center gap-2 text-white-50">
                 <span class="badge bg-success-lt border-0 p-1"></span>
-                <span style="font-size: 0.7rem;" class="fw-medium text-uppercase tracking-wider">System Online</span>
+                <span class="fw-medium text-uppercase tracking-wider small">System Online</span>
             </div>
         </div>
     </div>

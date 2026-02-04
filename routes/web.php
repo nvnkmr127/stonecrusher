@@ -94,6 +94,7 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
     Route::get('gate-passes/distance-report', [GatePassController::class, 'distanceReport'])->name('gate-passes.distance-report');
     Route::get('gate-passes/distance-report/export', [GatePassController::class, 'exportDistanceReport'])->name('gate-passes.distance-report.export');
     Route::get('gate-passes/calculator', [GatePassController::class, 'calculator'])->name('gate-passes.calculator');
+    Route::get('gate-passes/search-location', [GatePassController::class, 'searchLocation'])->name('gate-passes.search-location');
     Route::post('gate-passes/{gate_pass}/payment', [GatePassController::class, 'recordPayment'])->name('gate-passes.payment');
     Route::resource('gate-passes', GatePassController::class);
     Route::resource('vehicles', VehicleController::class);

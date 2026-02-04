@@ -40,10 +40,8 @@
     <div class="row row-cards">
         <div class="col-12">
             <x-card>
-                <div class="card-header">
-                    <h3 class="card-title">Filter Attendance</h3>
-                </div>
-                <div class="card-body border-bottom py-3">
+                <x-slot name="header">Filter Attendance</x-slot>
+                <div class="border-bottom py-3">
                     <form method="GET" action="{{ route('attendance.index') }}" class="d-flex gap-2">
                         <div>
                             <input type="date" name="date" value="{{ request('date', date('Y-m-d')) }}"
@@ -63,76 +61,71 @@
                     </form>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table card-table table-vcenter text-nowrap datatable">
-                        <thead>
+                <x-table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>User</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Status</th>
+                            <th>Total Time</th>
+                            <th>Remarks</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($employees as $employee)
+                            @php
+                                $attendance = $employee->attendances->first();
+                            @endphp
                             <tr>
-                                <th>Date</th>
-                                <th>User</th>
-                                <th>Check In</th>
-                                <th>Check Out</th>
-                                <th>Status</th>
-                                <th>Total Time</th>
-                                <th>Remarks</th>
-                                <th>Actions</th>
+                                <td>{{ $date }}</td>
+                                <td>{{ $employee->name }}</td>
+                                <td>{{ $attendance && $attendance->check_in ? \Carbon\Carbon::parse($attendance->check_in)->format('H:i') : '-' }}
+                                </td>
+                                <td>{{ $attendance && $attendance->check_out ? \Carbon\Carbon::parse($attendance->check_out)->format('H:i') : '-' }}
+                                </td>
+                                <td>
+                                    @if($attendance)
+                                        <x-status-badge :status="$attendance->status" />
+                                    @else
+                                        <x-status-badge status="absent" />
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($attendance && $attendance->check_in && $attendance->check_out)
+                                        {{ \Carbon\Carbon::parse($attendance->check_in)->diff(\Carbon\Carbon::parse($attendance->check_out))->format('%H:%I') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="text-truncate" style="max-width: 150px;">
+                                    {{ $attendance ? $attendance->remarks : '-' }}
+                                </td>
+                                <td>
+                                    @if($attendance)
+                                        <a href="{{ route('attendance.edit', $attendance) }}"
+                                            class="btn btn-sm btn-outline-primary">Edit</a>
+                                        <form action="{{ route('attendance.destroy', $attendance) }}" method="POST"
+                                            class="d-inline-block" onsubmit="return confirm('Are you sure?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </form>
+                                    @else
+                                        <a href="{{ route('attendance.create', ['user_id' => $employee->id, 'date' => $date]) }}"
+                                            class="btn btn-sm btn-primary">Mark</a>
+                                    @endif
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($employees as $employee)
-                                @php
-                                    $attendance = $employee->attendances->first();
-                                @endphp
-                                <tr>
-                                    <td>{{ $date }}</td>
-                                    <td>{{ $employee->name }}</td>
-                                    <td>{{ $attendance && $attendance->check_in ? \Carbon\Carbon::parse($attendance->check_in)->format('H:i') : '-' }}
-                                    </td>
-                                    <td>{{ $attendance && $attendance->check_out ? \Carbon\Carbon::parse($attendance->check_out)->format('H:i') : '-' }}
-                                    </td>
-                                    <td>
-                                        @if($attendance)
-                                            <span
-                                                class="badge bg-{{ match ($attendance->status) { 'present' => 'green', 'late' => 'yellow', 'absent' => 'red', 'leave' => 'blue', 'half_day' => 'orange', default => 'secondary'} }}-lt">
-                                                {{ ucfirst(str_replace('_', ' ', $attendance->status)) }}
-                                            </span>
-                                        @else
-                                            <span class="badge bg-red-lt">Absent</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($attendance && $attendance->check_in && $attendance->check_out)
-                                            {{ \Carbon\Carbon::parse($attendance->check_in)->diff(\Carbon\Carbon::parse($attendance->check_out))->format('%H:%I') }}
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
-                                    <td class="text-truncate" style="max-width: 150px;">
-                                        {{ $attendance ? $attendance->remarks : '-' }}
-                                    </td>
-                                    <td>
-                                        @if($attendance)
-                                            <a href="{{ route('attendance.edit', $attendance) }}"
-                                                class="btn btn-sm btn-outline-primary">Edit</a>
-                                            <form action="{{ route('attendance.destroy', $attendance) }}" method="POST"
-                                                class="d-inline-block" onsubmit="return confirm('Are you sure?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                            </form>
-                                        @else
-                                            <a href="{{ route('attendance.create', ['user_id' => $employee->id, 'date' => $date]) }}"
-                                                class="btn btn-sm btn-primary">Mark</a>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="text-center">No employees found.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center">No employees found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </x-table>
             </x-card>
         </div>
     </div>

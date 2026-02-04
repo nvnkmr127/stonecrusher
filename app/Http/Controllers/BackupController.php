@@ -64,23 +64,16 @@ class BackupController extends Controller
         }
 
         try {
-            // Run backup
-            Artisan::call('backup:run --only-db'); // Initial version just DB for speed? Or full?
-            // User requested "Data backup", usually full.
-            // But full backup might take time and timeout the request.
-            // I'll default to --only-db for the button for now, or full. 
-            // Better: use queue if configured. 
-            // artisan call is sync by default.
-
-            Artisan::call('backup:run');
+            // Dispatch async job
+            \App\Jobs\ProcessBackup::dispatch();
 
             activity()
                 ->useLog('backup')
                 ->log('Manual backup started by user');
 
-            return redirect()->back()->with('success', 'Backup started successfully. It will appear in the list once completed.');
+            return redirect()->back()->with('success', 'Backup started in background. It will appear in the list once completed.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Backup failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Backup dispatch failed: ' . $e->getMessage());
         }
     }
 

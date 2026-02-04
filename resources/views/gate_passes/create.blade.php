@@ -22,7 +22,23 @@
 
     <div class="row row-cards">
         <div class="col-12">
-            <form action="{{ route('gate-passes.store') }}" method="POST" x-data="gatePassForm()">
+            <form action="{{ route('gate-passes.store') }}" method="POST" x-data="gatePassForm({
+                grossWeight: {{ old('gross_weight', 0) }},
+                tareWeight: {{ old('tare_weight', 0) }},
+                netWeight: {{ old('net_weight', 0) }},
+                clientId: '{{ old('client_id') }}',
+                distanceKm: {{ old('distance_km', 0) }},
+                transportCost: {{ old('transport_cost', 0) }},
+                transportRate: {{ $transportRate }},
+                isRoundTrip: {{ $defaultRoundTrip ? 'true' : 'false' }},
+                deliveryLocation: '{{ old('delivery_location') }}',
+                endpoints: {
+                    calculator: '{{ route('gate-passes.calculator') }}',
+                    search: '{{ route('gate-passes.search-location') }}'
+                },
+                destinations: @json($destinations),
+                allowedStates: @json(json_decode(\App\Models\Setting::get('allowed_states', '[]'))) || []
+            })">
                 @csrf
                 <x-card>
                     <div class="card-body">
@@ -68,8 +84,7 @@
                                 <div class="mb-3">
                                     <label class="form-label required">Vehicle</label>
                                     <select class="form-select @error('vehicle_id') is-invalid @enderror"
-                                        name="vehicle_id" required @change="updateVehicleMultiplier()"
-                                        style="border: 1px solid #0f172a; background-color: #f8fafc;">
+                                        name="vehicle_id" required @change="updateVehicleMultiplier()">
                                         <option value="">Select Vehicle</option>
                                         @foreach($vehicles as $vehicle)
                                             <option value="{{ $vehicle->id }}"
@@ -291,188 +306,4 @@
     </form>
     </div>
     </div>
-
-    @push('scripts')
-        <script>
-            document.addEventListener('alpine:init', () => {
-                Alpine.data('gatePassForm', () => ({
-                    grossWeight: {{ old('gross_weight', 0) }},
-                    tareWeight: {{ old('tare_weight', 0) }},
-                    netWeight: {{ old('net_weight', 0) }},
-                    clientId: '{{ old('client_id') }}',
-                    clientBalance: 0,
-                    distanceKm: {{ old('distance_km', 0) }},
-                    transportCost: {{ old('transport_cost', 0) }},
-                    transportRate: {{ $transportRate }},
-                    vehicleMultiplier: 1,
-                    isRoundTrip: {{ $defaultRoundTrip ? 'true' : 'false' }},
-                    showCoords: false,
-                    destLat: '',
-                    destLon: '',
-                    validGeo: !!navigator.geolocation,
-                    destinations: @json($destinations),
-                    deliveryLocation: '{{ old('delivery_location') }}',
-                    isKnownLocation: false,
-                    isBillable: false,
-                    isBillable: false,
-                    isLoading: false,
-                    isSearching: false,
-                    searchResults: [],
-                    showResults: false,
-                    allowedStates: @json(json_decode(\App\Models\Setting::get('allowed_states', '[]'))) || [],
-
-                    init() {
-                        if (this.clientId) {
-                            this.updateBalance();
-                        }
-                        this.updateVehicleMultiplier();
-                    },
-
-                    updateVehicleMultiplier() {
-                        const select = document.querySelector('select[name="vehicle_id"]');
-                        if (select.selectedIndex >= 0) {
-                            const option = select.options[select.selectedIndex];
-                            this.vehicleMultiplier = parseFloat(option.getAttribute('data-multiplier')) || 1;
-                            this.calculateTransportCost();
-                        }
-                    },
-
-                    updateBalance() {
-                        const select = document.querySelector('select[name="client_id"]');
-                        if (select.selectedIndex >= 0) {
-                            const option = select.options[select.selectedIndex];
-                            this.clientBalance = option.getAttribute('data-balance') || 0;
-                        }
-                    },
-
-                    calculateNet() {
-                        const gross = parseFloat(this.grossWeight) || 0;
-                        const tare = parseFloat(this.tareWeight) || 0;
-
-                        if (gross > 0 && tare > 0) {
-                            this.netWeight = (gross - tare).toFixed(2);
-                        } else {
-                            this.netWeight = 0;
-                        }
-                    },
-
-                    calculateTransportCost() {
-                        const distance = parseFloat(this.distanceKm) || 0;
-                        const multiplier = parseFloat(this.vehicleMultiplier) || 1;
-                        const rt = this.isRoundTrip ? 2 : 1;
-
-                        if (distance > 0) {
-                            this.transportCost = (distance * this.transportRate * multiplier * rt).toFixed(2);
-                            this.calculateTotal();
-                        }
-                    },
-
-                    calculateTotal() {
-                        const qty = parseFloat(this.loadingQty) > 0 ? parseFloat(this.loadingQty) : (parseFloat(this.netWeight) || 0);
-                        const rate = parseFloat(this.ratePerTon) || 0;
-                        const diesel = parseFloat(this.dieselAmount) || 0;
-                        let transport = 0;
-
-                        if (this.isBillable) {
-                            transport = parseFloat(this.transportCost) || 0;
-                        }
-
-                        // Total = (Qty * Rate) + Diesel + Transport
-                        this.totalAmount = ((qty * rate) + diesel + transport).toFixed(2);
-                    },
-
-                    getUserLocation() {
-                        if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition((position) => {
-                                this.destLat = position.coords.latitude;
-                                this.destLon = position.coords.longitude;
-                            });
-                        }
-                    },
-
-                    async fetchDistance() {
-                        if (!this.destLat || !this.destLon) return;
-
-                        try {
-                            this.isLoading = true;
-                            let response = await fetch(`{{ route('gate-passes.calculator') }}?lat=${this.destLat}&lon=${this.destLon}&json=1`, {
-                                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-                            });
-                            let data = await response.json();
-
-                            this.distanceKm = data.distance;
-                            this.calculateTransportCost();
-                            this.showCoords = false;
-                        } catch (error) {
-                            console.error('Error:', error);
-                            alert('Calculation failed');
-                        } finally {
-                            this.isLoading = false;
-                        }
-                    },
-
-                    checkLocation() {
-                        const match = this.destinations.find(d => d.name.toLowerCase() === this.deliveryLocation.toLowerCase());
-                        if (match) {
-                            this.isKnownLocation = true;
-                            // Only auto-fill if distance is 0 or empty to avoid overwriting user manual input
-                            if (this.distanceKm == 0) {
-                                this.distanceKm = match.distance_km;
-                                this.destLat = match.latitude;
-                                this.destLon = match.longitude;
-                                this.calculateTransportCost();
-                            }
-                        } else {
-                            this.isKnownLocation = false;
-                            // Reset distance if user types manually and it's not a known location? 
-                            // Maybe not, let them keep it or search.
-                        }
-                    },
-
-                    async searchAddress() {
-                        if (this.deliveryLocation.length < 3) {
-                            this.searchResults = [];
-                            this.showResults = false;
-                            // Fallback to checking saved destinations
-                            this.checkLocation();
-                            return;
-                        }
-
-                        this.isSearching = true;
-
-                        try {
-                            // Using Nominatim API (OpenStreetMap)
-                            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.deliveryLocation)}&limit=50&countrycodes=in&addressdetails=1`);
-                            let data = await response.json();
-
-                            // Filter by allowed states if configured
-                            if (this.allowedStates.length > 0) {
-                                data = data.filter(result => {
-                                    return this.allowedStates.includes(result.address.state);
-                                });
-                            }
-
-                            this.searchResults = data.slice(0, 5);
-                            this.showResults = true;
-                        } catch (error) {
-                            console.error('Error searching address:', error);
-                            this.searchResults = [];
-                        } finally {
-                            this.isSearching = false;
-                        }
-                    },
-
-                    selectAddress(result) {
-                        this.deliveryLocation = result.display_name;
-                        this.destLat = result.lat;
-                        this.destLon = result.lon;
-                        this.showResults = false;
-
-                        // Auto-calculate distance using our backend
-                        this.fetchDistance();
-                    }
-                }));
-            });
-        </script>
-    @endpush
 </x-tabler-layout>

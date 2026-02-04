@@ -60,7 +60,7 @@ class GatePassController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, \App\Services\SalesService $salesService)
+    public function store(Request $request)
     {
         $status = $request->input('status', \App\Enums\GatePassStatus::PENDING->value);
 
@@ -100,16 +100,44 @@ class GatePassController extends Controller
         // Check if date is closed
         \App\Services\DayClosureService::checkAllowed($validated['date']);
 
-        // Ensure defaults strictly if null
-        $validated['gross_weight'] = $validated['gross_weight'] ?? 0;
-        $validated['tare_weight'] = $validated['tare_weight'] ?? 0;
-        $validated['net_weight'] = $validated['net_weight'] ?? 0;
+        // 1. Enforce Weight Logic
+        $validated['gross_weight'] = floatval($validated['gross_weight'] ?? 0);
+        $validated['tare_weight'] = floatval($validated['tare_weight'] ?? 0);
 
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $request, $salesService) {
+        // Auto-calculate Net Weight (Server ignores client input for safety)
+        if ($validated['gross_weight'] > 0 && $validated['tare_weight'] > 0) {
+            $validated['net_weight'] = max(0, $validated['gross_weight'] - $validated['tare_weight']);
+        } else {
+            $validated['net_weight'] = floatval($validated['net_weight'] ?? 0);
+        }
+
+        // 2. Enforce Financial Logic (if Completed)
+        if ($status === \App\Enums\GatePassStatus::COMPLETED->value) {
+            $qty = $validated['loading_quantity'] > 0 ? $validated['loading_quantity'] : $validated['net_weight'];
+            $rate = floatval($request->input('rate_per_ton', 0));
+            $diesel = floatval($request->input('diesel_amount', 0));
+            $transport = 0;
+
+            if ($request->boolean('transport_is_billable')) {
+                $transport = floatval($request->input('transport_cost', 0));
+            }
+
+            // Total = (Qty * Rate) + Diesel + Transport
+            $calculatedTotal = ($qty * $rate) + $diesel + $transport;
+
+            // Override with server-calculated entries
+            $validated['loading_quantity'] = $qty; // Ensure consistency
+            $validated['rate_per_ton'] = $rate;
+            $validated['diesel_amount'] = $diesel;
+            $validated['transport_cost'] = floatval($request->input('transport_cost', 0)); // Trust client for now or recalc if possible
+            $validated['total_amount'] = round($calculatedTotal, 2);
+        }
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $request) {
             $gatePass = GatePass::create($validated);
 
             if ($gatePass->status === \App\Enums\GatePassStatus::COMPLETED && $gatePass->client_id) {
-                $salesService->createOrUpdateTransaction($gatePass);
+                \App\Events\GatePassCompleted::dispatch($gatePass);
             }
 
             if ($request->boolean('save_location') && !empty($validated['delivery_location'])) {
@@ -154,7 +182,7 @@ class GatePassController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id, \App\Services\SalesService $salesService)
+    public function update(Request $request, $id)
     {
         $gate_pass = GatePass::findOrFail($id);
 
@@ -185,15 +213,40 @@ class GatePassController extends Controller
         // Check if original date was closed (prevent editing closed records)
         \App\Services\DayClosureService::checkAllowed($gate_pass->date);
 
-        // Default values
-        $validated['gross_weight'] = $validated['gross_weight'] ?? 0;
-        $validated['tare_weight'] = $validated['tare_weight'] ?? 0;
-        $validated['net_weight'] = $validated['net_weight'] ?? 0;
-        $validated['loading_quantity'] = $validated['loading_quantity'] ?? 0;
+        // 1. Enforce Weight Logic
+        $validated['gross_weight'] = floatval($validated['gross_weight'] ?? 0);
+        $validated['tare_weight'] = floatval($validated['tare_weight'] ?? 0);
+
+        if ($validated['gross_weight'] > 0 && $validated['tare_weight'] > 0) {
+            $validated['net_weight'] = max(0, $validated['gross_weight'] - $validated['tare_weight']);
+        } else {
+            $validated['net_weight'] = floatval($validated['net_weight'] ?? 0);
+        }
+
+        // 2. Enforce Financial Logic (if Completed)
+        // Note: partial updates might be tricky if fields are missing, but validation requires them for 'completed'
+        if ($validated['status'] === \App\Enums\GatePassStatus::COMPLETED->value) {
+            $qty = ($validated['loading_quantity'] ?? 0) > 0 ? $validated['loading_quantity'] : $validated['net_weight'];
+            $rate = floatval($request->input('rate_per_ton', 0));
+            $diesel = floatval($request->input('diesel_amount', 0));
+            $transport = 0;
+
+            if ($request->boolean('transport_is_billable')) {
+                $transport = floatval($request->input('transport_cost', 0));
+            }
+
+            $calculatedTotal = ($qty * $rate) + $diesel + $transport;
+
+            $validated['loading_quantity'] = $qty;
+            $validated['rate_per_ton'] = $rate;
+            $validated['diesel_amount'] = $diesel;
+            $validated['transport_cost'] = floatval($request->input('transport_cost', 0));
+            $validated['total_amount'] = round($calculatedTotal, 2);
+        }
 
         // Check if editing a completed pass
         if ($gate_pass->status === \App\Enums\GatePassStatus::COMPLETED->value && !$gate_pass->wasChanged('status')) {
-            $validated['remarks'] = $validated['remarks'] . " [Edited on " . now()->toDateTimeString() . "]";
+            $validated['remarks'] = ($validated['remarks'] ?? '') . " [Edited on " . now()->toDateTimeString() . "]";
         }
 
         // Restrict Cancellation to Admin
@@ -201,13 +254,13 @@ class GatePassController extends Controller
             return back()->with('error', 'Only Admins can cancel a Gate Pass.');
         }
 
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($gate_pass, $validated, $salesService, $request) {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($gate_pass, $validated, $request) {
             $gate_pass->update($validated);
 
             if ($gate_pass->status === \App\Enums\GatePassStatus::COMPLETED->value && $gate_pass->client_id) {
-                $salesService->createOrUpdateTransaction($gate_pass);
+                \App\Events\GatePassCompleted::dispatch($gate_pass);
             } elseif ($gate_pass->status === \App\Enums\GatePassStatus::CANCELLED->value) {
-                $salesService->cancelTransaction($gate_pass);
+                \App\Events\GatePassCancelled::dispatch($gate_pass);
             }
 
             if ($request->boolean('save_location') && !empty($validated['delivery_location'])) {
@@ -402,5 +455,38 @@ class GatePassController extends Controller
     public function exportDistanceReport(Request $request, \App\Services\ReportExportService $exportService)
     {
         return $exportService->exportDistanceReport($request);
+    }
+
+    public function searchLocation(Request $request)
+    {
+        $query = $request->input('q');
+        if (empty($query) || strlen($query) < 3) {
+            return response()->json([]);
+        }
+
+        // Cache key based on query
+        $cacheKey = 'geo_search_' . md5(strtolower($query));
+
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 86400, function () use ($query) { // 24 hours cache
+            try {
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'User-Agent' => config('app.name') . ' (' . config('app.url') . ')'
+                ])->get('https://nominatim.openstreetmap.org/search', [
+                            'format' => 'json',
+                            'q' => $query,
+                            'limit' => 50,
+                            'countrycodes' => 'in',
+                            'addressdetails' => 1
+                        ]);
+
+                if ($response->successful()) {
+                    return $response->json();
+                }
+                return [];
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Geocoding failed: ' . $e->getMessage());
+                return [];
+            }
+        });
     }
 }

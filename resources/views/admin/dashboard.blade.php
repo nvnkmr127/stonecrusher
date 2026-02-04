@@ -156,13 +156,9 @@
     <div class="row row-deck row-cards mb-3">
         <div class="col-12">
             <x-card>
-                <x-slot name="header">
-                    <div class="d-flex align-items-center">
-                        <div>Recent Projects</div>
-                        <div class="ms-auto">
-                            <a href="{{ route('projects.index') }}" class="btn btn-sm btn-primary">View All</a>
-                        </div>
-                    </div>
+                <x-slot name="header">Recent Projects</x-slot>
+                <x-slot name="actions">
+                    <a href="{{ route('projects.index') }}" class="btn btn-sm btn-primary">View All</a>
                 </x-slot>
 
                 <x-table>

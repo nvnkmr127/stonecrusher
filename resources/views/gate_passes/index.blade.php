@@ -1,17 +1,10 @@
 <x-tabler-layout>
     <x-slot name="header">
-        <div class="row align-items-center">
-            <div class="col">
-                <div class="mb-1">
-                    <x-breadcrumb>
-                        <x-breadcrumb-item href="{{ route('dashboard') }}">Dashboard</x-breadcrumb-item>
-                        <x-breadcrumb-item active>Gate Passes</x-breadcrumb-item>
-                    </x-breadcrumb>
-                </div>
-                <h2 class="page-title">Gate Passes</h2>
-                <div class="page-subtitle">Track vehicle movements and sales</div>
-            </div>
-            <div class="col-auto">
+        <x-page-header title="Gate Passes" subtitle="Track vehicle movements and sales" :breadcrumbs="[
+        ['label' => 'Dashboard', 'route' => 'dashboard'],
+        ['label' => 'Gate Passes', 'active' => true],
+    ]">
+            <x-slot name="actions">
                 <a href="{{ route('gate-passes.create') }}" class="btn btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
                         stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
@@ -35,8 +28,8 @@
                     </svg>
                     Daily Report
                 </a>
-            </div>
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     <div class="row row-deck row-cards">
@@ -108,13 +101,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($gp->status == 'completed')
-                                        <span class="badge bg-success">Completed</span>
-                                    @elseif($gp->status == 'cancelled')
-                                        <span class="badge bg-danger">Cancelled</span>
-                                    @else
-                                        <span class="badge bg-warning">Pending</span>
-                                    @endif
+                                    <x-status-badge :status="$gp->status->value ?? $gp->status" />
                                 </td>
                                 <td>
                                     @if($gp->transaction)
@@ -130,25 +117,22 @@
                                 <td>
                                     <div class="btn-list">
                                         @if($gp->status == 'completed' && $gp->paid_amount < $gp->total_amount)
-                                            <button type="button" class="btn btn-sm btn-outline-success"
-                                                onclick="openPaymentModal('{{ $gp->id }}', '{{ $gp->gate_pass_number }}', '{{ $gp->total_amount - $gp->paid_amount }}')">
+                                            <button type="button" class="btn btn-sm btn-outline-success" x-data
+                                                x-on:click="$dispatch('open-payment-modal', { id: '{{ $gp->id }}', number: '{{ $gp->gate_pass_number }}', balance: '{{ $gp->total_amount - $gp->paid_amount }}' })">
                                                 Pay
                                             </button>
                                         @endif
                                         <a href="{{ route('gate-passes.edit', $gp) }}"
                                             class="btn btn-sm btn-primary">Edit</a>
-                                        <!-- Add print button later -->
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
                                 <td colspan="10">
-                                    <x-empty-state
-                                        title="No Gate Passes Found"
+                                    <x-empty-state title="No Gate Passes Found"
                                         description="Try adjusting your search or create a new gate pass."
-                                        action='<a href="{{ route("gate-passes.create") }}" class="btn btn-primary">Create Gate Pass</a>'
-                                    />
+                                        action='<a href="{{ route("gate-passes.create") }}" class="btn btn-primary">Create Gate Pass</a>' />
                                 </td>
                             </tr>
                         @endforelse
@@ -162,61 +146,62 @@
         </div>
     </div>
 
-    <!-- Payment Modal -->
-    <div class="modal modal-blur fade" id="paymentModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <form id="paymentForm" action="" method="POST">
-                    @csrf
-                    <div class="modal-header">
-                        <h5 class="modal-title">Record Payment for <span id="modalGpNumber"></span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Amount Received</label>
-                            <input type="number" step="0.01" class="form-control" name="amount" id="modalAmount"
-                                required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Date</label>
-                            <input type="date" class="form-control" name="date" value="{{ date('Y-m-d') }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Payment Mode</label>
-                            <select class="form-select" name="payment_mode" required>
-                                <option value="cash">Cash</option>
-                                <option value="bank">Bank Transfer</option>
-                                <option value="upi">UPI</option>
-                                <option value="cheque">Cheque</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Remarks</label>
-                            <textarea class="form-control" name="remarks" rows="2"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn me-auto" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-success">Record Payment</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+</x-tabler-layout>
 
-    @push('scripts')
-        <script>
-            function openPaymentModal(id, number, balance) {
-                const form = document.getElementById('paymentForm');
-                form.action = `/gate-passes/${id}/payment`;
-
-                document.getElementById('modalGpNumber').textContent = number;
-                document.getElementById('modalAmount').value = balance; // Auto-fill balance
-
-                const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
-                modal.show();
+<x-modal name="payment-modal" :show="$errors->payment->isNotEmpty()" maxWidth="md" title="Record Payment">
+    <div x-data="{ 
+            gpId: '', 
+            gpNumber: '', 
+            amount: '',
+            init() {
+                window.addEventListener('open-payment-modal', event => {
+                    this.gpId = event.detail.id;
+                    this.gpNumber = event.detail.number;
+                    this.amount = event.detail.balance;
+                    $dispatch('open-modal', 'payment-modal');
+                });
             }
-        </script>
-    @endpush
+        }">
+        <form x-bind:action="`/gate-passes/${gpId}/payment`" method="POST">
+            @csrf
+
+            <p class="mb-4 text-sm text-secondary">
+                Recording payment for Gate Pass: <span class="font-bold text-primary" x-text="gpNumber"></span>
+            </p>
+
+            <div class="mb-3">
+                <label class="form-label required">Amount Received</label>
+                <input type="number" step="0.01" class="form-control" name="amount" x-model="amount" required>
+                @error('amount', 'payment') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label required">Date</label>
+                <input type="date" class="form-control" name="date" value="{{ date('Y-m-d') }}" required>
+                @error('date', 'payment') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label required">Payment Mode</label>
+                <select class="form-select" name="payment_mode" required>
+                    <option value="cash">Cash</option>
+                    <option value="bank">Bank Transfer</option>
+                    <option value="upi">UPI</option>
+                    <option value="cheque">Cheque</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Remarks</label>
+                <textarea class="form-control" name="remarks" rows="2"></textarea>
+            </div>
+
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" class="btn btn-ghost"
+                    x-on:click="$dispatch('close-modal', 'payment-modal')">Cancel</button>
+                <button type="submit" class="btn btn-success">Record Payment</button>
+            </div>
+        </form>
+    </div>
+</x-modal>
 </x-tabler-layout>

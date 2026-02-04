@@ -1,11 +1,7 @@
 <x-tabler-layout>
     <x-slot name="header">
-        <div class="row align-items-center">
-            <div class="col">
-                <h2 class="page-title">Clients</h2>
-                <div class="page-subtitle">Manage client information</div>
-            </div>
-            <div class="col-auto">
+        <x-page-header title="Clients" subtitle="Manage client information">
+            <x-slot name="actions">
                 <a href="{{ route('clients.create') }}" class="btn btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
                         stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
@@ -16,8 +12,8 @@
                     </svg>
                     Add Client
                 </a>
-            </div>
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     <div class="row row-deck row-cards">
@@ -70,11 +66,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($client->is_active)
-                                        <span class="badge bg-success">Active</span>
-                                    @else
-                                        <span class="badge bg-secondary">Inactive</span>
-                                    @endif
+                                    <x-status-badge :status="$client->is_active ? 'active' : 'inactive'" />
                                 </td>
                                 <td>{{ $client->created_at->format('M d, Y') }}</td>
                                 <td>
