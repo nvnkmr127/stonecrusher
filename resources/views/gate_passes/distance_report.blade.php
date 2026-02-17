@@ -23,10 +23,12 @@
                         <button type="submit" class="btn btn-primary">Filter</button>
                     </div>
                     <div class="ms-auto d-flex gap-2">
-                        <a href="{{ route('gate-passes.distance-report.export', ['start_date' => $startDate, 'end_date' => $endDate, 'format' => 'csv']) }}" class="btn btn-success">
+                        <a href="{{ route('gate-passes.distance-report.export', ['start_date' => $startDate, 'end_date' => $endDate, 'format' => 'csv']) }}"
+                            class="btn btn-success">
                             Export CSV
                         </a>
-                        <a href="{{ route('gate-passes.distance-report.export', ['start_date' => $startDate, 'end_date' => $endDate, 'format' => 'pdf']) }}" class="btn btn-danger">
+                        <a href="{{ route('gate-passes.distance-report.export', ['start_date' => $startDate, 'end_date' => $endDate, 'format' => 'pdf']) }}"
+                            class="btn btn-danger">
                             Export PDF
                         </a>
                         <button type="button" onclick="window.print()" class="btn btn-secondary">
@@ -241,9 +243,9 @@
                             <th>Location</th>
                             <th class="text-center">Trips</th>
                             <th class="text-end">Total Distance</th>
-                            <th class="text-end">Total Qty (Tons)</th>
+                            <th class="text-end">Total Qty (CFT)</th>
                             <th class="text-end">Cost/KM</th>
-                            <th class="text-end">Cost/Ton</th>
+                            <th class="text-end">Cost/CFT</th>
                             <th class="text-end">Total Cost</th>
                         </tr>
                     </thead>

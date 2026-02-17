@@ -46,7 +46,7 @@ class GatePassController extends Controller
         $vehicles = Vehicle::getCached();
         $metalTypes = MetalType::getCached();
 
-        $gpNumber = 'GP-' . date('Ymd') . '-' . str_pad(GatePass::whereDate('date', now()->format('Y-m-d'))->count() + 1, 4, '0', STR_PAD_LEFT);
+        $gpNumber = 'GP-' . date('Ymd') . '-' . str_pad(GatePass::where('date', '>=', now()->startOfDay())->where('date', '<=', now()->endOfDay())->count() + 1, 4, '0', STR_PAD_LEFT);
 
         $transportRate = Setting::get('rate_per_km', 0);
         $crusherLat = Setting::get('crusher_latitude', 0);
@@ -67,8 +67,9 @@ class GatePassController extends Controller
         $rules = [
             'gate_pass_number' => 'required|unique:gate_passes',
             'date' => 'required|date',
-            'vehicle_id' => 'required|exists:vehicles,id',
-            'client_id' => 'required|exists:clients,id',
+            'vehicle_id' => 'nullable|exists:vehicles,id',
+            'manual_vehicle_number' => 'nullable|required_without:vehicle_id|string|max:20',
+            'client_id' => 'nullable|exists:clients,id',
             'status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\GatePassStatus::class)],
             'remarks' => 'nullable|string',
             'delivery_location' => 'nullable|string|max:255',
@@ -80,11 +81,11 @@ class GatePassController extends Controller
         // Conditional Validation
         if ($status === \App\Enums\GatePassStatus::COMPLETED->value) {
             $rules['metal_type_id'] = 'required|exists:metal_types,id';
-            $rules['driver_name'] = 'required|string|max:255';
-            $rules['gross_weight'] = 'required|numeric|min:0';
-            $rules['tare_weight'] = 'required|numeric|min:0';
+            $rules['driver_name'] = 'nullable|string|max:255';
+            $rules['gross_weight'] = 'nullable|numeric|min:0';
+            $rules['tare_weight'] = 'nullable|numeric|min:0';
             $rules['net_weight'] = 'required|numeric|min:0';
-            $rules['total_amount'] = 'required|numeric|min:0';
+            $rules['total_amount'] = 'nullable|numeric|min:0';
         } else {
             // For pending, these are optional
             $rules['metal_type_id'] = 'nullable|exists:metal_types,id';
@@ -100,6 +101,19 @@ class GatePassController extends Controller
         // Check if date is closed
         \App\Services\DayClosureService::checkAllowed($validated['date']);
 
+        // Handle Manual Vehicle
+        if (empty($validated['vehicle_id']) && !empty($request->input('manual_vehicle_number'))) {
+            $vehicle = Vehicle::firstOrCreate(
+                ['registration_number' => $request->input('manual_vehicle_number')],
+                ['is_active' => true, 'transport_multiplier' => 1.0] // Default defaults
+            );
+            $validated['vehicle_id'] = $vehicle->id;
+        }
+
+        if (empty($validated['vehicle_id'])) {
+            return back()->withErrors(['vehicle_id' => 'Please select a vehicle or enter one manually.'])->withInput();
+        }
+
         // 1. Enforce Weight Logic
         $validated['gross_weight'] = floatval($validated['gross_weight'] ?? 0);
         $validated['tare_weight'] = floatval($validated['tare_weight'] ?? 0);
@@ -113,8 +127,16 @@ class GatePassController extends Controller
 
         // 2. Enforce Financial Logic (if Completed)
         if ($status === \App\Enums\GatePassStatus::COMPLETED->value) {
-            $qty = $validated['loading_quantity'] > 0 ? $validated['loading_quantity'] : $validated['net_weight'];
-            $rate = floatval($request->input('rate_per_ton', 0));
+            $qty = ($request->input('loading_quantity') > 0) ? $request->input('loading_quantity') : $validated['net_weight'];
+
+            // Fetch rate from MetalType if not provided in request (since we removed it from UI)
+            $rate = $request->input('rate_per_ton');
+            if ($rate === null && !empty($validated['metal_type_id'])) {
+                $metalType = \App\Models\MetalType::find($validated['metal_type_id']);
+                $rate = $metalType ? $metalType->unit_price : 0;
+            }
+            $rate = floatval($rate ?? 0);
+
             $diesel = floatval($request->input('diesel_amount', 0));
             $transport = 0;
 
@@ -126,10 +148,10 @@ class GatePassController extends Controller
             $calculatedTotal = ($qty * $rate) + $diesel + $transport;
 
             // Override with server-calculated entries
-            $validated['loading_quantity'] = $qty; // Ensure consistency
+            $validated['loading_quantity'] = $qty;
             $validated['rate_per_ton'] = $rate;
             $validated['diesel_amount'] = $diesel;
-            $validated['transport_cost'] = floatval($request->input('transport_cost', 0)); // Trust client for now or recalc if possible
+            $validated['transport_cost'] = floatval($request->input('transport_cost', 0));
             $validated['total_amount'] = round($calculatedTotal, 2);
         }
 
@@ -186,15 +208,15 @@ class GatePassController extends Controller
     {
         $gate_pass = GatePass::findOrFail($id);
 
-        $validated = $request->validate([
+        $rules = [
             'date' => 'required|date',
             'vehicle_id' => 'required|exists:vehicles,id',
             'client_id' => 'nullable|exists:clients,id',
-            'metal_type_id' => 'required|exists:metal_types,id',
-            'driver_name' => 'required|string|max:255',
+            'metal_type_id' => 'nullable|exists:metal_types,id',
+            'driver_name' => 'nullable|string|max:255',
             'gross_weight' => 'nullable|numeric|min:0',
             'tare_weight' => 'nullable|numeric|min:0',
-            'net_weight' => 'nullable|numeric|min:0',
+            'net_weight' => 'required|numeric|min:0',
             'loading_quantity' => 'nullable|numeric|min:0',
             'rate_per_ton' => 'nullable|numeric|min:0',
             'total_amount' => 'nullable|numeric|min:0',
@@ -206,7 +228,13 @@ class GatePassController extends Controller
             'distance_km' => 'nullable|numeric|min:0',
             'transport_cost' => 'nullable|numeric|min:0',
             'transport_is_billable' => 'nullable|boolean',
-        ]);
+        ];
+
+        if ($request->input('status') === \App\Enums\GatePassStatus::COMPLETED->value) {
+            $rules['metal_type_id'] = 'required|exists:metal_types,id';
+        }
+
+        $validated = $request->validate($rules);
 
         // Check if new date is closed
         \App\Services\DayClosureService::checkAllowed($validated['date']);
@@ -227,16 +255,26 @@ class GatePassController extends Controller
         // Note: partial updates might be tricky if fields are missing, but validation requires them for 'completed'
         if ($validated['status'] === \App\Enums\GatePassStatus::COMPLETED->value) {
             $qty = ($validated['loading_quantity'] ?? 0) > 0 ? $validated['loading_quantity'] : $validated['net_weight'];
-            $rate = floatval($request->input('rate_per_ton', 0));
-            $diesel = floatval($request->input('diesel_amount', 0));
+
+            // Fetch rate from MetalType if not provided in request (since we removed it from UI)
+            $rate = $request->input('rate_per_ton');
+            if ($rate === null && !empty($validated['metal_type_id'])) {
+                $metalType = \App\Models\MetalType::find($validated['metal_type_id']);
+                $rate = $metalType ? $metalType->unit_price : ($gate_pass->rate_per_ton ?? 0);
+            }
+            $rate = floatval($rate ?? 0);
+
+            $diesel = floatval($request->input('diesel_amount', $gate_pass->diesel_amount ?? 0));
             $transport = 0;
 
             if ($request->boolean('transport_is_billable')) {
                 $transport = floatval($request->input('transport_cost', 0));
             }
 
+            // Total = (Qty * Rate) + Diesel + Transport
             $calculatedTotal = ($qty * $rate) + $diesel + $transport;
 
+            // Override with server-calculated entries
             $validated['loading_quantity'] = $qty;
             $validated['rate_per_ton'] = $rate;
             $validated['diesel_amount'] = $diesel;
@@ -283,7 +321,9 @@ class GatePassController extends Controller
         $date = $request->input('date', now()->toDateString());
 
         // Base Query
-        $baseQuery = GatePass::whereDate('date', $date)->where('status', \App\Enums\GatePassStatus::COMPLETED->value);
+        $baseQuery = GatePass::where('date', '>=', \Carbon\Carbon::parse($date)->startOfDay())
+            ->where('date', '<=', \Carbon\Carbon::parse($date)->endOfDay())
+            ->where('status', \App\Enums\GatePassStatus::COMPLETED->value);
 
         // Overall Summary
         $summary = [
@@ -296,7 +336,8 @@ class GatePassController extends Controller
 
         // Metal-wise Breakdown
         $metalStats = GatePass::with('metalType')
-            ->whereDate('date', $date)
+            ->where('date', '>=', \Carbon\Carbon::parse($date)->startOfDay())
+            ->where('date', '<=', \Carbon\Carbon::parse($date)->endOfDay())
             ->where('status', \App\Enums\GatePassStatus::COMPLETED->value)
             ->select(
                 'metal_type_id',

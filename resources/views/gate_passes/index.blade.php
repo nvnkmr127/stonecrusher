@@ -84,7 +84,7 @@
                                     @if($gp->loading_quantity > 0)
                                         {{ $gp->loading_quantity }} CFT
                                     @elseif($gp->net_weight > 0)
-                                        {{ $gp->net_weight }} Tons
+                                        {{ $gp->net_weight }} CFT
                                     @else
                                         -
                                     @endif

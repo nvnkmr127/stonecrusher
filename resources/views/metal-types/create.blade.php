@@ -16,8 +16,7 @@
 
                     <x-form.input name="name" label="Metal Type Name" required />
                     <x-form.textarea name="description" label="Description" rows="3" />
-                    <x-form.input name="unit_price" label="Unit Price" type="number" step="0.01" :value="'0.00'"
-                        required />
+
                     <x-form.checkbox name="is_active" label="Active" :checked="true" />
 
                     <hr class="my-4">

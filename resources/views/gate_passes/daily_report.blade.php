@@ -166,7 +166,7 @@
                             <tr>
                                 <th>Material / Metal Type</th>
                                 <th>No. of Loads</th>
-                                <th>Total Quantity (Tons)</th>
+                                <th>Total Quantity (CFT)</th>
                                 <th>Total Volume (CFT)</th>
                                 <th class="text-end">Total Amount</th>
                             </tr>
@@ -178,7 +178,7 @@
                                     <td>{{ $stat->count }}</td>
                                     <td>
                                         @if($stat->total_tons > 0)
-                                            {{ number_format($stat->total_tons, 2) }} Tons
+                                            {{ number_format($stat->total_tons, 2) }} CFT
                                         @else
                                             -
                                         @endif

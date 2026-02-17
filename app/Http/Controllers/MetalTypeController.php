@@ -23,7 +23,7 @@ class MetalTypeController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:metal_types',
             'description' => 'nullable|string',
-            'unit_price' => 'required|numeric|min:0',
+            'unit_price' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 
@@ -42,7 +42,7 @@ class MetalTypeController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:metal_types,name,' . $metalType->id,
             'description' => 'nullable|string',
-            'unit_price' => 'required|numeric|min:0',
+            'unit_price' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 
