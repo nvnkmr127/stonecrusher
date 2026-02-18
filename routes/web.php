@@ -97,9 +97,16 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
     Route::get('gate-passes/search-location', [GatePassController::class, 'searchLocation'])->name('gate-passes.search-location');
     Route::post('gate-passes/{gate_pass}/payment', [GatePassController::class, 'recordPayment'])->name('gate-passes.payment');
     Route::resource('gate-passes', GatePassController::class);
+    // Vehicle Management
     Route::resource('vehicles', VehicleController::class);
+    Route::resource('vehicle-maintenance', App\Http\Controllers\VehicleMaintenanceController::class);
+    Route::post('vehicle-maintenance/{vehicle_maintenance}/complete', [App\Http\Controllers\VehicleMaintenanceController::class, 'markComplete'])->name('vehicle-maintenance.complete');
     Route::resource('projects', ProjectController::class);
     Route::resource('metal-types', MetalTypeController::class);
+
+    // Diesel Management
+    Route::resource('diesel', App\Http\Controllers\DieselEntryController::class);
+    Route::resource('diesel-locations', App\Http\Controllers\DieselLocationController::class);
 
     // Client Transactions
     Route::get('clients/{client}/transactions/create', [App\Http\Controllers\ClientTransactionController::class, 'create'])->name('clients.transactions.create');

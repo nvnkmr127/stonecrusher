@@ -33,7 +33,9 @@
                             <th>Registration Number</th>
                             <th>Type</th>
                             <th>Model</th>
+                            <th>Assigned Location</th>
                             <th>Status</th>
+                            <th>Ops Status</th>
                             <th>Created</th>
                             <th>Actions</th>
                         </tr>
@@ -45,22 +47,55 @@
                                 <td>{{ $vehicle->type ?? '-' }}</td>
                                 <td>{{ $vehicle->model ?? '-' }}</td>
                                 <td>
+                                    @if($vehicle->dieselLocation)
+                                        <span class="badge bg-azure text-azure-fg">
+                                            {{ $vehicle->dieselLocation->name }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted small">Not assigned</span>
+                                    @endif
+                                </td>
+                                <td>
                                     @if($vehicle->is_active)
                                         <span class="badge bg-success">Active</span>
                                     @else
                                         <span class="badge bg-secondary">Inactive</span>
                                     @endif
                                 </td>
+                                <td>
+                                    <span
+                                        class="badge bg-{{ match ($vehicle->operational_status) { 'Operational' => 'success', 'Under Maintenance' => 'azure', 'Broken Down' => 'danger', default => 'secondary'} }}">
+                                        {{ $vehicle->operational_status }}
+                                    </span>
+                                </td>
                                 <td>{{ $vehicle->created_at->format('M d, Y') }}</td>
                                 <td>
                                     <div class="btn-list">
                                         <a href="{{ route('vehicles.edit', $vehicle) }}"
-                                            class="btn btn-sm btn-primary">Edit</a>
+                                            class="btn btn-sm btn-outline-primary">Edit</a>
+
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-ghost-secondary dropdown-toggle" type="button"
+                                                data-bs-toggle="dropdown">
+                                                History
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <a class="dropdown-item"
+                                                    href="{{ route('vehicle-maintenance.index', ['vehicle_id' => $vehicle->id]) }}">
+                                                    Maintenance Records
+                                                </a>
+                                                <a class="dropdown-item"
+                                                    href="{{ route('diesel.index', ['vehicle_id' => $vehicle->id]) }}">
+                                                    Diesel Entries
+                                                </a>
+                                            </div>
+                                        </div>
+
                                         <form action="{{ route('vehicles.destroy', $vehicle) }}" method="POST"
                                             class="d-inline" onsubmit="return confirm('Are you sure?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                            <button type="submit" class="btn btn-sm btn-ghost-danger">Delete</button>
                                         </form>
                                     </div>
                                 </td>

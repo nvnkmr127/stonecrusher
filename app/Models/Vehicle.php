@@ -14,10 +14,22 @@ class Vehicle extends Model
     protected $fillable = [
         'registration_number',
         'type',
+        'diesel_location_id',
         'model',
         'transport_multiplier',
         'is_active',
+        'operational_status',
     ];
+
+    public function dieselLocation()
+    {
+        return $this->belongsTo(DieselLocation::class);
+    }
+
+    public function maintenances()
+    {
+        return $this->hasMany(VehicleMaintenance::class);
+    }
 
     protected function casts(): array
     {

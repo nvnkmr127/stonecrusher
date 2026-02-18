@@ -35,6 +35,20 @@ class AdminDashboardController extends Controller
             'amount' => \App\Models\GatePass::whereBetween('date', [$todayStart, $todayEnd])->sum('total_amount'),
         ];
 
+        $dieselStats = [
+            'today_liters' => \App\Models\DieselEntry::whereBetween('date', [$todayStart, $todayEnd])->sum('liters'),
+            'month_liters' => \App\Models\DieselEntry::whereMonth('date', now()->month)
+                ->whereYear('date', now()->year)
+                ->sum('liters'),
+        ];
+
+        $maintenanceStats = [
+            'this_month_cost' => \App\Models\VehicleMaintenance::whereMonth('date', now()->month)
+                ->whereYear('date', now()->year)
+                ->sum('cost'),
+            'pending_reminders' => 0, // Placeholder for future
+        ];
+
         $systemHealth = [
             'database' => 'Online', // Default
             'disk_free' => $this->humanFileSize(disk_free_space(base_path())),
@@ -48,7 +62,7 @@ class AdminDashboardController extends Controller
             $systemHealth['database'] = 'Offline';
         }
 
-        return view('admin.dashboard', compact('projectStats', 'recentProjects', 'totalClients', 'vehicleStats', 'dailyStats', 'systemHealth'));
+        return view('admin.dashboard', compact('projectStats', 'recentProjects', 'totalClients', 'vehicleStats', 'dailyStats', 'systemHealth', 'dieselStats', 'maintenanceStats'));
     }
 
     private function humanFileSize($size, $unit = "")

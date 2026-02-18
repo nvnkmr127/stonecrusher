@@ -16,6 +16,21 @@
 
                     <x-form.input name="registration_number" label="Registration Number" required />
                     <x-form.input name="type" label="Type" placeholder="e.g., Truck, Dumper" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Default/Current Location</label>
+                        <select name="diesel_location_id"
+                            class="form-select @error('diesel_location_id') is-invalid @enderror">
+                            <option value="">None (Select Location)</option>
+                            @foreach($locations as $location)
+                                <option value="{{ $location->id }}" {{ old('diesel_location_id') == $location->id ? 'selected' : '' }}>
+                                    {{ $location->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('diesel_location_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <small class="form-hint">Assigning a location will auto-select it during diesel entry.</small>
+                    </div>
                     <x-form.input name="model" label="Model" />
                     <x-form.input name="transport_multiplier" label="Transport Multiplier" type="number" step="0.01"
                         value="1.00" />

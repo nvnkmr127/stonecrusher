@@ -9,13 +9,14 @@ class VehicleController extends Controller
 {
     public function index()
     {
-        $vehicles = Vehicle::latest()->paginate(15);
+        $vehicles = Vehicle::with('dieselLocation')->latest()->paginate(15);
         return view('vehicles.index', compact('vehicles'));
     }
 
     public function create()
     {
-        return view('vehicles.create');
+        $locations = \App\Models\DieselLocation::getActive();
+        return view('vehicles.create', compact('locations'));
     }
 
     public function store(Request $request)
@@ -23,6 +24,7 @@ class VehicleController extends Controller
         $validated = $request->validate([
             'registration_number' => 'required|string|max:255|unique:vehicles',
             'type' => 'nullable|string|max:255',
+            'diesel_location_id' => 'nullable|exists:diesel_locations,id',
             'model' => 'nullable|string|max:255',
             'transport_multiplier' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
@@ -35,7 +37,8 @@ class VehicleController extends Controller
 
     public function edit(Vehicle $vehicle)
     {
-        return view('vehicles.edit', compact('vehicle'));
+        $locations = \App\Models\DieselLocation::getActive();
+        return view('vehicles.edit', compact('vehicle', 'locations'));
     }
 
     public function update(Request $request, Vehicle $vehicle)
@@ -43,6 +46,7 @@ class VehicleController extends Controller
         $validated = $request->validate([
             'registration_number' => 'required|string|max:255|unique:vehicles,registration_number,' . $vehicle->id,
             'type' => 'nullable|string|max:255',
+            'diesel_location_id' => 'nullable|exists:diesel_locations,id',
             'model' => 'nullable|string|max:255',
             'transport_multiplier' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',

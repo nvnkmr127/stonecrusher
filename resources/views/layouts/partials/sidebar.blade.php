@@ -167,6 +167,37 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('vehicle-maintenance.*') ? 'active' : '' }}"
+                        href="{{ route('vehicle-maintenance.index') }}">
+                        <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path
+                                    d="M7 10h3v-3l-3.5 -3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1 -3 3l-6 -6a6 6 0 0 1 -8 -8l3.5 3.5" />
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">Maintenance Log</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('diesel.*') ? 'active' : '' }}"
+                        href="{{ route('diesel.index') }}">
+                        <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M3 13l4 4l10 -10" />
+                                <path d="M21 12l-9 9l-9 -9" />
+                                <path d="M12 3l0 9" />
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">Diesel Register</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('metal-types.*') ? 'active' : '' }}"
                         href="{{ route('metal-types.index') }}">
                         <span class="nav-link-icon">
