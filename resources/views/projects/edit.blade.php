@@ -17,8 +17,33 @@
 
                     <x-form.input name="name" label="Project Name" :value="$project->name" required />
 
-                    <x-form.select name="client_id" label="Client" :options="$clients->pluck('name', 'id')->toArray()"
-                        :selected="$project->client_id" required />
+                    <div class="mb-3">
+                        <label class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="is_internal" value="1" id="is_internal"
+                                {{ $project->is_internal ? 'checked' : '' }} onchange="toggleClientRequired(this.checked)">
+                            <span class="form-check-label">Internal Project (Our Own)</span>
+                        </label>
+                    </div>
+
+                    <div id="client_selection" style="{{ $project->is_internal ? 'display: none;' : '' }}">
+                        <x-form.select name="client_id" label="Client" :options="$clients->pluck('name', 'id')->toArray()"
+                            :selected="$project->client_id" :required="!$project->is_internal" />
+                    </div>
+
+                    <script>
+                        function toggleClientRequired(isInternal) {
+                            const clientSelect = document.querySelector('select[name="client_id"]');
+                            const clientContainer = document.getElementById('client_selection');
+                            if (isInternal) {
+                                clientSelect.value = '';
+                                clientSelect.removeAttribute('required');
+                                clientContainer.style.display = 'none';
+                            } else {
+                                clientSelect.setAttribute('required', 'required');
+                                clientContainer.style.display = 'block';
+                            }
+                        }
+                    </script>
 
                     <x-form.input name="location" label="Project Location" :value="$project->location"
                         placeholder="e.g., Site Address, City" />

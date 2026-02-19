@@ -16,8 +16,33 @@
 
                     <x-form.input name="name" label="Project Name" required />
 
-                    <x-form.select name="client_id" label="Client" :options="$clients->pluck('name', 'id')->toArray()"
-                        required />
+                    <div class="mb-3">
+                        <label class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="is_internal" value="1" id="is_internal"
+                                onchange="toggleClientRequired(this.checked)">
+                            <span class="form-check-label">Internal Project (Our Own)</span>
+                        </label>
+                    </div>
+
+                    <div id="client_selection">
+                        <x-form.select name="client_id" label="Client" :options="$clients->pluck('name', 'id')->toArray()"
+                            required />
+                    </div>
+
+                    <script>
+                        function toggleClientRequired(isInternal) {
+                            const clientSelect = document.querySelector('select[name="client_id"]');
+                            const clientContainer = document.getElementById('client_selection');
+                            if (isInternal) {
+                                clientSelect.value = '';
+                                clientSelect.removeAttribute('required');
+                                clientContainer.style.display = 'none';
+                            } else {
+                                clientSelect.setAttribute('required', 'required');
+                                clientContainer.style.display = 'block';
+                            }
+                        }
+                    </script>
 
                     <x-form.address name="location" label="Project Location" placeholder="e.g., Site Address, City" />
 

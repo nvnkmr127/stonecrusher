@@ -45,8 +45,11 @@
                                 <td>
                                     <a href="{{ route('projects.show', $project) }}"
                                         class="text-reset fw-bold">{{ $project->name }}</a>
+                                    @if($project->is_internal)
+                                        <span class="badge bg-blue-lt ms-1">Internal</span>
+                                    @endif
                                 </td>
-                                <td>{{ $project->client->name }}</td>
+                                <td>{{ $project->client->name ?? 'Internal / Our Own' }}</td>
                                 <td>{{ $project->location ?? '-' }}</td>
                                 <td>{{ $project->estimated_quantity ? number_format($project->estimated_quantity, 2) : '-' }}
                                 </td>

@@ -78,7 +78,12 @@
                                 </td>
                                 <td>{{ $gp->date->format('d M, Y h:i A') }}</td>
                                 <td>{{ $gp->vehicle->vehicle_number }}</td>
-                                <td>{{ $gp->client->name ?? '-' }}</td>
+                                <td>
+                                    {{ $gp->client->name ?? $gp->manual_customer_name ?? '-' }}
+                                    @if($gp->project)
+                                        <div class="small text-muted">{{ $gp->project->name }}</div>
+                                    @endif
+                                </td>
                                 <td>{{ $gp->metalType->name ?? '-' }}</td>
                                 <td>
                                     @if($gp->loading_quantity > 0)
@@ -104,11 +109,13 @@
                                     <x-status-badge :status="$gp->status->value ?? $gp->status" />
                                 </td>
                                 <td>
-                                    @if($gp->transaction)
+                                    @if($gp->project && $gp->project->is_internal)
+                                        <span class="badge bg-info-lt">Internal (No Charge)</span>
+                                    @elseif($gp->transaction)
                                         <span class="badge bg-teal" title="Transaction Ref: {{ $gp->transaction->id }}">
                                             Billed: ₹{{ number_format($gp->transaction->amount, 0) }}
                                         </span>
-                                    @elseif($gp->status == 'completed' && $gp->client_id)
+                                    @elseif($gp->status->value == 'completed' && $gp->client_id)
                                         <span class="badge bg-warning">Unbilled</span>
                                     @else
                                         <span class="text-muted">-</span>

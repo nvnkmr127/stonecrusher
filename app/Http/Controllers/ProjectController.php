@@ -16,7 +16,7 @@ class ProjectController extends Controller
 
     public function create()
     {
-        $clients = Client::where('is_active', true)->get();
+        $clients = Client::where('is_active', true)->orderBy('name')->get();
         return view('projects.create', compact('clients'));
     }
 
@@ -24,7 +24,8 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'client_id' => 'required|exists:clients,id',
+            'client_id' => 'required_unless:is_internal,1|nullable|exists:clients,id',
+            'is_internal' => 'boolean',
             'location' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'estimated_quantity' => 'nullable|numeric|min:0',
@@ -54,7 +55,8 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'client_id' => 'required|exists:clients,id',
+            'client_id' => 'required_unless:is_internal,1|nullable|exists:clients,id',
+            'is_internal' => 'boolean',
             'location' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'estimated_quantity' => 'nullable|numeric|min:0',

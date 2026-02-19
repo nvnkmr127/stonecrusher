@@ -24,10 +24,13 @@
         <div class="col-12">
             <form action="{{ route('gate-passes.update', $gatePass->id) }}" method="POST" 
                 x-data="gatePassEditForm({
-                    netWeight: {{ old('net_weight', $gatePass->net_weight) }},
-                    transportCost: {{ old('transport_cost', $gatePass->transport_cost ?? 0) }},
+                    netWeight: {{ (float) old('net_weight', $gatePass->net_weight) }},
+                    transportCost: {{ (float) old('transport_cost', $gatePass->transport_cost ?? 0) }},
                     isBillable: {{ old('transport_is_billable', $gatePass->transport_is_billable) ? 'true' : 'false' }},
-                    clientId: '{{ old('client_id', $gatePass->client_id) }}'
+                    clientId: {{ Illuminate\Support\Js::from(old('client_id', $gatePass->client_id)) }},
+                    projectId: {{ Illuminate\Support\Js::from(old('project_id', $gatePass->project_id)) }},
+                    manualCustomerName: {{ Illuminate\Support\Js::from(old('manual_customer_name', $gatePass->manual_customer_name)) }},
+                    destinationType: {{ Illuminate\Support\Js::from(old('manual_customer_name', $gatePass->manual_customer_name) ? 'regular' : ($gatePass->project && $gatePass->project->is_internal ? 'internal' : 'registered')) }}
                 })">
                 @csrf
                 @method('PUT')
@@ -75,18 +78,109 @@
                                 <hr class="my-2 opacity-50">
                             </div>
 
-                            <!-- Section 2: Order Details -->
-                            <div class="col-md-6">
+                            <!-- Section 2: Destination Selection -->
+                            <div class="col-12 mb-2">
+                                <label class="form-label font-bold mb-2">Selling To / Destination</label>
+                                <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column flex-md-row gap-2">
+                                    <label class="form-selectgroup-item flex-fill">
+                                        <input type="radio" name="destination_type" value="registered" class="form-selectgroup-input" x-model="destinationType" @change="onDestinationTypeChange()">
+                                        <span class="form-selectgroup-label d-flex align-items-center p-3">
+                                            <span class="me-3">
+                                                <span class="form-selectgroup-check"></span>
+                                            </span>
+                                            <span class="form-selectgroup-label-content">
+                                                <span class="form-selectgroup-title fw-bold">Selling to Client</span>
+                                                <span class="text-muted">Registered account</span>
+                                            </span>
+                                        </span>
+                                    </label>
+                                    <label class="form-selectgroup-item flex-fill">
+                                        <input type="radio" name="destination_type" value="regular" class="form-selectgroup-input" x-model="destinationType" @change="onDestinationTypeChange()">
+                                        <span class="form-selectgroup-label d-flex align-items-center p-3">
+                                            <span class="me-3">
+                                                <span class="form-selectgroup-check"></span>
+                                            </span>
+                                            <span class="form-selectgroup-label-content">
+                                                <span class="form-selectgroup-title fw-bold">Regular Sale</span>
+                                                <span class="text-muted">Enter name manually</span>
+                                            </span>
+                                        </span>
+                                    </label>
+                                    <label class="form-selectgroup-item flex-fill">
+                                        <input type="radio" name="destination_type" value="internal" class="form-selectgroup-input" x-model="destinationType" @change="onDestinationTypeChange()">
+                                        <span class="form-selectgroup-label d-flex align-items-center p-3">
+                                            <span class="me-3">
+                                                <span class="form-selectgroup-check"></span>
+                                            </span>
+                                            <span class="form-selectgroup-label-content">
+                                                <span class="form-selectgroup-title fw-bold">Internal Project</span>
+                                                <span class="text-muted">Own usage</span>
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Registered Mode Fields -->
+                            <div class="col-md-6" x-show="destinationType === 'registered'" x-transition>
                                 <div class="mb-3">
-                                    <label class="form-label">Client / Customer</label>
+                                    <label class="form-label required">Client / Customer</label>
                                     <select class="form-select @error('client_id') is-invalid @enderror"
-                                        name="client_id" x-model="clientId" @change="if(clientId) isBillable = true">
-                                        <option value="">Select Client (Optional)</option>
+                                        name="client_id" x-model="clientId" :required="destinationType === 'registered'">
+                                        <option value="">Select Client</option>
                                         @foreach($clients as $client)
                                             <option value="{{ $client->id }}" {{ old('client_id', $gatePass->client_id) == $client->id ? 'selected' : '' }}>{{ $client->name }}</option>
                                         @endforeach
                                     </select>
                                     <x-input-error :messages="$errors->get('client_id')" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-6" x-show="destinationType === 'registered'" x-transition>
+                                <div class="mb-3">
+                                    <label class="form-label">Project (Optional)</label>
+                                    <select class="form-select @error('project_id') is-invalid @enderror"
+                                        name="project_id" x-model="projectId" @change="onProjectChange($event)">
+                                        <option value="">Select Project</option>
+                                        @foreach($projects->where('is_internal', false) as $project)
+                                            <option value="{{ $project->id }}" 
+                                                data-client-id="{{ $project->client_id }}"
+                                                {{ old('project_id', $gatePass->project_id) == $project->id ? 'selected' : '' }}>
+                                                {{ $project->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('project_id')" />
+                                </div>
+                            </div>
+
+                            <!-- Regular Sale Mode Fields -->
+                            <div class="col-md-12" x-show="destinationType === 'regular'" x-transition>
+                                <div class="mb-3">
+                                    <label class="form-label required">Customer Name</label>
+                                    <input type="text" class="form-control @error('manual_customer_name') is-invalid @enderror"
+                                        name="manual_customer_name" x-model="manualCustomerName"
+                                        placeholder="Enter Customer Name" :required="destinationType === 'regular'">
+                                    <x-input-error :messages="$errors->get('manual_customer_name')" />
+                                </div>
+                            </div>
+
+                            <!-- Internal Mode Fields -->
+                            <div class="col-md-12" x-show="destinationType === 'internal'" x-transition>
+                                <div class="mb-3">
+                                    <label class="form-label required">Internal Project</label>
+                                    <select class="form-select @error('project_id') is-invalid @enderror"
+                                        name="project_id" x-model="projectId" @change="onProjectChange($event)" :required="destinationType === 'internal'">
+                                        <option value="">Select Internal Project</option>
+                                        @foreach($projects->where('is_internal', true) as $project)
+                                            <option value="{{ $project->id }}" 
+                                                data-is-internal="1"
+                                                {{ old('project_id', $gatePass->project_id) == $project->id ? 'selected' : '' }}>
+                                                {{ $project->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('project_id')" />
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -161,14 +255,64 @@
                     netWeight: initial.netWeight,
                     transportCost: initial.transportCost,
                     clientId: initial.clientId,
+                    projectId: initial.projectId,
+                    manualCustomerName: initial.manualCustomerName,
+                    destinationType: initial.destinationType,
                     isBillable: initial.isBillable,
 
                     init() {
                         this.$watch('clientId', (value) => {
-                            if (value) {
+                            if (value && this.destinationType === 'registered') {
                                 this.isBillable = true;
                             }
                         });
+
+                        this.$watch('manualCustomerName', (value) => {
+                            if (value && this.destinationType === 'regular') {
+                                this.isBillable = true;
+                            }
+                        });
+
+                        this.$watch('destinationType', (value) => {
+                            if (value === 'registered' && this.clientId) {
+                                this.isBillable = true;
+                            }
+                            if (value === 'regular' && this.manualCustomerName) {
+                                this.isBillable = true;
+                            }
+                            if (value === 'internal') {
+                                this.isBillable = false;
+                            }
+                        });
+                    },
+
+                    onDestinationTypeChange() {
+                        this.clientId = '';
+                        this.projectId = '';
+                        this.manualCustomerName = '';
+                        this.isBillable = false;
+                    },
+
+                    onProjectChange(e) {
+                        if (!this.projectId) return;
+
+                        const select = e ? e.target : document.querySelector('select[name="project_id"]');
+                        if (!select) return;
+
+                        const option = select.options[select.selectedIndex];
+                        
+                        if (option) {
+                            const clientId = option.getAttribute('data-client-id');
+                            const isInternal = option.getAttribute('data-is-internal') === '1';
+
+                            if (this.destinationType === 'registered' && clientId) {
+                                this.clientId = clientId;
+                            }
+
+                            if (isInternal || this.destinationType === 'internal') {
+                                this.isBillable = false;
+                            }
+                        }
                     }
                 }));
             });

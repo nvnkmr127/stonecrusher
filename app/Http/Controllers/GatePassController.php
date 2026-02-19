@@ -19,7 +19,7 @@ class GatePassController extends Controller
      */
     public function index()
     {
-        $gatePasses = GatePass::with(['client', 'vehicle', 'metalType', 'transaction'])
+        $gatePasses = GatePass::with(['client', 'project', 'vehicle', 'metalType', 'transaction'])
             ->when(request('search'), function ($query, $search) {
                 $query->where('gate_pass_number', 'like', "%{$search}%")
                     ->orWhere('driver_name', 'like', "%{$search}%")
@@ -42,7 +42,8 @@ class GatePassController extends Controller
      */
     public function create()
     {
-        $clients = Client::where('is_active', true)->get();
+        $clients = Client::where('is_active', true)->orderBy('name')->get();
+        $projects = \App\Models\Project::where('status', 'active')->orderBy('name')->get();
         $vehicles = Vehicle::getCached();
         $metalTypes = MetalType::getCached();
 
@@ -54,7 +55,7 @@ class GatePassController extends Controller
         $defaultRoundTrip = (bool) Setting::get('default_round_trip', false);
         $destinations = DeliveryDestination::getCached();
 
-        return view('gate_passes.create', compact('clients', 'vehicles', 'metalTypes', 'gpNumber', 'transportRate', 'crusherLat', 'crusherLon', 'destinations', 'defaultRoundTrip'));
+        return view('gate_passes.create', compact('clients', 'projects', 'vehicles', 'metalTypes', 'gpNumber', 'transportRate', 'crusherLat', 'crusherLon', 'destinations', 'defaultRoundTrip'));
     }
 
     /**
@@ -70,6 +71,8 @@ class GatePassController extends Controller
             'vehicle_id' => 'nullable|exists:vehicles,id',
             'manual_vehicle_number' => 'nullable|required_without:vehicle_id|string|max:20',
             'client_id' => 'nullable|exists:clients,id',
+            'manual_customer_name' => 'nullable|string|max:255',
+            'project_id' => 'nullable|exists:projects,id',
             'status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\GatePassStatus::class)],
             'remarks' => 'nullable|string',
             'delivery_location' => 'nullable|string|max:255',
@@ -147,6 +150,14 @@ class GatePassController extends Controller
             // Total = (Qty * Rate) + Diesel + Transport
             $calculatedTotal = ($qty * $rate) + $diesel + $transport;
 
+            // Override for internal projects
+            if (!empty($validated['project_id'])) {
+                $project = \App\Models\Project::find($validated['project_id']);
+                if ($project && $project->is_internal) {
+                    $calculatedTotal = 0;
+                }
+            }
+
             // Override with server-calculated entries
             $validated['loading_quantity'] = $qty;
             $validated['rate_per_ton'] = $rate;
@@ -158,7 +169,7 @@ class GatePassController extends Controller
         return \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $request) {
             $gatePass = GatePass::create($validated);
 
-            if ($gatePass->status === \App\Enums\GatePassStatus::COMPLETED && $gatePass->client_id) {
+            if ($gatePass->status === \App\Enums\GatePassStatus::COMPLETED && ($gatePass->client_id || $gatePass->manual_customer_name)) {
                 \App\Events\GatePassCompleted::dispatch($gatePass);
             }
 
@@ -190,7 +201,8 @@ class GatePassController extends Controller
      */
     public function edit(GatePass $gate_pass)
     {
-        $clients = Client::where('is_active', true)->get();
+        $clients = Client::where('is_active', true)->orderBy('name')->get();
+        $projects = \App\Models\Project::orderBy('name')->get();
         $vehicles = Vehicle::where('is_active', true)->get();
         $metalTypes = MetalType::all();
         $transportRate = Setting::get('rate_per_km', 0);
@@ -198,7 +210,7 @@ class GatePassController extends Controller
         $crusherLon = Setting::get('crusher_longitude', 0);
         $destinations = DeliveryDestination::orderBy('name')->get();
 
-        return view('gate_passes.edit', compact('gate_pass', 'clients', 'vehicles', 'metalTypes', 'transportRate', 'crusherLat', 'crusherLon', 'destinations'));
+        return view('gate_passes.edit', compact('gate_pass', 'clients', 'projects', 'vehicles', 'metalTypes', 'transportRate', 'crusherLat', 'crusherLon', 'destinations'));
     }
 
     /**
@@ -212,6 +224,8 @@ class GatePassController extends Controller
             'date' => 'required|date',
             'vehicle_id' => 'required|exists:vehicles,id',
             'client_id' => 'nullable|exists:clients,id',
+            'manual_customer_name' => 'nullable|string|max:255',
+            'project_id' => 'nullable|exists:projects,id',
             'metal_type_id' => 'nullable|exists:metal_types,id',
             'driver_name' => 'nullable|string|max:255',
             'gross_weight' => 'nullable|numeric|min:0',
@@ -274,6 +288,14 @@ class GatePassController extends Controller
             // Total = (Qty * Rate) + Diesel + Transport
             $calculatedTotal = ($qty * $rate) + $diesel + $transport;
 
+            // Override for internal projects
+            if (!empty($validated['project_id'])) {
+                $project = \App\Models\Project::find($validated['project_id']);
+                if ($project && $project->is_internal) {
+                    $calculatedTotal = 0;
+                }
+            }
+
             // Override with server-calculated entries
             $validated['loading_quantity'] = $qty;
             $validated['rate_per_ton'] = $rate;
@@ -295,7 +317,7 @@ class GatePassController extends Controller
         return \Illuminate\Support\Facades\DB::transaction(function () use ($gate_pass, $validated, $request) {
             $gate_pass->update($validated);
 
-            if ($gate_pass->status === \App\Enums\GatePassStatus::COMPLETED->value && $gate_pass->client_id) {
+            if ($gate_pass->status === \App\Enums\GatePassStatus::COMPLETED->value && ($gate_pass->client_id || $gate_pass->manual_customer_name)) {
                 \App\Events\GatePassCompleted::dispatch($gate_pass);
             } elseif ($gate_pass->status === \App\Enums\GatePassStatus::CANCELLED->value) {
                 \App\Events\GatePassCancelled::dispatch($gate_pass);

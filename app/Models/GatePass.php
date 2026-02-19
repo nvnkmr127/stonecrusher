@@ -15,6 +15,8 @@ class GatePass extends Model
         'date',
         'vehicle_id',
         'client_id',
+        'manual_customer_name',
+        'project_id',
         'metal_type_id',
         'driver_name',
         'gross_weight',
@@ -60,6 +62,11 @@ class GatePass extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function metalType()

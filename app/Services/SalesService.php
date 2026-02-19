@@ -17,6 +17,11 @@ class SalesService
             return;
         }
 
+        // Check if it's an internal project
+        if ($gatePass->project_id && $gatePass->project->is_internal) {
+            return;
+        }
+
         DB::transaction(function () use ($gatePass) {
             // Check if transaction already exists
             $transaction = $gatePass->transaction;
