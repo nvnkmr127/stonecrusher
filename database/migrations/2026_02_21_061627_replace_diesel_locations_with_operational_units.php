@@ -25,16 +25,19 @@ return new class extends Migration {
             $table->renameColumn('diesel_location_id', 'operational_unit_id');
         });
 
+        // Nullify foreign keys securely before truncate
+        \Illuminate\Support\Facades\DB::table('vehicles')->update(['operational_unit_id' => null]);
+        \Illuminate\Support\Facades\DB::table('diesel_entries')->update(['operational_unit_id' => null]);
+
+        Schema::disableForeignKeyConstraints();
         \Illuminate\Support\Facades\DB::table('operational_units')->truncate();
+        Schema::enableForeignKeyConstraints();
+
         \Illuminate\Support\Facades\DB::table('operational_units')->insert([
             ['code' => 'QRY', 'name' => 'Quarry', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
             ['code' => 'CRS', 'name' => 'Crusher', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
             ['code' => 'EXT', 'name' => 'External Delivery', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
         ]);
-
-        // Nullify foreign keys to old missing IDs securely
-        \Illuminate\Support\Facades\DB::table('vehicles')->update(['operational_unit_id' => null]);
-        \Illuminate\Support\Facades\DB::table('diesel_entries')->update(['operational_unit_id' => null]);
     }
 
     /**
