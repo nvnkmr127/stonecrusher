@@ -114,7 +114,8 @@
                     <div class="col-6 text-center">
                         <div class="subheader">Under Maintenance</div>
                         <div class="h2 mb-0 text-warning">
-                            {{ \App\Models\Vehicle::where('operational_status', 'Under Maintenance')->count() }}</div>
+                            {{ \App\Models\Vehicle::where('operational_status', 'Under Maintenance')->count() }}
+                        </div>
                     </div>
                 </div>
             </x-card>
@@ -184,7 +185,7 @@
                         @forelse($recentProjects as $project)
                             <tr>
                                 <td><strong>{{ $project->name }}</strong></td>
-                                <td>{{ $project->client->name }}</td>
+                                <td>{{ $project->client->name ?? ($project->is_internal ? 'Internal' : '-') }}</td>
                                 <td>{{ $project->location ?? '-' }}</td>
                                 <td>
                                     <div class="d-flex align-items-center">

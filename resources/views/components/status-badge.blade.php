@@ -1,6 +1,7 @@
 @props(['status'])
 
 @php
+    $status = $status instanceof \BackedEnum ? $status->value : $status;
     $status = strtolower($status);
     $color = match ($status) {
         'active', 'paid', 'completed', 'present', 'approved', 'success' => 'success',

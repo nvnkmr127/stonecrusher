@@ -28,6 +28,17 @@
                     <x-form.input name="department" label="Department" :value="$user->department"
                         placeholder="e.g., Sales, Operations, Finance" />
 
+                    <div class="row">
+                        <div class="col-md-6">
+                            <x-form.input name="base_salary" label="Monthly Base Salary" type="number" step="0.01"
+                                :value="$user->base_salary" />
+                        </div>
+                        <div class="col-md-6">
+                            <x-form.input name="daily_rate" label="Daily Rate (optional)" type="number" step="0.01"
+                                :value="$user->daily_rate" placeholder="Calculated if 0" />
+                        </div>
+                    </div>
+
                     <x-form.checkbox name="is_active" label="Active User" :checked="$user->is_active" />
 
                     <hr class="my-4">

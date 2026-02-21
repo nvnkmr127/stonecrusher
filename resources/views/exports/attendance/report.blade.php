@@ -35,28 +35,38 @@
 <body>
     <div class="header">
         <h2>Attendance Report - {{ \Carbon\Carbon::createFromDate($year, $month, 1)->format('F Y') }}</h2>
+        <p style="color: #666;">Salary Payable in: <strong>{{ $payoutMonthName }}</strong> (2-month hold policy)</p>
+        <p style="font-size: 9px;">* 4 days of leave per month are allowed without deduction.</p>
     </div>
 
     <table>
         <thead>
             <tr>
                 <th>Employee</th>
-                <th>Present</th>
-                <th>Late</th>
-                <th>Half Day</th>
-                <th>Absent</th>
+                <th>Work Month</th>
+                <th>Payout Month</th>
+                <th>Base Salary</th>
                 <th>Leave</th>
+                <th>Absent</th>
+                <th>Advances</th>
+                <th>Deductions</th>
+                <th>CF Balance</th>
+                <th>Net Salary</th>
             </tr>
         </thead>
         <tbody>
             @foreach($reportData as $row)
                 <tr>
                     <td>{{ $row['user']->name }}</td>
-                    <td>{{ $row['present'] }}</td>
-                    <td>{{ $row['late'] }}</td>
-                    <td>{{ $row['half_day'] }}</td>
-                    <td>{{ $row['absent'] }}</td>
+                    <td>{{ \Carbon\Carbon::create($year, $month, 1)->format('M Y') }}</td>
+                    <td>{{ $payoutMonthName }}</td>
+                    <td>{{ number_format($row['base_salary'], 0) }}</td>
                     <td>{{ $row['leave'] }}</td>
+                    <td>{{ $row['absent'] }}</td>
+                    <td>{{ number_format($row['advances'], 0) }}</td>
+                    <td>{{ number_format($row['absent_deduction'], 0) }}</td>
+                    <td>{{ number_format($row['carry_forward'], 0) }}</td>
+                    <td><strong>{{ number_format($row['remaining'], 0) }}</strong></td>
                 </tr>
             @endforeach
         </tbody>

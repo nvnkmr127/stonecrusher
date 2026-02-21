@@ -110,6 +110,8 @@
                                 <td>{{ $user->created_at->format('M d, Y') }}</td>
                                 <td>
                                     <div class="btn-list">
+                                        <a href="{{ route('users.show', $user) }}"
+                                            class="btn btn-sm btn-ghost-primary">View</a>
                                         <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-primary">Edit</a>
 
                                         @if($user->id !== auth()->id())

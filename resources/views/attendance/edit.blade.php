@@ -33,24 +33,7 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <x-form.input
-                                name="check_in"
-                                label="Check In Time"
-                                type="time"
-                                :value="old('check_in', $attendance->check_in ? \Carbon\Carbon::parse($attendance->check_in)->format('H:i') : '')"
-                            />
-                        </div>
-                        <div class="col-md-6">
-                            <x-form.input
-                                name="check_out"
-                                label="Check Out Time"
-                                type="time"
-                                :value="old('check_out', $attendance->check_out ? \Carbon\Carbon::parse($attendance->check_out)->format('H:i') : '')"
-                            />
-                        </div>
-                    </div>
+
 
                     <div class="row">
                          <div class="col-md-6">

@@ -14,6 +14,9 @@
                             <a class="nav-link active" href="#">Daily Report</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ route('attendance.bulk') }}">Bulk Entry</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ route('attendance.report') }}">Monthly Summary</a>
                         </li>
                     </ul>
@@ -45,20 +48,15 @@
                         <thead>
                             <tr>
                                 <th>Employee</th>
-                                <th>Check In</th>
-                                <th>Check Out</th>
                                 <th class="text-center">Status</th>
                                 <th>Remarks</th>
+                                <th>Advance</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($dailyData as $data)
                                 <tr>
                                     <td>{{ $data['user']->name }}</td>
-                                    <td>{{ $data['check_in'] ? \Carbon\Carbon::parse($data['check_in'])->format('h:i A') : '-' }}
-                                    </td>
-                                    <td>{{ $data['check_out'] ? \Carbon\Carbon::parse($data['check_out'])->format('h:i A') : '-' }}
-                                    </td>
                                     <td class="text-center">
                                         <span
                                             class="badge bg-{{ match (strtolower($data['status_label'])) { 'present' => 'success', 'late' => 'warning', 'half day' => 'orange', 'absent' => 'danger', 'leave' => 'primary', default => 'secondary'} }} text-white">
@@ -66,6 +64,10 @@
                                         </span>
                                     </td>
                                     <td class="text-muted">{{ $data['remarks'] ?? '-' }}</td>
+                                    <td>
+                                        <a href="{{ route('salary-advances.create', ['user_id' => $data['user']->id, 'date' => $date]) }}"
+                                            class="btn btn-sm btn-outline-warning">Record</a>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>

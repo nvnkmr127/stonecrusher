@@ -54,6 +54,13 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('attendance/report', [App\Http\Controllers\AttendanceReportController::class, 'index'])->name('attendance.report');
     Route::get('attendance/report/export', [App\Http\Controllers\AttendanceReportController::class, 'export'])->name('attendance.report.export');
     Route::get('attendance/report/export-pdf', [App\Http\Controllers\AttendanceReportController::class, 'exportPdf'])->name('attendance.report.export-pdf');
+    Route::post('attendance/report/lock', [App\Http\Controllers\AttendanceReportController::class, 'lock'])->name('attendance.report.lock');
+    Route::post('attendance/report/release', [App\Http\Controllers\AttendanceReportController::class, 'release'])->name('attendance.report.release');
+    Route::get('reports/liability', [App\Http\Controllers\PayrollLiabilityController::class, 'index'])->name('reports.liability');
+    Route::get('attendance/bulk', [App\Http\Controllers\AttendanceController::class, 'bulk'])->name('attendance.bulk');
+    Route::post('attendance/bulk', [App\Http\Controllers\AttendanceController::class, 'bulkStore'])->name('attendance.bulk.store');
+    Route::post('attendance/ajax-store', [App\Http\Controllers\AttendanceController::class, 'ajaxStore'])->name('attendance.ajax.store');
+    Route::get('attendance/calendar', [App\Http\Controllers\AttendanceController::class, 'calendar'])->name('attendance.calendar');
     Route::resource('attendance', AttendanceController::class)->except(['show']);
 
     // Restricted Transaction Edits (Admin Only)
@@ -102,6 +109,7 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
     Route::resource('vehicle-maintenance', App\Http\Controllers\VehicleMaintenanceController::class);
     Route::post('vehicle-maintenance/{vehicle_maintenance}/complete', [App\Http\Controllers\VehicleMaintenanceController::class, 'markComplete'])->name('vehicle-maintenance.complete');
     Route::resource('projects', ProjectController::class);
+    Route::resource('salary-advances', App\Http\Controllers\SalaryAdvanceController::class);
     Route::resource('metal-types', MetalTypeController::class);
 
     // Diesel Management

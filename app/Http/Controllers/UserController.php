@@ -68,6 +68,8 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|exists:roles,name',
             'department' => 'nullable|string|max:255',
+            'base_salary' => 'nullable|numeric|min:0',
+            'daily_rate' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 
@@ -77,6 +79,8 @@ class UserController extends Controller
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'department' => $validated['department'] ?? null,
+                'base_salary' => $validated['base_salary'] ?? 0,
+                'daily_rate' => $validated['daily_rate'] ?? 0,
                 'is_active' => $validated['is_active'] ?? true,
             ]);
 
@@ -113,6 +117,8 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|exists:roles,name',
             'department' => 'nullable|string|max:255',
+            'base_salary' => 'nullable|numeric|min:0',
+            'daily_rate' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 
@@ -121,6 +127,8 @@ class UserController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'department' => $validated['department'] ?? null,
+                'base_salary' => $validated['base_salary'] ?? 0,
+                'daily_rate' => $validated['daily_rate'] ?? 0,
                 'is_active' => $validated['is_active'] ?? $user->is_active,
             ]);
 
@@ -135,6 +143,77 @@ class UserController extends Controller
                 ->route('users.index')
                 ->with('success', 'User updated successfully!');
         });
+    }
+
+    /**
+     * Display User Profile and Salary History.
+     */
+    public function show(User $user)
+    {
+        $startDate = $user->created_at ?? \Carbon\Carbon::parse('2024-01-01');
+        $currentDate = now()->startOfMonth();
+        $iterator = \Carbon\Carbon::parse($startDate)->startOfMonth();
+
+        $history = [];
+        $workingDays = (int) \App\Models\Setting::get('monthly_working_days', 26);
+        $balance = 0;
+
+        while ($iterator->lte($currentDate)) {
+            $m = $iterator->month;
+            $y = $iterator->year;
+
+            $attendances = \App\Models\Attendance::where('user_id', $user->id)
+                ->whereMonth('date', $m)
+                ->whereYear('date', $y)
+                ->get();
+
+            $advs = \App\Models\SalaryAdvance::where('user_id', $user->id)
+                ->whereMonth('date', $m)
+                ->whereYear('date', $y)
+                ->get();
+
+            $advAmount = $advs->sum('amount');
+
+            $leave = $attendances->where('status', \App\Enums\AttendanceStatus::LEAVE->value)->count();
+            $absent = $attendances->where('status', \App\Enums\AttendanceStatus::ABSENT->value)->count();
+            $halfDay = $attendances->where('status', \App\Enums\AttendanceStatus::HALF_DAY->value)->count();
+
+            $excessLeave = max(0, $leave - 4);
+            $deductionDays = $absent + $excessLeave + ($halfDay * 0.5);
+
+            $dailyRate = $user->daily_rate > 0 ? $user->daily_rate : ($user->base_salary > 0 ? $user->base_salary / $workingDays : 0);
+            $absentDeduction = $deductionDays * $dailyRate;
+            $monthlyEarning = $user->base_salary - $absentDeduction;
+
+            $net = $monthlyEarning - $advAmount + $balance;
+
+            $period = \App\Models\PayrollPeriod::where('month', $m)->where('year', $y)->first();
+            $status = $period ? $period->getStatus() : 'Draft';
+
+            $history[] = [
+                'month' => $iterator->format('F Y'),
+                'payable_month' => $iterator->copy()->addMonths(2)->format('F Y'),
+                'base_salary' => $user->base_salary,
+                'advances' => $advAmount,
+                'deductions' => $absentDeduction,
+                'net_salary' => $net,
+                'status' => $status,
+                'paid_date' => ($period && $period->is_released) ? $period->released_at?->format('d M Y') : 'N/A',
+                'advances_list' => $advs
+            ];
+
+            if ($period && $period->is_released) {
+                $balance = min(0, $net);
+            } else {
+                $balance = $net;
+            }
+
+            $iterator->addMonth();
+        }
+
+        $history = array_reverse($history);
+
+        return view('users.show', compact('user', 'history'));
     }
 
     /**

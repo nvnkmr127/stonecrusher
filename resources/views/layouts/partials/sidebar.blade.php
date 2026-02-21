@@ -51,6 +51,57 @@
                     </a>
                 </li>
 
+                <!-- Quick Links Section -->
+                <li class="nav-item mt-3">
+                    <div class="sidebar-section-header">Quick Actions</div>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-primary-emphasis" href="{{ route('gate-passes.create') }}">
+                        <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="24"
+                                height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M12 5l0 14" />
+                                <path d="M5 12l14 0" />
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">New Gate Pass</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-success-emphasis" href="{{ route('attendance.bulk') }}">
+                        <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user-check"
+                                width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                                <path d="M6 21v-2a4 4 0 0 1 4 -4h4" />
+                                <path d="M15 19l2 2l4 -4" />
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">Daily Attendance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-warning-emphasis" href="{{ route('salary-advances.create') }}">
+                        <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-cash" width="24"
+                                height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path
+                                    d="M7 9m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" />
+                                <path d="M18 12s-2.5 2 -5.5 2s-5.5 -2 -5.5 -2" />
+                                <path d="M12 19l0 .01" />
+                                <path d="M3 13a3 3 0 0 1 3 -3h4a1 1 0 0 1 0 2h-4a1 1 0 0 0 -1 1v2a1 1 0 0 0 1 1h1" />
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">Salary Advance</span>
+                    </a>
+                </li>
+
                 <!-- Operations Section -->
                 <li class="nav-item mt-3">
                     <div class="sidebar-section-header">Operations</div>
@@ -255,6 +306,8 @@
                             href="{{ route('reports.summary', ['type' => 'vehicle']) }}">Summary View</a>
                         <a class="dropdown-item {{ request()->routeIs('attendance.report') ? 'active' : '' }}"
                             href="{{ route('attendance.report') }}">Attendance Report</a>
+                        <a class="dropdown-item {{ request()->routeIs('reports.liability') ? 'active' : '' }}"
+                            href="{{ route('reports.liability') }}">Payroll Liability</a>
                     </div>
                 </li>
 

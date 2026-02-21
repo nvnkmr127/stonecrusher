@@ -22,15 +22,7 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <x-form.input name="check_in" label="Check In Time" type="time" :value="old('check_in')" />
-                        </div>
-                        <div class="col-md-6">
-                            <x-form.input name="check_out" label="Check Out Time" type="time"
-                                :value="old('check_out')" />
-                        </div>
-                    </div>
+
 
                     <div class="row">
                         <div class="col-md-6">

@@ -167,6 +167,14 @@
                                     />
                                 </div>
                             </div>
+                            <x-form.input 
+                                name="monthly_working_days" 
+                                label="Configured Monthly Working Days" 
+                                type="number"
+                                :value="$settings['monthly_working_days'] ?? '26'"
+                                required 
+                                placeholder="Used for daily rate calculation (e.g., 26 or 30)"
+                            />
                         </div>
                     </div>
 
@@ -227,6 +235,10 @@
                         <tr>
                             <td><strong>Date Format</strong></td>
                             <td>{{ $settings['date_format'] ?? 'd/m/Y' }} ({{ now()->format($settings['date_format'] ?? 'd/m/Y') }})</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Monthly Working Days</strong></td>
+                            <td>{{ $settings['monthly_working_days'] ?? '26' }} days (for daily rate calc)</td>
                         </tr>
                     </tbody>
                 </x-table>

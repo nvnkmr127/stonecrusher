@@ -7,7 +7,6 @@ use App\Models\Attendance;
 use App\Models\User;
 use Carbon\Carbon;
 
-
 class AttendanceController extends Controller
 {
     public function __construct()
@@ -41,38 +40,6 @@ class AttendanceController extends Controller
         return view('attendance.create', compact('users'));
     }
 
-    private function calculateStatus($checkIn, $checkOut)
-    {
-        $shiftStartStr = \App\Models\Setting::get('attendance_shift_start', '09:30');
-        $shiftEndStr = \App\Models\Setting::get('attendance_shift_end', '18:30');
-
-        $shiftStart = Carbon::createFromTimeString($shiftStartStr);
-        $shiftEnd = Carbon::createFromTimeString($shiftEndStr);
-
-        $status = \App\Enums\AttendanceStatus::PRESENT->value;
-
-        if ($checkIn) {
-            $checkInTime = Carbon::parse($checkIn);
-            // Ignore date part for comparison
-            $checkInTime = Carbon::createFromTime($checkInTime->hour, $checkInTime->minute, 0);
-
-            if ($checkInTime->gt($shiftStart)) {
-                $status = \App\Enums\AttendanceStatus::LATE->value;
-            }
-        }
-
-        if ($checkOut) {
-            $checkOutTime = Carbon::parse($checkOut);
-            $checkOutTime = Carbon::createFromTime($checkOutTime->hour, $checkOutTime->minute, 0);
-
-            if ($checkOutTime->lt($shiftEnd)) {
-                $status = \App\Enums\AttendanceStatus::HALF_DAY->value;
-            }
-        }
-
-        return $status;
-    }
-
     public function store(Request $request)
     {
         $request->validate([
@@ -81,47 +48,38 @@ class AttendanceController extends Controller
                 'required',
                 'date',
                 function ($attribute, $value, $fail) use ($request) {
+                    $parsedDate = \Carbon\Carbon::parse($value)->startOfDay();
                     if (
                         Attendance::where('user_id', $request->user_id)
-                            ->where('date', $value)
+                            ->where('date', $parsedDate)
                             ->exists()
                     ) {
                         $fail('Attendance for this employee has already been recorded for this date.');
                     }
                 },
             ],
-            'check_in' => 'nullable|date_format:H:i',
-            'check_out' => 'nullable|date_format:H:i|after:check_in',
-            'status' => ['nullable', \Illuminate\Validation\Rule::enum(\App\Enums\AttendanceStatus::class)],
+            'status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\AttendanceStatus::class)],
             'remarks' => 'nullable|string',
         ]);
 
         \App\Services\DayClosureService::checkAllowed($request->date);
+        \App\Services\PayrollService::checkLock($request->date);
 
-        $data = $request->all();
-
-        // Auto-calculate status if check_in is provided
-        if (isset($data['check_in'])) {
-            $data['status'] = $this->calculateStatus($data['check_in'], $data['check_out'] ?? null);
-
-            // Allow manual override only for Leave/Absent
-            if (in_array($request->status, [\App\Enums\AttendanceStatus::LEAVE->value, \App\Enums\AttendanceStatus::ABSENT->value])) {
-                $data['status'] = $request->status;
-            }
-        } elseif ($request->status) {
-            // If no times but status provided (e.g. absent/leave)
-            $data['status'] = $request->status;
-        } else {
-            $data['status'] = \App\Enums\AttendanceStatus::ABSENT->value;
-        }
-
-        Attendance::create($data);
+        Attendance::create([
+            'user_id' => $request->user_id,
+            'date' => $request->date,
+            'status' => $request->status,
+            'remarks' => $request->remarks,
+        ]);
 
         return redirect()->route('attendance.index')->with('success', 'Attendance recorded successfully.');
     }
 
     public function edit(Attendance $attendance)
     {
+        if (request()->ajax()) {
+            return response()->json($attendance);
+        }
         $users = User::all();
         return view('attendance.edit', compact('attendance', 'users'));
     }
@@ -131,51 +89,23 @@ class AttendanceController extends Controller
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'date' => 'required|date',
-            'check_in' => 'nullable|date_format:H:i',
-            'check_out' => [
-                'nullable',
-                'date_format:H:i',
-                function ($attribute, $value, $fail) use ($request, $attendance) {
-                    // Check if check-in exists (either in request or DB)
-                    $checkInTime = $request->check_in ?? $attendance->check_in;
-
-                    if (!$checkInTime && $value) {
-                        $fail('Check-out cannot be recorded without a check-in time.');
-                        return;
-                    }
-
-                    // Check if check-out is after check-in
-                    if ($checkInTime && $value) {
-                        if ($value <= $checkInTime) {
-                            $fail('Check-out time must be after check-in time.');
-                        }
-                    }
-                },
-            ],
-            'status' => ['nullable', \Illuminate\Validation\Rule::enum(\App\Enums\AttendanceStatus::class)],
-            'remarks' => 'required|string',
+            'status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\AttendanceStatus::class)],
+            'remarks' => 'nullable|string',
         ]);
 
         \App\Services\DayClosureService::checkAllowed($request->date);
-        \App\Services\DayClosureService::checkAllowed($attendance->date);
+        \App\Services\PayrollService::checkLock($request->date);
 
-        $data = $request->all();
+        $attendance->update([
+            'user_id' => $request->user_id,
+            'date' => $request->date,
+            'status' => $request->status,
+            'remarks' => $request->remarks,
+        ]);
 
-        // Auto-calculate status
-        $checkIn = $request->check_in ?? $attendance->check_in;
-        $checkOut = $request->check_out ?? $attendance->check_out;
-
-        if ($checkIn) {
-            $calculatedStatus = $this->calculateStatus($checkIn, $checkOut);
-
-            if (!in_array($request->status, [\App\Enums\AttendanceStatus::LEAVE->value, \App\Enums\AttendanceStatus::ABSENT->value])) {
-                $data['status'] = $calculatedStatus;
-            } else {
-                $data['status'] = $request->status;
-            }
+        if ($request->ajax()) {
+            return response()->json(['success' => true]);
         }
-
-        $attendance->update($data);
 
         return redirect()->route('attendance.index')->with('success', 'Attendance updated successfully.');
     }
@@ -183,8 +113,79 @@ class AttendanceController extends Controller
     public function destroy(Attendance $attendance)
     {
         \App\Services\DayClosureService::checkAllowed($attendance->date);
+        \App\Services\PayrollService::checkLock($attendance->date);
 
         $attendance->delete();
         return redirect()->route('attendance.index')->with('success', 'Attendance deleted successfully.');
+    }
+
+    public function bulk(Request $request)
+    {
+        $month = $request->input('month', now()->month);
+        $year = $request->input('year', now()->year);
+
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+        $daysInMonth = $startDate->daysInMonth;
+
+        $employees = User::where('is_active', true)
+            ->with([
+                'attendances' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('date', [$startDate, $endDate]);
+                }
+            ])
+            ->get();
+
+        return view('attendance.bulk', compact('employees', 'month', 'year', 'daysInMonth', 'startDate'));
+    }
+
+    public function ajaxStore(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'date' => 'required|date',
+            'status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\AttendanceStatus::class)],
+        ]);
+
+        \App\Services\DayClosureService::checkAllowed($request->date);
+        \App\Services\PayrollService::checkLock($request->date);
+
+        $parsedDate = \Carbon\Carbon::parse($request->date)->startOfDay();
+
+        $attendance = Attendance::updateOrCreate(
+            ['user_id' => $request->user_id, 'date' => $parsedDate],
+            ['status' => $request->status]
+        );
+
+        return response()->json([
+            'success' => true,
+            'status' => $attendance->status
+        ]);
+    }
+
+    public function bulkStore(Request $request)
+    {
+        // Keep fallback support
+        return redirect()->route('attendance.index');
+    }
+
+    public function calendar(Request $request)
+    {
+        $month = $request->input('month', now()->month);
+        $year = $request->input('year', now()->year);
+
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+        $daysInMonth = $startDate->daysInMonth;
+
+        $employees = User::where('is_active', true)
+            ->with([
+                'attendances' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('date', [$startDate, $endDate]);
+                }
+            ])
+            ->get();
+
+        return view('attendance.calendar', compact('employees', 'month', 'year', 'daysInMonth', 'startDate'));
     }
 }

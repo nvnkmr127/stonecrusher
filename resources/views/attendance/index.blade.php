@@ -22,6 +22,30 @@
                         </svg>
                         {{ __('Daily Report') }}
                     </a>
+                    <a href="{{ route('attendance.calendar') }}" class="btn btn-info d-none d-sm-inline-block me-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar" width="24"
+                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" />
+                            <path d="M16 3v4" />
+                            <path d="M8 3v4" />
+                            <path d="M4 11h16" />
+                            <path d="M11 15h1" />
+                            <path d="M12 15v3" />
+                        </svg>
+                        {{ __('Calendar View') }}
+                    </a>
+                    <a href="{{ route('attendance.bulk') }}" class="btn btn-warning d-none d-sm-inline-block me-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-checkbox" width="24"
+                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M9 11l3 3l8 -8" />
+                            <path d="M20 12v6a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h9" />
+                        </svg>
+                        {{ __('Bulk Entry') }}
+                    </a>
                     <a href="{{ route('attendance.create') }}" class="btn btn-primary d-none d-sm-inline-block">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
                             stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
@@ -66,10 +90,7 @@
                         <tr>
                             <th>Date</th>
                             <th>User</th>
-                            <th>Check In</th>
-                            <th>Check Out</th>
                             <th>Status</th>
-                            <th>Total Time</th>
                             <th>Remarks</th>
                             <th>Actions</th>
                         </tr>
@@ -78,14 +99,11 @@
                         @forelse ($employees as $employee)
                             @php
                                 $attendance = $employee->attendances->first();
+                                $isLocked = \App\Models\PayrollPeriod::isLocked(\Carbon\Carbon::parse($date)->month, \Carbon\Carbon::parse($date)->year);
                             @endphp
                             <tr>
                                 <td>{{ $date }}</td>
                                 <td>{{ $employee->name }}</td>
-                                <td>{{ $attendance && $attendance->check_in ? \Carbon\Carbon::parse($attendance->check_in)->format('H:i') : '-' }}
-                                </td>
-                                <td>{{ $attendance && $attendance->check_out ? \Carbon\Carbon::parse($attendance->check_out)->format('H:i') : '-' }}
-                                </td>
                                 <td>
                                     @if($attendance)
                                         <x-status-badge :status="$attendance->status" />
@@ -93,35 +111,34 @@
                                         <x-status-badge status="absent" />
                                     @endif
                                 </td>
-                                <td>
-                                    @if($attendance && $attendance->check_in && $attendance->check_out)
-                                        {{ \Carbon\Carbon::parse($attendance->check_in)->diff(\Carbon\Carbon::parse($attendance->check_out))->format('%H:%I') }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td class="text-truncate" style="max-width: 150px;">
+                                <td class="text-truncate" style="max-width: 250px;">
                                     {{ $attendance ? $attendance->remarks : '-' }}
                                 </td>
                                 <td>
-                                    @if($attendance)
-                                        <a href="{{ route('attendance.edit', $attendance) }}"
-                                            class="btn btn-sm btn-outline-primary">Edit</a>
-                                        <form action="{{ route('attendance.destroy', $attendance) }}" method="POST"
-                                            class="d-inline-block" onsubmit="return confirm('Are you sure?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                        </form>
+                                    @if(!$isLocked)
+                                        @if($attendance)
+                                            <a href="{{ route('attendance.edit', $attendance) }}"
+                                                class="btn btn-sm btn-outline-primary">Edit</a>
+                                            <form action="{{ route('attendance.destroy', $attendance) }}" method="POST"
+                                                class="d-inline-block" onsubmit="return confirm('Are you sure?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        @else
+                                            <a href="{{ route('attendance.create', ['user_id' => $employee->id, 'date' => $date]) }}"
+                                                class="btn btn-sm btn-primary">Mark</a>
+                                        @endif
+                                        <a href="{{ route('salary-advances.create', ['user_id' => $employee->id]) }}"
+                                            class="btn btn-sm btn-outline-warning ms-1" title="Salary Advance">₹</a>
                                     @else
-                                        <a href="{{ route('attendance.create', ['user_id' => $employee->id, 'date' => $date]) }}"
-                                            class="btn btn-sm btn-primary">Mark</a>
+                                        <span class="badge bg-secondary">Locked</span>
                                     @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">No employees found.</td>
+                                <td colspan="5" class="text-center">No employees found.</td>
                             </tr>
                         @endforelse
                     </tbody>
