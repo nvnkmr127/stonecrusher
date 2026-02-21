@@ -236,16 +236,59 @@
                     <a class="nav-link {{ request()->routeIs('diesel.*') ? 'active' : '' }}"
                         href="{{ route('diesel.index') }}">
                         <span class="nav-link-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M3 13l4 4l10 -10" />
-                                <path d="M21 12l-9 9l-9 -9" />
-                                <path d="M12 3l0 9" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-gas-station"
+                                width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M14 11h1a2 2 0 0 1 2 2v3a1.5 1.5 0 0 0 3 0v-7l-3 -3"></path>
+                                <path d="M4 20v-14a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v14"></path>
+                                <path d="M3 20l10 0"></path>
+                                <path d="M18 7v1a1 1 0 0 0 1 1h1"></path>
+                                <path d="M4 11l10 0"></path>
                             </svg>
                         </span>
-                        <span class="nav-link-title">Diesel Register</span>
+                        <span class="nav-link-title">Diesel Refills</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('diesel-stocks.*') ? 'active' : '' }}"
+                        href="{{ route('diesel-stocks.index') }}">
+                        <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-barrel"
+                                width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M10 21v-6m4 0v6"></path>
+                                <path
+                                    d="M5 7v10c0 1.657 3.134 3 7 3s7 -1.343 7 -3v-10c0 -1.657 -3.134 -3 -7 -3s-7 1.343 -7 3z">
+                                </path>
+                                <path d="M19 12c0 1.657 -3.134 3 -7 3s-7 -1.343 -7 -3"></path>
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">Diesel Stock (Tank)</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('operational-units.*') ? 'active' : '' }}"
+                        href="{{ route('operational-units.index') }}">
+                        <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="icon icon-tabler icon-tabler-building-factory-2" width="24" height="24"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M3 21h18"></path>
+                                <path d="M5 21v-12l5 4v-4l5 4v-4l5 4v12"></path>
+                                <path d="M7 21h10"></path>
+                                <path d="M8 14v.01"></path>
+                                <path d="M12 14v.01"></path>
+                                <path d="M16 14v.01"></path>
+                                <path d="M8 17v.01"></path>
+                                <path d="M12 17v.01"></path>
+                                <path d="M16 17v.01"></path>
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">Operational Units</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -300,6 +343,8 @@
                             href="{{ route('reports.outstanding') }}">Outstanding & Advance</a>
                         <a class="dropdown-item {{ request()->routeIs('gate-passes.distance-report') ? 'active' : '' }}"
                             href="{{ route('gate-passes.distance-report') }}">Distance Report</a>
+                        <a class="dropdown-item {{ request()->routeIs('reports.vehicle-usage') ? 'active' : '' }}"
+                            href="{{ route('reports.vehicle-usage') }}">Vehicle Usage</a>
                         <a class="dropdown-item {{ request()->routeIs('reports.custom') ? 'active' : '' }}"
                             href="{{ route('reports.custom') }}">Custom Date</a>
                         <a class="dropdown-item {{ request()->routeIs('reports.summary') ? 'active' : '' }}"

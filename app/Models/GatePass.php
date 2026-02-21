@@ -15,9 +15,13 @@ class GatePass extends Model
         'date',
         'vehicle_id',
         'client_id',
+        'source_unit_id',
+        'destination_unit_id',
+        'activity_type',
         'manual_customer_name',
         'project_id',
         'metal_type_id',
+        'trips',
         'driver_name',
         'gross_weight',
         'tare_weight',
@@ -27,6 +31,7 @@ class GatePass extends Model
         'total_amount',
         'paid_amount',
         'diesel_amount',
+        'diesel_qty',
         'advance_amount',
         'status',
         'payment_status',
@@ -47,11 +52,14 @@ class GatePass extends Model
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'diesel_amount' => 'decimal:2',
+        'diesel_qty' => 'decimal:2',
         'advance_amount' => 'decimal:2',
         'distance_km' => 'decimal:2',
         'transport_cost' => 'decimal:2',
         'transport_is_billable' => 'boolean',
         'status' => \App\Enums\GatePassStatus::class,
+        'activity_type' => \App\Enums\ActivityType::class,
+        'trips' => 'integer',
     ];
 
     public function vehicle()
@@ -72,6 +80,16 @@ class GatePass extends Model
     public function metalType()
     {
         return $this->belongsTo(MetalType::class);
+    }
+
+    public function sourceUnit()
+    {
+        return $this->belongsTo(OperationalUnit::class, 'source_unit_id');
+    }
+
+    public function destinationUnit()
+    {
+        return $this->belongsTo(OperationalUnit::class, 'destination_unit_id');
     }
 
     public function transaction()

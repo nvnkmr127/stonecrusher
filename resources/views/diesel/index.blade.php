@@ -1,11 +1,11 @@
 <x-tabler-layout>
     <x-slot name="header">
-        <x-page-header title="Diesel Entry Register" subtitle="Manage and track diesel consumption" :breadcrumbs="[
+        <x-page-header title="Diesel Issue Entry" subtitle="Log fuel issued to vehicles and machines" :breadcrumbs="[
         ['label' => 'Dashboard', 'route' => 'dashboard'],
-        ['label' => 'Diesel Management', 'active' => true],
+        ['label' => 'Diesel Issues', 'active' => true],
     ]">
             <x-slot name="actions">
-                <a href="{{ route('diesel-locations.index') }}" class="btn btn-outline-primary me-2">
+                <a href="{{ route('operational-units.index') }}" class="btn btn-outline-primary me-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
                         stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
                         stroke-linejoin="round">
@@ -14,7 +14,7 @@
                         <path d="M10 12l4 0" />
                         <path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9 -9 9s-9 -1.8 -9 -9s1.8 -9 9 -9z" />
                     </svg>
-                    Manage Locations
+                    Manage Units
                 </a>
                 <a href="{{ route('diesel.create') }}" class="btn btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
@@ -100,11 +100,11 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <select name="diesel_location_id" class="form-select form-select-sm">
-                                <option value="">All Locations</option>
+                            <select name="operational_unit_id" class="form-select form-select-sm">
+                                <option value="">All Units</option>
                                 @foreach($locations as $location)
-                                    <option value="{{ $location->id }}" {{ request('diesel_location_id') == $location->id ? 'selected' : '' }}>
-                                        {{ $location->name }}
+                                    <option value="{{ $location->id }}" {{ request('operational_unit_id') == $location->id ? 'selected' : '' }}>
+                                        {{ $location->name }} ({{ $location->code }})
                                     </option>
                                 @endforeach
                             </select>
@@ -119,31 +119,40 @@
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Vehicle</th>
-                            <th>Liters</th>
-                            <th>Location</th>
-                            <th>Purpose</th>
+                            <th>Unit</th>
+                            <th>Vehicle / Machine</th>
+                            <th class="text-end">Liters Issued</th>
+                            <th>Work Type</th>
                             <th>Driver</th>
+                            <th>Linked Trip</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($dieselEntries as $entry)
                             <tr>
-                                <td>{{ $entry->date->format('d M, Y') }}</td>
-                                <td>{{ $entry->vehicle->registration_number }}</td>
-                                <td class="fw-bold">{{ $entry->liters }} L</td>
+                                <td>{{ $entry->date->format('d/m/Y') }}</td>
                                 <td>
-                                    <span class="badge bg-azure">
-                                        {{ $entry->dieselLocation->name ?? 'N/A' }}
-                                    </span>
+                                    <span class="badge bg-azure-lt">{{ $entry->operationalUnit->code ?? 'N/A' }}</span>
                                 </td>
-                                <td>{{ $entry->purpose }}</td>
+                                <td>{{ $entry->vehicle->registration_number }}</td>
+                                <td class="text-end fw-bold text-primary">{{ number_format($entry->liters, 2) }} L</td>
+                                <td>
+                                    <span class="text-uppercase small fw-medium">{{ $entry->work_type }}</span>
+                                </td>
                                 <td>{{ $entry->driver_name }}</td>
                                 <td>
+                                    @if($entry->gate_pass_id)
+                                        <a href="{{ route('gate-passes.show', $entry->gate_pass_id) }}" class="small">
+                                            #{{ $entry->gatePass->gate_pass_number }}
+                                        </a>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>
                                     <div class="btn-list">
-                                        <a href="{{ route('diesel.edit', $entry) }}"
-                                            class="btn btn-sm btn-ghost-primary">Edit</a>
+                                        <a href="{{ route('diesel.edit', $entry) }}" class="btn btn-sm btn-white">Edit</a>
                                         <form action="{{ route('diesel.destroy', $entry) }}" method="POST"
                                             onsubmit="return confirm('Are you sure?')">
                                             @csrf @method('DELETE')
@@ -171,20 +180,23 @@
         <div class="col-lg-4">
             <x-card class="mb-3">
                 <x-slot name="header">
-                    <h3 class="card-title">Per Location Summary</h3>
+                    <h3 class="card-title">Per Unit Summary</h3>
                 </x-slot>
                 <div class="table-responsive">
                     <table class="table table-vcenter card-table">
                         <thead>
                             <tr>
-                                <th>Location</th>
+                                <th>Unit</th>
                                 <th class="text-end">Total</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($perLocation as $row)
                                 <tr>
-                                    <td>{{ $row->dieselLocation->name ?? 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-azure-lt">{{ $row->operationalUnit->code ?? 'N/A' }}</span>
+                                        <small class="text-muted ms-1">{{ $row->operationalUnit->name ?? '' }}</small>
+                                    </td>
                                     <td class="text-end fw-bold">{{ number_format($row->total_liters, 2) }} L</td>
                                 </tr>
                             @endforeach

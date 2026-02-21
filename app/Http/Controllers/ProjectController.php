@@ -22,6 +22,13 @@ class ProjectController extends Controller
 
     public function store(Request $request)
     {
+        if (!$request->has('status')) {
+            $request->merge(['status' => 'active']);
+        }
+        if (!$request->has('progress')) {
+            $request->merge(['progress' => 0]);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'client_id' => 'required_unless:is_internal,1|nullable|exists:clients,id',
@@ -48,11 +55,27 @@ class ProjectController extends Controller
 
     public function show(Project $project)
     {
-        return view('projects.show', compact('project'));
+        $project->load('client');
+        $gatePasses = $project->gatePasses()
+            ->with(['vehicle', 'metalType'])
+            ->latest('date')
+            ->paginate(15);
+
+        $totalTrips = $project->gatePasses()->count();
+        $totalCft = $project->gatePasses()->sum('net_weight');
+
+        return view('projects.show', compact('project', 'gatePasses', 'totalTrips', 'totalCft'));
     }
 
     public function update(Request $request, Project $project)
     {
+        if (!$request->has('status')) {
+            $request->merge(['status' => $project->status ?? 'active']);
+        }
+        if (!$request->has('progress')) {
+            $request->merge(['progress' => $project->progress ?? 0]);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'client_id' => 'required_unless:is_internal,1|nullable|exists:clients,id',

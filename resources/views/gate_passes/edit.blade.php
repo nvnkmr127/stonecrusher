@@ -26,11 +26,16 @@
                 x-data="gatePassEditForm({
                     netWeight: {{ (float) old('net_weight', $gatePass->net_weight) }},
                     transportCost: {{ (float) old('transport_cost', $gatePass->transport_cost ?? 0) }},
+                    activityType: '{{ old('activity_type', $gatePass->activity_type->value) }}',
+                    sourceUnitId: {{ old('source_unit_id', $gatePass->source_unit_id ?? 2) }},
+                    destinationUnitId: {{ old('destination_unit_id', $gatePass->destination_unit_id ?? 3) }},
+                    trips: {{ old('trips', $gatePass->trips ?? 1) }},
                     isBillable: {{ old('transport_is_billable', $gatePass->transport_is_billable) ? 'true' : 'false' }},
                     clientId: {{ Illuminate\Support\Js::from(old('client_id', $gatePass->client_id)) }},
                     projectId: {{ Illuminate\Support\Js::from(old('project_id', $gatePass->project_id)) }},
                     manualCustomerName: {{ Illuminate\Support\Js::from(old('manual_customer_name', $gatePass->manual_customer_name)) }},
-                    destinationType: {{ Illuminate\Support\Js::from(old('manual_customer_name', $gatePass->manual_customer_name) ? 'regular' : ($gatePass->project && $gatePass->project->is_internal ? 'internal' : 'registered')) }}
+                    manualVehicleNumber: {{ Illuminate\Support\Js::from(old('manual_vehicle_number', $gatePass->vehicle ? $gatePass->vehicle->registration_number : $gatePass->manual_vehicle_number)) }},
+                    destinationType: {{ Illuminate\Support\Js::from(old('manual_customer_name', $gatePass->manual_customer_name) ? 'regular' : ($gatePass->activity_type->value == 'Material Transfer' ? 'transfer' : ($gatePass->project && $gatePass->project->is_internal ? 'internal' : 'registered'))) }}
                 })">
                 @csrf
                 @method('PUT')
@@ -38,14 +43,14 @@
                     <div class="card-body">
                         <div class="row g-3">
                             <!-- Section 1: Identification -->
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="mb-3">
                                     <label class="form-label required">Gate Pass Number</label>
                                     <input type="text" class="form-control fw-bold bg-light" name="gate_pass_number"
                                         value="{{ old('gate_pass_number', $gatePass->gate_pass_number) }}" readonly>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="mb-3">
                                     <label class="form-label required">Date & Time</label>
                                     <input type="datetime-local"
@@ -54,23 +59,20 @@
                                     <x-input-error :messages="$errors->get('date')" />
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label class="form-label required">Status</label>
-                                    <select class="form-select @error('status') is-invalid @enderror" name="status">
-                                        <option value="pending" {{ old('status', $gatePass->status) == 'pending' ? 'selected' : '' }}>Pending</option>
-                                        <option value="completed" {{ old('status', $gatePass->status) == 'completed' ? 'selected' : '' }}>Completed</option>
-                                        <option value="cancelled" {{ old('status', $gatePass->status) == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                    </select>
-                                    <x-input-error :messages="$errors->get('status')" />
-                                </div>
-                            </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="mb-3">
                                     <label class="form-label required">Vehicle Number</label>
-                                    <input type="text" class="form-control bg-light" value="{{ $gatePass->vehicle->vehicle_number ?? $gatePass->manual_vehicle_number }}" readonly>
-                                    <input type="hidden" name="manual_vehicle_number" value="{{ $gatePass->manual_vehicle_number }}">
-                                    <input type="hidden" name="vehicle_id" value="{{ $gatePass->vehicle_id }}">
+                                    <input type="text"
+                                        class="form-control @error('manual_vehicle_number') is-invalid @enderror"
+                                        name="manual_vehicle_number" list="vehicleList"
+                                        x-model="manualVehicleNumber"
+                                        placeholder="Enter Vehicle Number" required autocomplete="off">
+                                    <datalist id="vehicleList">
+                                        @foreach($vehicles as $vehicle)
+                                            <option value="{{ $vehicle->registration_number }}"></option>
+                                        @endforeach
+                                    </datalist>
+                                    <x-input-error :messages="$errors->get('manual_vehicle_number')" />
                                 </div>
                             </div>
 
@@ -78,48 +80,59 @@
                                 <hr class="my-2 opacity-50">
                             </div>
 
-                            <!-- Section 2: Destination Selection -->
-                            <div class="col-12 mb-2">
-                                <label class="form-label font-bold mb-2">Selling To / Destination</label>
+                            <!-- Section 2: Destination & Usage Selection -->
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold mb-3">Selling To / Movement Type</label>
                                 <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column flex-md-row gap-2">
                                     <label class="form-selectgroup-item flex-fill">
-                                        <input type="radio" name="destination_type" value="registered" class="form-selectgroup-input" x-model="destinationType" @change="onDestinationTypeChange()">
+                                        <input type="radio" name="destination_type" value="registered" class="form-selectgroup-input" x-model="destinationType" @change="onUsageChange()">
                                         <span class="form-selectgroup-label d-flex align-items-center p-3">
-                                            <span class="me-3">
-                                                <span class="form-selectgroup-check"></span>
-                                            </span>
-                                            <span class="form-selectgroup-label-content">
+                                            <span class="me-3"><span class="form-selectgroup-check"></span></span>
+                                            <span class="form-selectgroup-label-content text-start">
                                                 <span class="form-selectgroup-title fw-bold">Selling to Client</span>
-                                                <span class="text-muted">Registered account</span>
+                                                <span class="text-muted small">Registered account</span>
                                             </span>
                                         </span>
                                     </label>
                                     <label class="form-selectgroup-item flex-fill">
-                                        <input type="radio" name="destination_type" value="regular" class="form-selectgroup-input" x-model="destinationType" @change="onDestinationTypeChange()">
+                                        <input type="radio" name="destination_type" value="regular" class="form-selectgroup-input" x-model="destinationType" @change="onUsageChange()">
                                         <span class="form-selectgroup-label d-flex align-items-center p-3">
-                                            <span class="me-3">
-                                                <span class="form-selectgroup-check"></span>
-                                            </span>
-                                            <span class="form-selectgroup-label-content">
+                                            <span class="me-3"><span class="form-selectgroup-check"></span></span>
+                                            <span class="form-selectgroup-label-content text-start">
                                                 <span class="form-selectgroup-title fw-bold">Regular Sale</span>
-                                                <span class="text-muted">Enter name manually</span>
+                                                <span class="text-muted small">Enter name manually</span>
                                             </span>
                                         </span>
                                     </label>
                                     <label class="form-selectgroup-item flex-fill">
-                                        <input type="radio" name="destination_type" value="internal" class="form-selectgroup-input" x-model="destinationType" @change="onDestinationTypeChange()">
+                                        <input type="radio" name="destination_type" value="internal" class="form-selectgroup-input" x-model="destinationType" @change="onUsageChange()">
                                         <span class="form-selectgroup-label d-flex align-items-center p-3">
-                                            <span class="me-3">
-                                                <span class="form-selectgroup-check"></span>
-                                            </span>
-                                            <span class="form-selectgroup-label-content">
+                                            <span class="me-3"><span class="form-selectgroup-check"></span></span>
+                                            <span class="form-selectgroup-label-content text-start">
                                                 <span class="form-selectgroup-title fw-bold">Internal Project</span>
-                                                <span class="text-muted">Own usage</span>
+                                                <span class="text-muted small">Own project usage</span>
+                                            </span>
+                                        </span>
+                                    </label>
+                                    <label class="form-selectgroup-item flex-fill">
+                                        <input type="radio" name="destination_type" value="transfer" class="form-selectgroup-input" x-model="destinationType" @change="onUsageChange()">
+                                        <span class="form-selectgroup-label d-flex align-items-center p-3">
+                                            <span class="me-3"><span class="form-selectgroup-check"></span></span>
+                                            <span class="form-selectgroup-label-content text-start">
+                                                <span class="form-selectgroup-title fw-bold">Material Transfer</span>
+                                                <span class="text-muted small">Quarry to Crusher</span>
                                             </span>
                                         </span>
                                     </label>
                                 </div>
                             </div>
+
+                            <input type="hidden" name="activity_type" x-model="activityType">
+                            <input type="hidden" name="source_unit_id" x-model="sourceUnitId">
+                            <input type="hidden" name="destination_unit_id" x-model="destinationUnitId">
+
+                            <!-- Conditional Inputs based on Selection -->
+                            <div class="col-12" x-show="destinationType !== 'transfer'" x-transition>
 
                             <!-- Registered Mode Fields -->
                             <div class="col-md-6" x-show="destinationType === 'registered'" x-transition>
@@ -183,32 +196,35 @@
                                     <x-input-error :messages="$errors->get('project_id')" />
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Material Type</label>
-                                    <select class="form-select @error('metal_type_id') is-invalid @enderror"
-                                        name="metal_type_id">
-                                        <option value="">Select Material</option>
-                                        @foreach($metalTypes as $type)
-                                            <option value="{{ $type->id }}" {{ old('metal_type_id', $gatePass->metal_type_id) == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <x-input-error :messages="$errors->get('metal_type_id')" />
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label class="form-label">Material Type</label>
+                                        <select class="form-select @error('metal_type_id') is-invalid @enderror"
+                                            name="metal_type_id">
+                                            <option value="">Select Material</option>
+                                            @foreach($metalTypes as $type)
+                                                <option value="{{ $type->id }}" {{ old('metal_type_id', $gatePass->metal_type_id) == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <x-input-error :messages="$errors->get('metal_type_id')" />
+                                    </div>
                                 </div>
                             </div>
+                            <input type="hidden" name="trips" value="1">
 
                             <div class="col-12 mt-0">
                                 <hr class="my-2 opacity-50">
                             </div>
 
                             <!-- Section 3: Quantity & Cost -->
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="mb-3">
-                                    <label class="form-label">Weight / Quantity (CFT)</label>
+                                    <label class="form-label" x-text="destinationType === 'transfer' ? 'Quantity (Optional)' : 'Weight / Quantity (CFT)'"></label>
                                     <div class="input-group">
                                         <input type="number" step="0.01"
                                             class="form-control @error('net_weight') is-invalid @enderror" name="net_weight"
-                                            x-model.number="netWeight" required>
+                                            x-model.number="netWeight" :required="destinationType !== 'transfer'">
                                         <span class="input-group-text">CFT</span>
                                     </div>
                                     <x-input-error :messages="$errors->get('net_weight')" />
@@ -217,7 +233,7 @@
                                 <input type="hidden" name="tare_weight" value="{{ $gatePass->tare_weight ?? 0 }}">
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="mb-3">
                                     <label class="form-label">Transport Cost (₹)</label>
                                     <div class="input-group mb-2">
@@ -226,7 +242,7 @@
                                             class="form-control @error('transport_cost') is-invalid @enderror"
                                             name="transport_cost" x-model.number="transportCost">
                                     </div>
-                                    <label class="form-check form-check-inline">
+                                    <label class="form-check form-check-inline" x-show="activityType === 'Sales'">
                                         <input class="form-check-input" type="checkbox" name="transport_is_billable"
                                             value="1" id="billTransport" x-model="isBillable"
                                             {{ $gatePass->transport_is_billable ? 'checked' : '' }}>
@@ -235,6 +251,8 @@
                                     <x-input-error :messages="$errors->get('transport_cost')" />
                                 </div>
                             </div>
+
+
                         </div>
                     </div>
                     <div class="card-footer bg-light-subtle text-end">
@@ -254,21 +272,26 @@
                 Alpine.data('gatePassEditForm', (initial) => ({
                     netWeight: initial.netWeight,
                     transportCost: initial.transportCost,
+                    activityType: initial.activityType,
+                    sourceUnitId: initial.sourceUnitId,
+                    destinationUnitId: initial.destinationUnitId,
+                    trips: initial.trips,
                     clientId: initial.clientId,
                     projectId: initial.projectId,
                     manualCustomerName: initial.manualCustomerName,
+                    manualVehicleNumber: initial.manualVehicleNumber,
                     destinationType: initial.destinationType,
                     isBillable: initial.isBillable,
 
                     init() {
                         this.$watch('clientId', (value) => {
-                            if (value && this.destinationType === 'registered') {
+                            if (value && this.activityType === 'Sales') {
                                 this.isBillable = true;
                             }
                         });
 
                         this.$watch('manualCustomerName', (value) => {
-                            if (value && this.destinationType === 'regular') {
+                            if (value && this.activityType === 'Sales') {
                                 this.isBillable = true;
                             }
                         });
@@ -280,17 +303,30 @@
                             if (value === 'regular' && this.manualCustomerName) {
                                 this.isBillable = true;
                             }
-                            if (value === 'internal') {
-                                this.isBillable = false;
-                            }
                         });
                     },
 
+                    onUsageChange() {
+                        if (this.destinationType === 'transfer') {
+                            this.activityType = 'Material Transfer';
+                            this.sourceUnitId = 1;
+                            this.destinationUnitId = 2;
+                            this.isBillable = false;
+                        } else if (this.destinationType === 'internal') {
+                            this.activityType = 'Internal Movement';
+                            this.sourceUnitId = 2;
+                            this.destinationUnitId = 3;
+                            this.isBillable = false;
+                        } else {
+                            this.activityType = 'Sales';
+                            this.sourceUnitId = 2;
+                            this.destinationUnitId = 3;
+                            this.isBillable = true;
+                        }
+                    },
+
                     onDestinationTypeChange() {
-                        this.clientId = '';
-                        this.projectId = '';
-                        this.manualCustomerName = '';
-                        this.isBillable = false;
+                        this.onUsageChange();
                     },
 
                     onProjectChange(e) {
@@ -303,14 +339,8 @@
                         
                         if (option) {
                             const clientId = option.getAttribute('data-client-id');
-                            const isInternal = option.getAttribute('data-is-internal') === '1';
-
                             if (this.destinationType === 'registered' && clientId) {
                                 this.clientId = clientId;
-                            }
-
-                            if (isInternal || this.destinationType === 'internal') {
-                                this.isBillable = false;
                             }
                         }
                     }

@@ -62,7 +62,49 @@ class AdminDashboardController extends Controller
             $systemHealth['database'] = 'Offline';
         }
 
-        return view('admin.dashboard', compact('projectStats', 'recentProjects', 'totalClients', 'vehicleStats', 'dailyStats', 'systemHealth', 'dieselStats', 'maintenanceStats'));
+        // --- Chart Data ---
+        $chartDates = [];
+        $chartLoads = [];
+        $chartTonnage = [];
+        $chartRevenue = [];
+        $chartDiesel = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = \Carbon\Carbon::today()->subDays($i);
+            $chartDates[] = $date->format('d M');
+
+            $start = $date->copy()->startOfDay();
+            $end = $date->copy()->endOfDay();
+
+            $chartLoads[] = \App\Models\GatePass::whereBetween('date', [$start, $end])->count();
+            $chartTonnage[] = round((float) \App\Models\GatePass::whereBetween('date', [$start, $end])->sum('net_weight'), 2);
+            $chartRevenue[] = \App\Models\GatePass::whereBetween('date', [$start, $end])->sum('total_amount');
+            $chartDiesel[] = round((float) \App\Models\DieselEntry::whereBetween('date', [$start, $end])->sum('liters'), 2);
+        }
+
+        $materialData = \App\Models\GatePass::selectRaw('metal_type_id, count(*) as count')
+            ->whereNotNull('metal_type_id')
+            ->groupBy('metal_type_id')
+            ->with('metalType')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'name' => $item->metalType ? $item->metalType->name : 'Unknown',
+                    'count' => $item->count
+                ];
+            });
+
+        $chartData = [
+            'dates' => json_encode($chartDates),
+            'loads' => json_encode($chartLoads),
+            'tonnage' => json_encode($chartTonnage),
+            'revenue' => json_encode($chartRevenue),
+            'diesel' => json_encode($chartDiesel),
+            'material_names' => json_encode($materialData->pluck('name')),
+            'material_counts' => json_encode($materialData->pluck('count')),
+        ];
+
+        return view('admin.dashboard', compact('projectStats', 'recentProjects', 'totalClients', 'vehicleStats', 'dailyStats', 'systemHealth', 'dieselStats', 'maintenanceStats', 'chartData'));
     }
 
     private function humanFileSize($size, $unit = "")

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DieselEntry;
 use App\Models\Vehicle;
-use App\Models\DieselLocation;
+use App\Models\OperationalUnit;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -19,15 +19,15 @@ class DieselEntryController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
 
-        $query = DieselEntry::with(['vehicle', 'dieselLocation'])
+        $query = DieselEntry::with(['vehicle', 'operationalUnit'])
             ->whereBetween('date', [$startDate, $endDate]);
 
         if ($request->filled('vehicle_id')) {
             $query->where('vehicle_id', $request->vehicle_id);
         }
 
-        if ($request->filled('diesel_location_id')) {
-            $query->where('diesel_location_id', $request->diesel_location_id);
+        if ($request->filled('operational_unit_id')) {
+            $query->where('operational_unit_id', $request->operational_unit_id);
         }
 
         $dieselEntries = $query->latest('date')->paginate(20)->withQueryString();
@@ -44,9 +44,9 @@ class DieselEntryController extends Controller
 
         // Total per location
         $perLocation = (clone $query)
-            ->select('diesel_location_id', DB::raw('SUM(liters) as total_liters'))
-            ->groupBy('diesel_location_id')
-            ->with('dieselLocation')
+            ->select('operational_unit_id', DB::raw('SUM(liters) as total_liters'))
+            ->groupBy('operational_unit_id')
+            ->with('operationalUnit')
             ->get();
 
         // Daily summary for the range
@@ -67,7 +67,7 @@ class DieselEntryController extends Controller
             ->pluck('total_liters', 'month');
 
         $vehicles = Vehicle::getCached();
-        $locations = DieselLocation::getActive();
+        $locations = OperationalUnit::getActive();
 
         return view('diesel.index', compact(
             'dieselEntries',
@@ -89,7 +89,7 @@ class DieselEntryController extends Controller
     public function create()
     {
         $vehicles = Vehicle::getCached();
-        $locations = DieselLocation::getActive();
+        $locations = OperationalUnit::getActive();
         return view('diesel.create', compact('vehicles', 'locations'));
     }
 
@@ -101,9 +101,10 @@ class DieselEntryController extends Controller
         $validated = $request->validate([
             'date' => 'required|date',
             'vehicle_id' => 'required|exists:vehicles,id',
-            'diesel_location_id' => 'required|exists:diesel_locations,id',
+            'operational_unit_id' => 'required|exists:operational_units,id',
+            'gate_pass_id' => 'nullable|exists:gate_passes,id',
             'liters' => 'required|numeric|min:0.01',
-            'purpose' => 'required|string|max:255',
+            'work_type' => 'required|string|max:255',
             'driver_name' => 'required|string|max:255',
         ]);
 
@@ -111,7 +112,7 @@ class DieselEntryController extends Controller
 
         DieselEntry::create($validated);
 
-        return redirect()->route('diesel.index')->with('success', 'Diesel entry recorded successfully.');
+        return redirect()->route('diesel.index')->with('success', 'Diesel issue recorded successfully.');
     }
 
     /**
@@ -120,7 +121,7 @@ class DieselEntryController extends Controller
     public function edit(DieselEntry $diesel)
     {
         $vehicles = Vehicle::getCached();
-        $locations = DieselLocation::getActive();
+        $locations = OperationalUnit::getActive();
         return view('diesel.edit', compact('diesel', 'vehicles', 'locations'));
     }
 
@@ -132,9 +133,10 @@ class DieselEntryController extends Controller
         $validated = $request->validate([
             'date' => 'required|date',
             'vehicle_id' => 'required|exists:vehicles,id',
-            'diesel_location_id' => 'required|exists:diesel_locations,id',
+            'operational_unit_id' => 'required|exists:operational_units,id',
+            'gate_pass_id' => 'nullable|exists:gate_passes,id',
             'liters' => 'required|numeric|min:0.01',
-            'purpose' => 'required|string|max:255',
+            'work_type' => 'required|string|max:255',
             'driver_name' => 'required|string|max:255',
         ]);
 
@@ -143,7 +145,7 @@ class DieselEntryController extends Controller
 
         $diesel->update($validated);
 
-        return redirect()->route('diesel.index')->with('success', 'Diesel entry updated successfully.');
+        return redirect()->route('diesel.index')->with('success', 'Diesel issue updated successfully.');
     }
 
     /**

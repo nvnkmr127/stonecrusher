@@ -43,8 +43,17 @@ class ClientController extends Controller
             $query->whereBetween('transaction_date', [$request->start_date, $request->end_date]);
         }
 
-        $transactions = $query->latest('transaction_date')->paginate(20)->withQueryString();
-        return view('clients.show', compact('client', 'transactions'));
+        $transactions = $query->latest('transaction_date')->paginate(20, ['*'], 'tx_page')->withQueryString();
+
+        $gatePasses = $client->gatePasses()
+            ->with(['vehicle', 'metalType'])
+            ->latest('date')
+            ->paginate(15, ['*'], 'gp_page');
+
+        $totalTrips = $client->gatePasses()->count();
+        $totalCft = $client->gatePasses()->sum('net_weight');
+
+        return view('clients.show', compact('client', 'transactions', 'gatePasses', 'totalTrips', 'totalCft'));
     }
 
     public function create()

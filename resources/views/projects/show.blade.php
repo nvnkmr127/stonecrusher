@@ -38,70 +38,131 @@
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <div class="form-label">Client</div>
-                            <div>{{ $project->client->name }}</div>
+                            <div class="form-label">Client / Type</div>
+                            <div>
+                                @if($project->is_internal)
+                                    <span class="badge bg-info-lt">Internal Project</span>
+                                @else
+                                    {{ $project->client->name ?? 'No Client Assigned' }}
+                                @endif
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-label">Location</div>
                             <div>{{ $project->location ?? 'Not specified' }}</div>
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-label">Start Date</div>
-                            <div>{{ $project->start_date ? $project->start_date->format('d M, Y') : '-' }}</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-label">End Date</div>
-                            <div>{{ $project->end_date ? $project->end_date->format('d M, Y') : '-' }}</div>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-label">Estimated Quantity</div>
-                            <div>{{ number_format($project->estimated_quantity) }} Tons</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-label">Status</div>
-                            <div>
-                                <span
-                                    class="badge bg-{{ $project->status === 'active' ? 'green' : ($project->status === 'completed' ? 'blue' : 'secondary') }}-lt uppercase">
-                                    {{ $project->status }}
-                                </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="row row-cards">
+                <div class="col-12">
+                    <div class="card card-sm">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <span class="bg-primary text-white avatar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                            <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                            <path d="M5 17h-2v-4m-1 -8h11v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" />
+                                            <line x1="3" y1="9" x2="7" y2="9" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="col">
+                                    <div class="font-weight-medium">
+                                        {{ $totalTrips }} Total Trips
+                                    </div>
+                                    <div class="text-muted">
+                                        Recorded under project
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <div class="form-label">Description</div>
-                        <div class="text-muted">
-                            {{ $project->description ?? 'No description provided.' }}
+                </div>
+                <div class="col-12">
+                    <div class="card card-sm">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <span class="bg-success text-white avatar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path d="M12 3v18" />
+                                            <path d="M16 7h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4h-6" />
+                                            <path d="M12 21v-2" />
+                                            <path d="M12 3v2" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="col">
+                                    <div class="font-weight-medium">
+                                        {{ number_format($totalCft, 2) }} CFT
+                                    </div>
+                                    <div class="text-muted">
+                                        Cumulative Volume
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Progress</h3>
-                </div>
-                <div class="card-body">
-                    <div class="mb-2">
-                        <label class="form-label">Completion</label>
-                        <div class="progress progress-lg">
-                            <div class="progress-bar bg-primary" style="width: {{ $project->progress ?? 0 }}%"
-                                role="progressbar" aria-valuenow="{{ $project->progress ?? 0 }}" aria-valuemin="0"
-                                aria-valuemax="100">
-                                {{ $project->progress ?? 0 }}%
-                            </div>
-                        </div>
+        <div class="col-12">
+            <x-card>
+                <x-slot name="header">
+                    Trips / Gate Passes
+                </x-slot>
+
+                <x-table>
+                    <thead>
+                        <tr>
+                            <th>GP Number</th>
+                            <th>Date</th>
+                            <th>Vehicle Number</th>
+                            <th>Material Type</th>
+                            <th>Weight / Quantity (CFT)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($gatePasses as $gp)
+                            <tr>
+                                <td>
+                                    <a href="{{ route('gate-passes.edit', $gp) }}"
+                                        class="text-reset fw-bold">{{ $gp->gate_pass_number }}</a>
+                                </td>
+                                <td>{{ $gp->date->format('d M, Y h:i A') }}</td>
+                                <td>{{ $gp->vehicle->registration_number ?? $gp->manual_vehicle_number ?? '-' }}</td>
+                                <td>{{ $gp->metalType->name ?? '-' }}</td>
+                                <td>{{ $gp->net_weight }} CFT</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5">
+                                    <x-empty-state title="No Trips Found"
+                                        description="There are currently no gate passes linked to this project." />
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </x-table>
+
+                @if($gatePasses->hasPages())
+                    <div class="mt-3">
+                        {{ $gatePasses->links() }}
                     </div>
-                    <p class="text-muted mt-3">
-                        Update the progress bar via the "Edit Project" button to track milestones.
-                    </p>
-                </div>
-            </div>
+                @endif
+            </x-card>
         </div>
     </div>
 

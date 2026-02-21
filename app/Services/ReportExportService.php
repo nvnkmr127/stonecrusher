@@ -38,8 +38,43 @@ class ReportExportService
             "Expires" => "0"
         ];
 
-        $callback = function () use ($sales, $transactions, $date) {
+        $stock = \App\Models\DieselStock::where('date', $date)->first();
+
+        $callback = function () use ($sales, $transactions, $date, $stock) {
             $file = fopen('php://output', 'w');
+
+            // Diesel Stock Section (New: Requirement 1)
+            fputcsv($file, ['DIESEL STOCK (TANK) - ' . Carbon::parse($date)->format('d M Y')]);
+            fputcsv($file, ['Opening Stock', 'Purchased Liters', 'Total Available', 'Closing Balance']);
+            if ($stock) {
+                fputcsv($file, [
+                    number_format($stock->opening_liters, 2) . ' L',
+                    number_format($stock->purchased_liters, 2) . ' L',
+                    number_format($stock->total_available, 2) . ' L',
+                    number_format($stock->closing_liters, 2) . ' L',
+                ]);
+            } else {
+                fputcsv($file, ['No stock record found', '-', '-', '-']);
+            }
+            fputcsv($file, []);
+
+            // Diesel Consumption Breakdown (New: Requirement 3)
+            $issues = \App\Models\DieselEntry::with('operationalUnit')
+                ->whereDate('date', $date)
+                ->get();
+
+            if ($issues->count() > 0) {
+                fputcsv($file, ['DIESEL CONSUMPTION BREAKDOWN']);
+                fputcsv($file, ['Operational Unit', 'Total Liters Issued', 'Records Count']);
+                foreach ($issues->groupBy('operational_unit_id') as $summary) {
+                    fputcsv($file, [
+                        $summary->first()->operationalUnit->name ?? 'N/A',
+                        number_format($summary->sum('liters'), 2) . ' L',
+                        $summary->count()
+                    ]);
+                }
+                fputcsv($file, []);
+            }
 
             // Sales Section
             fputcsv($file, ['DAILY SALES REPORT - ' . Carbon::parse($date)->format('d M Y')]);

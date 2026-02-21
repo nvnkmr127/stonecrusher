@@ -32,6 +32,11 @@ class Client extends Model
         return $this->hasMany(ClientTransaction::class)->orderBy('transaction_date', 'desc')->orderBy('created_at', 'desc');
     }
 
+    public function gatePasses()
+    {
+        return $this->hasMany(GatePass::class);
+    }
+
     public function getBalanceAttribute()
     {
         // Balance = Total Credit (Advance) - Total Debit (Sales)

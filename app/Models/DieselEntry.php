@@ -14,9 +14,10 @@ class DieselEntry extends Model
     protected $fillable = [
         'date',
         'vehicle_id',
-        'diesel_location_id',
+        'operational_unit_id',
+        'gate_pass_id',
         'liters',
-        'purpose',
+        'work_type',
         'location',
         'driver_name',
     ];
@@ -31,9 +32,14 @@ class DieselEntry extends Model
         return $this->belongsTo(Vehicle::class);
     }
 
-    public function dieselLocation()
+    public function operationalUnit()
     {
-        return $this->belongsTo(DieselLocation::class);
+        return $this->belongsTo(OperationalUnit::class);
+    }
+
+    public function gatePass()
+    {
+        return $this->belongsTo(GatePass::class);
     }
 
     public function getActivitylogOptions(): LogOptions

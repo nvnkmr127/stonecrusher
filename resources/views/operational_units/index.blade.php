@@ -1,9 +1,9 @@
 <x-tabler-layout>
     <x-slot name="header">
-        <x-page-header title="Diesel Locations" subtitle="Manage locations for diesel consumption" :breadcrumbs="[
+        <x-page-header title="Operational Units" subtitle="Manage internal operational cost centers" :breadcrumbs="[
         ['label' => 'Dashboard', 'route' => 'dashboard'],
         ['label' => 'Diesel Register', 'route' => 'diesel.index'],
-        ['label' => 'Locations', 'active' => true],
+        ['label' => 'Operational Units', 'active' => true],
     ]">
             <x-slot name="actions">
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLocationModal">
@@ -14,7 +14,7 @@
                         <path d="M12 5l0 14" />
                         <path d="M5 12l14 0" />
                     </svg>
-                    Add Location
+                    Add Unit
                 </button>
             </x-slot>
         </x-page-header>
@@ -27,6 +27,7 @@
                     <x-table>
                         <thead>
                             <tr>
+                                <th>Code</th>
                                 <th>Name</th>
                                 <th>Status</th>
                                 <th>Created At</th>
@@ -36,6 +37,7 @@
                         <tbody>
                             @forelse($locations as $location)
                                 <tr>
+                                    <td><code>{{ $location->code }}</code></td>
                                     <td>{{ $location->name }}</td>
                                     <td>
                                         @if($location->is_active)
@@ -52,7 +54,7 @@
                                                 data-bs-target="#editLocationModal{{ $location->id }}">
                                                 Edit
                                             </button>
-                                            <form action="{{ route('diesel-locations.destroy', $location) }}" method="POST"
+                                            <form action="{{ route('operational-units.destroy', $location) }}" method="POST"
                                                 onsubmit="return confirm('Are you sure?')">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-ghost-danger">Delete</button>
@@ -64,17 +66,22 @@
                                             tabindex="-1" role="dialog" aria-hidden="true">
                                             <div class="modal-dialog modal-dialog-centered" role="document">
                                                 <div class="modal-content text-start">
-                                                    <form action="{{ route('diesel-locations.update', $location) }}"
+                                                    <form action="{{ route('operational-units.update', $location) }}"
                                                         method="POST">
                                                         @csrf @method('PUT')
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title">Edit Location</h5>
+                                                            <h5 class="modal-title">Edit Operational Unit</h5>
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                                                 aria-label="Close"></button>
                                                         </div>
                                                         <div class="modal-body">
                                                             <div class="mb-3">
-                                                                <label class="form-label required">Location Name</label>
+                                                                <label class="form-label required">Unit Code</label>
+                                                                <input type="text" name="code" class="form-control"
+                                                                    value="{{ $location->code }}" required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label required">Unit Name</label>
                                                                 <input type="text" name="name" class="form-control"
                                                                     value="{{ $location->name }}" required>
                                                             </div>
@@ -90,7 +97,7 @@
                                                             <button type="button" class="btn btn-link link-secondary"
                                                                 data-bs-dismiss="modal">Cancel</button>
                                                             <button type="submit" class="btn btn-primary ms-auto">Update
-                                                                Location</button>
+                                                                Unit</button>
                                                         </div>
                                                     </form>
                                                 </div>
@@ -114,23 +121,28 @@
     <div class="modal modal-blur fade" id="addLocationModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
-                <form action="{{ route('diesel-locations.store') }}" method="POST">
+                <form action="{{ route('operational-units.store') }}" method="POST">
                     @csrf
                     <div class="modal-header">
-                        <h5 class="modal-title">New Location</h5>
+                        <h5 class="modal-title">New Operational Unit</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label required">Location Name</label>
-                            <input type="text" name="name" class="form-control" placeholder="e.g. Site A, Workshop"
+                            <label class="form-label required">Unit Code</label>
+                            <input type="text" name="code" class="form-control" placeholder="e.g. QRY, CRS"
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label required">Unit Name</label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Quarry, Crusher"
                                 required>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-link link-secondary"
                             data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary ms-auto">Add Location</button>
+                        <button type="submit" class="btn btn-primary ms-auto">Add Unit</button>
                     </div>
                 </form>
             </div>

@@ -41,6 +41,11 @@ class Project extends Model
         return $this->belongsTo(Client::class);
     }
 
+    public function gatePasses()
+    {
+        return $this->hasMany(GatePass::class);
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

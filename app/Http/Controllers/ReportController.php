@@ -8,6 +8,7 @@ use App\Models\ClientTransaction;
 use App\Models\Client;
 use App\Models\Vehicle;
 use App\Models\MetalType;
+use App\Models\DieselStock;
 use Carbon\Carbon;
 use DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -30,6 +31,9 @@ class ReportController extends Controller
     public function daily(Request $request)
     {
         $date = $request->input('date', Carbon::today()->toDateString());
+
+        // Diesel Stock for the day
+        $dieselStock = DieselStock::where('date', $date)->first();
 
         // 1. Sales (Completed Gate Passes)
         $gatePasses = GatePass::with(['client', 'vehicle', 'metalType'])
@@ -96,7 +100,30 @@ class ReportController extends Controller
             'by_mode' => $collections->groupBy('payment_mode')->map->sum('amount'),
         ];
 
-        return view('reports.daily', compact('date', 'gatePasses', 'salesSummary', 'metalStats', 'collections', 'collectionSummary'));
+        // 3. Diesel Issues Summary (New: Requirement 3)
+        $dieselIssues = \App\Models\DieselEntry::with('operationalUnit')
+            ->whereDate('date', $date)
+            ->get();
+
+        $dieselIssuesSummary = $dieselIssues->groupBy('operational_unit_id')->map(function ($issues) {
+            return [
+                'unit_name' => $issues->first()->operationalUnit->name ?? 'N/A',
+                'unit_code' => $issues->first()->operationalUnit->code ?? 'N/A',
+                'total' => $issues->sum('liters'),
+                'count' => $issues->count()
+            ];
+        })->values();
+
+        return view('reports.daily', compact(
+            'date',
+            'gatePasses',
+            'salesSummary',
+            'metalStats',
+            'collections',
+            'collectionSummary',
+            'dieselStock',
+            'dieselIssuesSummary'
+        ));
     }
 
     public function exportDaily(Request $request, ReportExportService $exportService)
@@ -324,5 +351,79 @@ class ReportController extends Controller
         $advanceClients = $advanceClients->sortByDesc('current_balance'); // Descending (Largest positive first)
 
         return view('reports.outstanding', compact('outstandingClients', 'advanceClients'));
+    }
+
+    /**
+     * Vehicle Usage Report
+     */
+    public function vehicleUsage(Request $request)
+    {
+        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', Carbon::now()->toDateString());
+
+        $quarryId = \App\Models\OperationalUnit::where('code', 'QRY')->value('id') ?? 1;
+        $crusherId = \App\Models\OperationalUnit::where('code', 'CRS')->value('id') ?? 2;
+        $externalId = \App\Models\OperationalUnit::where('code', 'EXT')->value('id') ?? 3;
+
+        $vehicles = Vehicle::withSum([
+            'dieselEntries as total_diesel_liters' => function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('date', [$startDate, $endDate]);
+            }
+        ], 'liters')
+            ->with(['operationalUnit'])
+            ->get();
+
+        $usageData = [];
+
+        foreach ($vehicles as $vehicle) {
+            $gatePasses = GatePass::where('vehicle_id', $vehicle->id)
+                ->whereBetween('date', [$startDate, $endDate])
+                ->with(['sourceUnit', 'destinationUnit'])
+                ->get();
+
+            if ($gatePasses->isEmpty() && ($vehicle->total_diesel_liters ?? 0) == 0) {
+                continue;
+            }
+
+            $breakdown = $gatePasses->groupBy(function ($gp) {
+                $source = $gp->sourceUnit->name ?? 'N/A';
+                $dest = $gp->destinationUnit->name ?? 'N/A';
+                return "{$source} → {$dest}";
+            })->map(function ($rows) {
+                return [
+                    'trips' => $rows->sum('trips'),
+                    'qty' => $rows->sum('loading_quantity'),
+                    'diesel_qty' => $rows->sum('diesel_qty'),
+                    'diesel_amount' => $rows->sum('diesel_amount'),
+                ];
+            });
+
+            // "Used In" percentages based on source unit
+            // QRY = Quarry (id 1), CRS = Crusher (id 2), EXT = External (id 3)
+            $totalTrips = $gatePasses->sum('trips');
+
+            $sourceStats = [
+                'quarry' => $gatePasses->where('source_unit_id', $quarryId)->sum('trips'),
+                'crusher' => $gatePasses->where('source_unit_id', $crusherId)->sum('trips'),
+                'external' => $gatePasses->where('source_unit_id', $externalId)->sum('trips'),
+            ];
+
+            $usageData[] = (object) [
+                'vehicle' => $vehicle,
+                'total_trips' => $totalTrips,
+                'total_qty' => $gatePasses->sum('loading_quantity'),
+                'allocated_diesel' => $gatePasses->sum('diesel_amount'),
+                'allocated_diesel_qty' => $gatePasses->sum('diesel_qty'),
+                'actual_diesel_liters' => $vehicle->total_diesel_liters ?? 0,
+                'breakdown' => $breakdown,
+                'percentages' => [
+                    'quarry' => $totalTrips > 0 ? round(($sourceStats['quarry'] / $totalTrips) * 100, 1) : 0,
+                    'crusher' => $totalTrips > 0 ? round(($sourceStats['crusher'] / $totalTrips) * 100, 1) : 0,
+                    'external' => $totalTrips > 0 ? round(($sourceStats['external'] / $totalTrips) * 100, 1) : 0,
+                ]
+            ];
+        }
+
+        return view('reports.vehicle_usage', compact('usageData', 'startDate', 'endDate'));
     }
 }

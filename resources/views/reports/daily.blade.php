@@ -37,6 +37,89 @@
             </div>
         </div>
 
+        <!-- Diesel Stock (Daily Tank) -->
+        <div class="col-12 mb-3">
+            <div class="card bg-primary-lt border-primary-subtle shadow-sm">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                    <h3 class="card-title fw-bold">Diesel Stock Entry (Daily Tank)</h3>
+                    @if(!$dieselStock)
+                        <a href="{{ route('diesel-stocks.create', ['date' => $date]) }}" class="btn btn-sm btn-primary">
+                            Record Stock
+                        </a>
+                    @endif
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-vcenter table-nowrap card-table bg-transparent">
+                        <thead>
+                            <tr class="text-uppercase small text-muted">
+                                <th>Date</th>
+                                <th class="text-end">Opening stock</th>
+                                <th class="text-end text-success">Purchased litres</th>
+                                <th class="text-end fw-bold">Total available</th>
+                                <th class="text-end text-primary">Closing balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if($dieselStock)
+                                <tr class="fw-medium">
+                                    <td>{{ $dieselStock->date->format('d/m/Y') }}</td>
+                                    <td class="text-end">{{ number_format($dieselStock->opening_liters, 2) }} L</td>
+                                    <td class="text-end text-success">+
+                                        {{ number_format($dieselStock->purchased_liters, 2) }} L
+                                    </td>
+                                    <td class="text-end fw-bold">{{ number_format($dieselStock->total_available, 2) }} L
+                                    </td>
+                                    <td class="text-end text-primary">{{ number_format($dieselStock->closing_liters, 2) }} L
+                                    </td>
+                                </tr>
+                            @else
+                                <tr>
+                                    <td colspan="5" class="text-center py-3 text-muted">
+                                        No stock record found for this date.
+                                    </td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diesel Consumption Breakdown (Requirement 3) -->
+        <div class="col-12 mb-3">
+            <div class="card bg-azure-lt border-azure-subtle shadow-sm">
+                <div class="card-header py-2">
+                    <h3 class="card-title fw-bold">Diesel Consumption Summary</h3>
+                </div>
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        @forelse($dieselIssuesSummary as $summary)
+                            <div class="col-sm-4 border-end text-center">
+                                <div class="subheader text-azure mb-1">{{ $summary['unit_name'] }}
+                                    ({{ $summary['unit_code'] }})</div>
+                                <div class="h2 mb-0 fw-bold text-azure-emphasis">{{ number_format($summary['total'], 2) }} L
+                                </div>
+                                <div class="text-muted small">{{ $summary['count'] }} issues recorded</div>
+                            </div>
+                        @empty
+                            <div class="col-12 py-2 text-center text-muted">
+                                <em>No diesel issues recorded for this date.</em>
+                            </div>
+                        @endforelse
+
+                        @if($dieselIssuesSummary->count() > 0)
+                            <div class="col-sm text-end">
+                                <a href="{{ route('diesel.index', ['start_date' => $date, 'end_date' => $date]) }}"
+                                    class="btn btn-sm btn-ghost-azure">
+                                    View Full Register
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Sales Summary Block -->
         <div class="col-md-6">
             <div class="card h-100">

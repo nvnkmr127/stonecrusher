@@ -11,7 +11,7 @@
                     Project Information
                 </x-slot>
 
-                <form action="{{ route('projects.update', $project) }}" method="POST">
+                <form action="{{ route('projects.update', $project) }}" method="POST" x-data="{ isInternal: {{ old('is_internal', $project->is_internal) ? 'true' : 'false' }} }">
                     @csrf
                     @method('PUT')
 
@@ -20,65 +20,18 @@
                     <div class="mb-3">
                         <label class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="is_internal" value="1" id="is_internal"
-                                {{ $project->is_internal ? 'checked' : '' }} onchange="toggleClientRequired(this.checked)">
+                                x-model="isInternal">
                             <span class="form-check-label">Internal Project (Our Own)</span>
                         </label>
                     </div>
 
-                    <div id="client_selection" style="{{ $project->is_internal ? 'display: none;' : '' }}">
+                    <div id="client_selection" x-show="!isInternal" x-transition>
                         <x-form.select name="client_id" label="Client" :options="$clients->pluck('name', 'id')->toArray()"
-                            :selected="$project->client_id" :required="!$project->is_internal" />
+                            :selected="$project->client_id" x-bind:required="!isInternal" x-bind:disabled="isInternal" />
                     </div>
-
-                    <script>
-                        function toggleClientRequired(isInternal) {
-                            const clientSelect = document.querySelector('select[name="client_id"]');
-                            const clientContainer = document.getElementById('client_selection');
-                            if (isInternal) {
-                                clientSelect.value = '';
-                                clientSelect.removeAttribute('required');
-                                clientContainer.style.display = 'none';
-                            } else {
-                                clientSelect.setAttribute('required', 'required');
-                                clientContainer.style.display = 'block';
-                            }
-                        }
-                    </script>
 
                     <x-form.input name="location" label="Project Location" :value="$project->location"
                         placeholder="e.g., Site Address, City" />
-
-                    <x-form.textarea name="description" label="Description" :value="$project->description" rows="3" />
-
-                    <x-form.input name="estimated_quantity" label="Estimated Quantity (Tons)" type="number" step="0.01"
-                        :value="$project->estimated_quantity" placeholder="0.00" />
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <x-form.input name="start_date" label="Start Date" type="date"
-                                :value="$project->start_date?->format('Y-m-d')" />
-                        </div>
-                        <div class="col-md-6">
-                            <x-form.input name="end_date" label="End Date" type="date"
-                                :value="$project->end_date?->format('Y-m-d')" />
-                        </div>
-                    </div>
-
-                    <x-form.select name="status" label="Status" :options="[
-        'pending' => 'Pending',
-        'active' => 'Active',
-        'completed' => 'Completed',
-        'cancelled' => 'Cancelled'
-    ]" :selected="$project->status" required />
-
-                    <div class="mb-3">
-                        <label class="form-label">Progress (%)</label>
-                        <input type="range" class="form-range" name="progress" id="progress" min="0" max="100"
-                            value="{{ $project->progress ?? 0 }}"
-                            oninput="document.getElementById('progressValue').textContent = this.value">
-                        <div class="text-muted">Current: <span id="progressValue">{{ $project->progress ?? 0 }}</span>%
-                        </div>
-                    </div>
 
                     <hr class="my-4">
 

@@ -2,8 +2,8 @@
     <x-slot name="header">
         <div class="row align-items-center">
             <div class="col">
-                <h2 class="page-title">Vehicles</h2>
-                <div class="page-subtitle">Manage vehicle fleet</div>
+                <h2 class="page-title">Our Vehicles</h2>
+                <div class="page-subtitle">Manage our owned vehicle fleet</div>
             </div>
             <div class="col-auto">
                 <a href="{{ route('vehicles.create') }}" class="btn btn-primary">
@@ -14,7 +14,7 @@
                         <path d="M12 5l0 14" />
                         <path d="M5 12l14 0" />
                     </svg>
-                    Add Vehicle
+                    Add Owned Vehicle
                 </a>
             </div>
         </div>
@@ -24,7 +24,7 @@
         <div class="col-12">
             <x-card>
                 <x-slot name="header">
-                    Vehicles ({{ $vehicles->total() }})
+                    Our Owned Vehicles ({{ $vehicles->total() }})
                 </x-slot>
 
                 <x-table>
@@ -33,7 +33,7 @@
                             <th>Registration Number</th>
                             <th>Type</th>
                             <th>Model</th>
-                            <th>Assigned Location</th>
+                            <th>Assigned Unit</th>
                             <th>Status</th>
                             <th>Ops Status</th>
                             <th>Created</th>
@@ -43,13 +43,17 @@
                     <tbody>
                         @forelse($vehicles as $vehicle)
                             <tr>
-                                <td><strong>{{ $vehicle->registration_number }}</strong></td>
+                                <td>
+                                    <a href="{{ route('vehicles.show', $vehicle) }}" class="text-reset fw-bold">
+                                        {{ $vehicle->registration_number }}
+                                    </a>
+                                </td>
                                 <td>{{ $vehicle->type ?? '-' }}</td>
                                 <td>{{ $vehicle->model ?? '-' }}</td>
                                 <td>
-                                    @if($vehicle->dieselLocation)
+                                    @if($vehicle->operationalUnit)
                                         <span class="badge bg-azure text-azure-fg">
-                                            {{ $vehicle->dieselLocation->name }}
+                                            {{ $vehicle->operationalUnit->name }} ({{ $vehicle->operationalUnit->code }})
                                         </span>
                                     @else
                                         <span class="text-muted small">Not assigned</span>

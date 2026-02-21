@@ -15,6 +15,7 @@ class SalaryAdvance extends Model
     protected $fillable = [
         'user_id',
         'amount',
+        'payment_mode',
         'date',
         'remarks',
     ];

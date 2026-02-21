@@ -162,6 +162,45 @@
         </div>
     </div>
 
+    <!-- Analytics Charts Row -->
+    <div class="row row-deck row-cards mb-3">
+        <!-- Sales & Revenue Trend Chart -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header border-bottom bg-white py-3">
+                    <h3 class="card-title fw-bold">7-Day Sales & Revenue Trend</h3>
+                </div>
+                <div class="card-body">
+                    <div id="chart-sales-trend" class="chart-lg"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Material Distribution Pie Chart -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header border-bottom bg-white py-3">
+                    <h3 class="card-title fw-bold">Material Overview</h3>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                    <div id="chart-material-distribution" class="chart-lg w-100"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diesel Consumption Bar Chart -->
+        <div class="col-lg-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header border-bottom bg-white py-3">
+                    <h3 class="card-title fw-bold">Weekly Diesel Consumption (Liters)</h3>
+                </div>
+                <div class="card-body">
+                    <div id="chart-diesel-trend" class="chart-lg"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Recent Projects -->
     <div class="row row-deck row-cards mb-3">
         <div class="col-12">
@@ -212,4 +251,86 @@
             </x-card>
         </div>
     </div>
+
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                let dates = {!! $chartData['dates'] !!}.reverse();
+
+                // 1. Sales Trend Chart (Mixed: Line & Column)
+                window.ApexCharts && (new ApexCharts(document.getElementById('chart-sales-trend'), {
+                    chart: {
+                        type: "line",
+                        fontFamily: 'inherit',
+                        height: 320,
+                        parentHeightOffset: 0,
+                        toolbar: { show: false },
+                        animations: { enabled: true },
+                    },
+                    series: [{
+                        name: "Revenue (₹)",
+                        type: "column",
+                        data: {!! $chartData['revenue'] !!}.reverse()
+                    }, {
+                        name: "Tonnage (T)",
+                        type: "line",
+                        data: {!! $chartData['tonnage'] !!}.reverse()
+                    }],
+                    colors: ['#206bc4', '#2fb344'],
+                    dataLabels: { enabled: false },
+                    stroke: { width: [0, 3], curve: 'smooth' },
+                    xaxis: { categories: dates, tooltip: { enabled: false } },
+                    yaxis: [
+                        { title: { text: "Revenue (₹)" }, labels: { formatter: (val) => "₹ " + val } },
+                        { opposite: true, title: { text: "Tonnage (T)" } }
+                    ],
+                    legend: { position: 'top', horizontalAlign: 'right' }
+                })).render();
+
+                // 2. Material Distribution Donut Chart
+                let materialNames = {!! $chartData['material_names'] !!};
+                let materialCounts = {!! $chartData['material_counts'] !!};
+
+                if (materialCounts.length > 0) {
+                    window.ApexCharts && (new ApexCharts(document.getElementById('chart-material-distribution'), {
+                        chart: { type: "donut", fontFamily: 'inherit', height: 320, sparkline: { enabled: true } },
+                        series: materialCounts,
+                        labels: materialNames,
+                        colors: ['#206bc4', '#4299e1', '#66b3ff', '#99ccff', '#cce6ff'],
+                        legend: { show: true, position: 'bottom' },
+                        tooltip: { fillSeriesColor: false },
+                        plotOptions: { pie: { donut: { size: '65%' } } }
+                    })).render();
+                } else {
+                    document.getElementById('chart-material-distribution').innerHTML = '<div class="text-muted text-center py-5">No material data available yet.</div>';
+                }
+
+                // 3. Diesel Trend Area Chart
+                window.ApexCharts && (new ApexCharts(document.getElementById('chart-diesel-trend'), {
+                    chart: {
+                        type: "area",
+                        fontFamily: 'inherit',
+                        height: 240,
+                        parentHeightOffset: 0,
+                        toolbar: { show: false },
+                    },
+                    series: [{
+                        name: "Diesel (L)",
+                        data: {!! $chartData['diesel'] !!}.reverse()
+                    }],
+                    fill: {
+                        type: 'gradient',
+                        gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.1, stops: [0, 100] }
+                    },
+                    colors: ['#f59f00'],
+                    dataLabels: { enabled: false },
+                    stroke: { width: 3, curve: 'smooth' },
+                    xaxis: { categories: dates, tooltip: { enabled: false } },
+                    yaxis: { title: { text: "Liters" } },
+                    legend: { show: false }
+                })).render();
+            });
+        </script>
+    @endpush
 </x-tabler-layout>

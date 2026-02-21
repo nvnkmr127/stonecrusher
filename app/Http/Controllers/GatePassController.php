@@ -19,7 +19,7 @@ class GatePassController extends Controller
      */
     public function index()
     {
-        $gatePasses = GatePass::with(['client', 'project', 'vehicle', 'metalType', 'transaction'])
+        $gatePasses = GatePass::with(['client', 'project', 'vehicle', 'metalType', 'transaction', 'sourceUnit', 'destinationUnit'])
             ->when(request('search'), function ($query, $search) {
                 $query->where('gate_pass_number', 'like', "%{$search}%")
                     ->orWhere('driver_name', 'like', "%{$search}%")
@@ -27,11 +27,11 @@ class GatePassController extends Controller
                         $q->where('name', 'like', "%{$search}%");
                     })
                     ->orWhereHas('vehicle', function ($q) use ($search) {
-                        $q->where('vehicle_number', 'like', "%{$search}%");
+                        $q->where('registration_number', 'like', "%{$search}%");
                     });
             })
             ->latest()
-            ->paginate(10)
+            ->paginate(15)
             ->withQueryString();
 
         return view('gate_passes.index', compact('gatePasses'));
@@ -54,8 +54,9 @@ class GatePassController extends Controller
         $crusherLon = Setting::get('crusher_longitude', 0);
         $defaultRoundTrip = (bool) Setting::get('default_round_trip', false);
         $destinations = DeliveryDestination::getCached();
+        $operationalUnits = \App\Models\OperationalUnit::getActive();
 
-        return view('gate_passes.create', compact('clients', 'projects', 'vehicles', 'metalTypes', 'gpNumber', 'transportRate', 'crusherLat', 'crusherLon', 'destinations', 'defaultRoundTrip'));
+        return view('gate_passes.create', compact('clients', 'projects', 'vehicles', 'metalTypes', 'gpNumber', 'transportRate', 'crusherLat', 'crusherLon', 'destinations', 'defaultRoundTrip', 'operationalUnits'));
     }
 
     /**
@@ -63,7 +64,11 @@ class GatePassController extends Controller
      */
     public function store(Request $request)
     {
-        $status = $request->input('status', \App\Enums\GatePassStatus::PENDING->value);
+        if (!$request->has('status')) {
+            $request->merge(['status' => \App\Enums\GatePassStatus::COMPLETED->value]);
+        }
+
+        $status = $request->input('status');
 
         $rules = [
             'gate_pass_number' => 'required|unique:gate_passes',
@@ -73,12 +78,17 @@ class GatePassController extends Controller
             'client_id' => 'nullable|exists:clients,id',
             'manual_customer_name' => 'nullable|string|max:255',
             'project_id' => 'nullable|exists:projects,id',
+            'source_unit_id' => 'required|exists:operational_units,id',
+            'destination_unit_id' => 'required|exists:operational_units,id',
+            'activity_type' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\ActivityType::class)],
+            'trips' => 'required|integer|min:1',
             'status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\GatePassStatus::class)],
             'remarks' => 'nullable|string',
             'delivery_location' => 'nullable|string|max:255',
             'distance_km' => 'nullable|numeric|min:0',
             'transport_cost' => 'nullable|numeric|min:0',
             'transport_is_billable' => 'nullable|boolean',
+            'diesel_qty' => 'nullable|numeric|min:0',
         ];
 
         // Conditional Validation
@@ -141,6 +151,7 @@ class GatePassController extends Controller
             $rate = floatval($rate ?? 0);
 
             $diesel = floatval($request->input('diesel_amount', 0));
+            $validated['diesel_qty'] = floatval($request->input('diesel_qty', 0));
             $transport = 0;
 
             if ($request->boolean('transport_is_billable')) {
@@ -209,8 +220,10 @@ class GatePassController extends Controller
         $crusherLat = Setting::get('crusher_latitude', 0);
         $crusherLon = Setting::get('crusher_longitude', 0);
         $destinations = DeliveryDestination::orderBy('name')->get();
+        $operationalUnits = \App\Models\OperationalUnit::getActive();
 
-        return view('gate_passes.edit', compact('gate_pass', 'clients', 'projects', 'vehicles', 'metalTypes', 'transportRate', 'crusherLat', 'crusherLon', 'destinations'));
+        $gatePass = $gate_pass;
+        return view('gate_passes.edit', compact('gatePass', 'gate_pass', 'clients', 'projects', 'vehicles', 'metalTypes', 'transportRate', 'crusherLat', 'crusherLon', 'destinations', 'operationalUnits'));
     }
 
     /**
@@ -220,17 +233,26 @@ class GatePassController extends Controller
     {
         $gate_pass = GatePass::findOrFail($id);
 
+        if (!$request->has('status')) {
+            $request->merge(['status' => $gate_pass->status instanceof \App\Enums\GatePassStatus ? $gate_pass->status->value : $gate_pass->status]);
+        }
+
         $rules = [
             'date' => 'required|date',
-            'vehicle_id' => 'required|exists:vehicles,id',
+            'vehicle_id' => 'nullable|exists:vehicles,id',
+            'manual_vehicle_number' => 'nullable|required_without:vehicle_id|string|max:20',
             'client_id' => 'nullable|exists:clients,id',
             'manual_customer_name' => 'nullable|string|max:255',
             'project_id' => 'nullable|exists:projects,id',
+            'source_unit_id' => 'required|exists:operational_units,id',
+            'destination_unit_id' => 'required|exists:operational_units,id',
+            'activity_type' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\ActivityType::class)],
+            'trips' => 'required|integer|min:1',
             'metal_type_id' => 'nullable|exists:metal_types,id',
             'driver_name' => 'nullable|string|max:255',
             'gross_weight' => 'nullable|numeric|min:0',
             'tare_weight' => 'nullable|numeric|min:0',
-            'net_weight' => 'required|numeric|min:0',
+            'net_weight' => 'required_unless:activity_type,' . \App\Enums\ActivityType::INTERNAL_MOVEMENT->value . '|numeric|min:0',
             'loading_quantity' => 'nullable|numeric|min:0',
             'rate_per_ton' => 'nullable|numeric|min:0',
             'total_amount' => 'nullable|numeric|min:0',
@@ -242,6 +264,7 @@ class GatePassController extends Controller
             'distance_km' => 'nullable|numeric|min:0',
             'transport_cost' => 'nullable|numeric|min:0',
             'transport_is_billable' => 'nullable|boolean',
+            'diesel_qty' => 'nullable|numeric|min:0',
         ];
 
         if ($request->input('status') === \App\Enums\GatePassStatus::COMPLETED->value) {
@@ -254,6 +277,19 @@ class GatePassController extends Controller
         \App\Services\DayClosureService::checkAllowed($validated['date']);
         // Check if original date was closed (prevent editing closed records)
         \App\Services\DayClosureService::checkAllowed($gate_pass->date);
+
+        // Handle Manual Vehicle
+        if (empty($validated['vehicle_id']) && !empty($request->input('manual_vehicle_number'))) {
+            $vehicle = Vehicle::firstOrCreate(
+                ['registration_number' => $request->input('manual_vehicle_number')],
+                ['is_active' => true, 'transport_multiplier' => 1.0] // Default defaults
+            );
+            $validated['vehicle_id'] = $vehicle->id;
+        }
+
+        if (empty($validated['vehicle_id'])) {
+            return back()->withErrors(['vehicle_id' => 'Please select a vehicle or enter one manually.'])->withInput();
+        }
 
         // 1. Enforce Weight Logic
         $validated['gross_weight'] = floatval($validated['gross_weight'] ?? 0);
@@ -279,6 +315,7 @@ class GatePassController extends Controller
             $rate = floatval($rate ?? 0);
 
             $diesel = floatval($request->input('diesel_amount', $gate_pass->diesel_amount ?? 0));
+            $validated['diesel_qty'] = floatval($request->input('diesel_qty', $gate_pass->diesel_qty ?? 0));
             $transport = 0;
 
             if ($request->boolean('transport_is_billable')) {
@@ -288,8 +325,10 @@ class GatePassController extends Controller
             // Total = (Qty * Rate) + Diesel + Transport
             $calculatedTotal = ($qty * $rate) + $diesel + $transport;
 
-            // Override for internal projects
-            if (!empty($validated['project_id'])) {
+            // Override for internal projects or specific activity types
+            if ($validated['activity_type'] !== \App\Enums\ActivityType::SALES->value) {
+                $calculatedTotal = 0;
+            } elseif (!empty($validated['project_id'])) {
                 $project = \App\Models\Project::find($validated['project_id']);
                 if ($project && $project->is_internal) {
                     $calculatedTotal = 0;

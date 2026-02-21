@@ -1,18 +1,18 @@
-<x-tabler-layout title="Record Salary Advance">
+<x-tabler-layout title="Edit Salary Advance">
     <div class="page-header d-print-none mb-4">
         <div class="container-xl">
             <div class="row g-2 align-items-center">
                 <div class="col">
                     <h2 class="page-title fw-bold text-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-cash me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                            <path d="M7 9m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" />
-                            <path d="M14 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                            <path d="M17 9v-2a2 2 0 0 0 -2 -2h-10a2 2 0 0 0 -2 2v6a2 2 0 0 0 2 2h2" />
+                            <path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" />
+                            <path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" />
+                            <path d="M16 5l3 3" />
                         </svg>
-                        Record Salary Advance
+                        Edit Salary Advance
                     </h2>
-                    <div class="text-muted">Issue a new salary advance to an employee.</div>
+                    <div class="text-muted">Modify previously recorded salary advance.</div>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <div class="btn-list">
@@ -35,8 +35,9 @@
         <div class="container-xl">
             <div class="row row-cards justify-content-center">
                 <div class="col-md-8">
-                    <form action="{{ route('salary-advances.store') }}" method="POST" class="card shadow-sm border-0">
+                    <form action="{{ route('salary-advances.update', $salaryAdvance->id) }}" method="POST" class="card shadow-sm border-0">
                         @csrf
+                        @method('PUT')
                         <div class="card-header bg-white py-3">
                             <h3 class="card-title fw-bold">Advance Details</h3>
                         </div>
@@ -56,7 +57,7 @@
                                             <select name="user_id" class="form-select @error('user_id') is-invalid @enderror" required>
                                                 <option value="">Select an employee...</option>
                                                 @foreach($users as $user)
-                                                    <option value="{{ $user->id }}" {{ (old('user_id') ?? ($selectedUserId ?? '')) == $user->id ? 'selected' : '' }}>
+                                                    <option value="{{ $user->id }}" {{ (old('user_id', $salaryAdvance->user_id) == $user->id) ? 'selected' : '' }}>
                                                         {{ $user->name }}
                                                     </option>
                                                 @endforeach
@@ -78,7 +79,7 @@
                                                 </svg>
                                             </span>
                                             <input type="number" step="0.01" name="amount"
-                                                class="form-control @error('amount') is-invalid @enderror" placeholder="0.00" value="{{ old('amount') }}"
+                                                class="form-control @error('amount') is-invalid @enderror" placeholder="0.00" value="{{ old('amount', $salaryAdvance->amount) }}"
                                                 required>
                                         </div>
                                         @error('amount') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
@@ -101,7 +102,7 @@
                                                 </svg>
                                             </span>
                                             <input type="date" name="date" class="form-control @error('date') is-invalid @enderror"
-                                                value="{{ old('date', date('Y-m-d')) }}" required>
+                                                value="{{ old('date', $salaryAdvance->date->format('Y-m-d')) }}" required>
                                         </div>
                                         @error('date') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                     </div>
@@ -119,11 +120,11 @@
                                                 </svg>
                                             </span>
                                             <select name="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
-                                                <option value="">Select Option (Optional)</option>
-                                                <option value="Cash" {{ old('payment_mode') == 'Cash' ? 'selected' : '' }}>Cash</option>
-                                                <option value="Bank Transfer" {{ old('payment_mode') == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
-                                                <option value="UPI" {{ old('payment_mode') == 'UPI' ? 'selected' : '' }}>UPI</option>
-                                                <option value="Cheque" {{ old('payment_mode') == 'Cheque' ? 'selected' : '' }}>Cheque</option>
+                                                <option value="">Select Mode</option>
+                                                <option value="Cash" {{ old('payment_mode', $salaryAdvance->payment_mode) == 'Cash' ? 'selected' : '' }}>Cash</option>
+                                                <option value="Bank Transfer" {{ old('payment_mode', $salaryAdvance->payment_mode) == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                                                <option value="UPI" {{ old('payment_mode', $salaryAdvance->payment_mode) == 'UPI' ? 'selected' : '' }}>UPI</option>
+                                                <option value="Cheque" {{ old('payment_mode', $salaryAdvance->payment_mode) == 'Cheque' ? 'selected' : '' }}>Cheque</option>
                                             </select>
                                         </div>
                                         @error('payment_mode') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
@@ -134,7 +135,7 @@
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">Remarks</label>
                                         <textarea name="remarks" class="form-control @error('remarks') is-invalid @enderror"
-                                            rows="4" placeholder="Optional: Reason for the advance...">{{ old('remarks') }}</textarea>
+                                            rows="4" placeholder="Optional: Reason for the advance...">{{ old('remarks', $salaryAdvance->remarks) }}</textarea>
                                         @error('remarks') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                     </div>
                                 </div>
@@ -150,7 +151,7 @@
                                         <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
                                         <path d="M14 4l0 4l-6 0l0 -4" />
                                     </svg>
-                                    Save Advance
+                                    Update Advance
                                 </button>
                             </div>
                         </div>

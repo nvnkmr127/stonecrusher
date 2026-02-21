@@ -95,6 +95,7 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
     Route::get('reports/custom/export', [App\Http\Controllers\ReportController::class, 'exportCustom'])->name('reports.custom.export');
     Route::get('reports/summary/{type}', [App\Http\Controllers\ReportController::class, 'summary'])->name('reports.summary');
     Route::get('reports/summary/{type}/export', [App\Http\Controllers\ReportController::class, 'exportSummary'])->name('reports.summary.export');
+    Route::get('reports/vehicle-usage', [App\Http\Controllers\ReportController::class, 'vehicleUsage'])->name('reports.vehicle-usage');
 
     // Gate Pass Reports
     Route::get('gate-passes/daily-report', [GatePassController::class, 'dailyReport'])->name('gate-passes.daily-report');
@@ -114,7 +115,8 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
 
     // Diesel Management
     Route::resource('diesel', App\Http\Controllers\DieselEntryController::class);
-    Route::resource('diesel-locations', App\Http\Controllers\DieselLocationController::class);
+    Route::resource('diesel-stocks', App\Http\Controllers\DieselStockController::class);
+    Route::resource('operational-units', App\Http\Controllers\OperationalUnitController::class);
 
     // Client Transactions
     Route::get('clients/{client}/transactions/create', [App\Http\Controllers\ClientTransactionController::class, 'create'])->name('clients.transactions.create');

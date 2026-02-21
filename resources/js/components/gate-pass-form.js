@@ -6,10 +6,14 @@ export default function gatePassForm(config = {}) {
         metalTypeId: config.metalTypeId || '',
         netWeight: config.netWeight || 0,
         transportCost: config.transportCost || 0,
+        activityType: config.activityType || 'Sales',
+        sourceUnitId: config.sourceUnitId || 2,
+        destinationUnitId: config.destinationUnitId || 3,
+        trips: config.trips || 1,
         clientId: config.clientId || '',
         projectId: config.projectId || '',
         manualCustomerName: config.manualCustomerName || '',
-        destinationType: config.destinationType || 'registered', // registered, regular, internal
+        destinationType: config.destinationType || 'registered', // registered, regular
         manualVehicleNumber: config.manualVehicleNumber || '',
         isBillable: config.isBillable || false,
         isManualTransportCost: false,
@@ -22,13 +26,13 @@ export default function gatePassForm(config = {}) {
             this.checkVehicleMultiplier();
 
             this.$watch('clientId', (value) => {
-                if (value && this.destinationType === 'registered') {
+                if (value && this.activityType === 'Sales') {
                     this.isBillable = true;
                 }
             });
 
             this.$watch('manualCustomerName', (value) => {
-                if (value && this.destinationType === 'regular') {
+                if (value && this.activityType === 'Sales') {
                     this.isBillable = true;
                 }
             });
@@ -42,10 +46,6 @@ export default function gatePassForm(config = {}) {
                 if (value === 'regular' && this.manualCustomerName) {
                     this.isBillable = true;
                 }
-                // Internal is always false
-                if (value === 'internal') {
-                    this.isBillable = false;
-                }
             });
         },
 
@@ -53,26 +53,50 @@ export default function gatePassForm(config = {}) {
             if (!this.manualVehicleNumber) return;
             const normalizedInput = this.manualVehicleNumber.toLowerCase().trim();
             const vehicle = this.vehicles.find(v => v.number && v.number.toLowerCase() === normalizedInput);
-            // Multiplier logic can go here if needed
+
+            // If vehicle has a preferred unit, we could auto-set source unit
+            if (vehicle && vehicle.unit_id && this.activityType === 'Sales') {
+                // this.sourceUnitId = vehicle.unit_id;
+            }
+        },
+
+        onUsageChange() {
+            // Mapping Destination Type to Activity & Units
+            if (this.destinationType === 'transfer') {
+                this.activityType = 'Material Transfer';
+                this.sourceUnitId = 1;
+                this.destinationUnitId = 2;
+                this.isBillable = false;
+            } else if (this.destinationType === 'internal') {
+                this.activityType = 'Internal Movement';
+                this.sourceUnitId = 2; // Usually Crusher
+                this.destinationUnitId = 3; // External/Internal site
+                this.isBillable = false;
+            } else {
+                // registered or regular (Sales)
+                this.activityType = 'Sales';
+                this.sourceUnitId = 2; // Crusher
+                this.destinationUnitId = 3; // External
+                this.isBillable = true;
+            }
+
+            // Reset selection fields when switching types
+            if (this.destinationType !== 'registered' && this.destinationType !== 'internal') {
+                this.clientId = '';
+                this.projectId = '';
+            }
+            if (this.destinationType !== 'regular') {
+                this.manualCustomerName = '';
+            }
         },
 
         onDestinationTypeChange() {
-            // Reset fields when switching
-            this.clientId = '';
-            this.projectId = '';
-            this.manualCustomerName = '';
-
-            if (this.destinationType === 'internal') {
-                this.isBillable = false;
-            } else {
-                this.isBillable = false;
-            }
+            this.onUsageChange();
         },
 
         onProjectChange(e) {
             if (!this.projectId) return;
 
-            // Try to find the select that triggered this
             const select = e ? e.target : null;
             if (!select) return;
 
@@ -80,14 +104,8 @@ export default function gatePassForm(config = {}) {
 
             if (option) {
                 const clientId = option.getAttribute('data-client-id');
-                const isInternal = option.getAttribute('data-is-internal') === '1';
-
                 if (this.destinationType === 'registered' && clientId) {
                     this.clientId = clientId;
-                }
-
-                if (isInternal || this.destinationType === 'internal') {
-                    this.isBillable = false;
                 }
             }
         },

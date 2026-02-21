@@ -14,16 +14,17 @@ class Vehicle extends Model
     protected $fillable = [
         'registration_number',
         'type',
-        'diesel_location_id',
+        'operational_unit_id',
         'model',
         'transport_multiplier',
         'is_active',
+        'is_owned',
         'operational_status',
     ];
 
-    public function dieselLocation()
+    public function operationalUnit()
     {
-        return $this->belongsTo(DieselLocation::class);
+        return $this->belongsTo(OperationalUnit::class);
     }
 
     public function maintenances()
@@ -31,10 +32,21 @@ class Vehicle extends Model
         return $this->hasMany(VehicleMaintenance::class);
     }
 
+    public function dieselEntries()
+    {
+        return $this->hasMany(DieselEntry::class);
+    }
+
+    public function gatePasses()
+    {
+        return $this->hasMany(GatePass::class);
+    }
+
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'is_owned' => 'boolean',
             'transport_multiplier' => 'decimal:2',
         ];
     }

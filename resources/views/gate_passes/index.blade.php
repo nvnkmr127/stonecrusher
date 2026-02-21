@@ -60,12 +60,11 @@
                             <th>GP Number</th>
                             <th>Date</th>
                             <th>Vehicle</th>
+                            <th>Usage</th>
                             <th>Client</th>
                             <th>Material</th>
                             <th>Weight/Qty</th>
-                            <th>Diesel/Adv</th>
                             <th>Status</th>
-                            <th>Sale Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -77,7 +76,16 @@
                                         class="text-reset fw-bold">{{ $gp->gate_pass_number }}</a>
                                 </td>
                                 <td>{{ $gp->date->format('d M, Y h:i A') }}</td>
-                                <td>{{ $gp->vehicle->vehicle_number }}</td>
+                                <td>{{ $gp->vehicle->registration_number ?? $gp->manual_vehicle_number ?? '-' }}</td>
+                                <td>
+                                    <div class="fw-bold">{{ $gp->activity_type->value }}</div>
+                                    @if($gp->activity_type->value == 'Material Transfer')
+                                        <div class="text-muted small">{{ $gp->sourceUnit->code ?? 'QRY' }} &rarr;
+                                            {{ $gp->destinationUnit->code ?? 'CRS' }}
+                                        </div>
+                                    @endif
+
+                                </td>
                                 <td>
                                     {{ $gp->client->name ?? $gp->manual_customer_name ?? '-' }}
                                     @if($gp->project)
@@ -93,30 +101,17 @@
                                     @else
                                         -
                                     @endif
-                                </td>
-                                <td>
-                                    @if($gp->diesel_amount > 0)
-                                        <div class="text-danger" title="Diesel">D: {{ $gp->diesel_amount }}</div>
-                                    @endif
-                                    @if($gp->advance_amount > 0)
-                                        <div class="text-info" title="Advance">A: {{ $gp->advance_amount }}</div>
-                                    @endif
-                                    @if($gp->diesel_amount <= 0 && $gp->advance_amount <= 0)
-                                        <span class="text-muted">-</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <x-status-badge :status="$gp->status->value ?? $gp->status" />
+
                                 </td>
                                 <td>
                                     @if($gp->project && $gp->project->is_internal)
-                                        <span class="badge bg-info-lt">Internal (No Charge)</span>
+                                        <span class="badge bg-info-lt" title="Internal Project">Internal (No Charge)</span>
                                     @elseif($gp->transaction)
                                         <span class="badge bg-teal" title="Transaction Ref: {{ $gp->transaction->id }}">
                                             Billed: ₹{{ number_format($gp->transaction->amount, 0) }}
                                         </span>
-                                    @elseif($gp->status->value == 'completed' && $gp->client_id)
-                                        <span class="badge bg-warning">Unbilled</span>
+                                    @elseif($gp->client_id)
+                                        <span class="badge bg-warning" title="Sale to client">Unbilled</span>
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif

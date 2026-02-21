@@ -29,6 +29,7 @@
                             <th>Date</th>
                             <th>Employee</th>
                             <th>Amount</th>
+                            <th>Mode</th>
                             <th>Remarks</th>
                             <th>Actions</th>
                         </tr>
@@ -39,6 +40,13 @@
                                 <td>{{ $advance->date->format('d M, Y') }}</td>
                                 <td>{{ $advance->user->name }}</td>
                                 <td class="fw-bold">₹ {{ number_format($advance->amount, 2) }}</td>
+                                <td>
+                                    @if($advance->payment_mode)
+                                        <span class="badge bg-purple-lt">{{ $advance->payment_mode }}</span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td>{{ $advance->remarks ?? '-' }}</td>
                                 <td>
                                     @php
@@ -62,7 +70,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center">No salary advances found.</td>
+                                <td colspan="6" class="text-center">No salary advances found.</td>
                             </tr>
                         @endforelse
                     </tbody>

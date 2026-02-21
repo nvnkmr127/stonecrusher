@@ -26,6 +26,7 @@ class SalaryAdvanceController extends Controller
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'amount' => 'required|numeric|min:1',
+            'payment_mode' => 'nullable|string',
             'date' => 'required|date',
             'remarks' => 'nullable|string|max:255',
         ]);
@@ -49,6 +50,7 @@ class SalaryAdvanceController extends Controller
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'amount' => 'required|numeric|min:1',
+            'payment_mode' => 'nullable|string',
             'date' => 'required|date',
             'remarks' => 'nullable|string|max:255',
         ]);
