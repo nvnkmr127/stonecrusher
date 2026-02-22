@@ -87,7 +87,7 @@ class ReportExportService
                     $sale->vehicle->vehicle_number,
                     $sale->client->name ?? 'Cash Sale',
                     $sale->metalType->name,
-                    $sale->net_weight . ' tons',
+                    $sale->net_weight . ' CFT',
                     $sale->total_amount
                 ]);
             }
@@ -252,12 +252,12 @@ class ReportExportService
             $file = fopen('php://output', 'w');
 
             if ($type == 'metal') {
-                fputcsv($file, ['Metal Type', 'Total Weight', 'Total Sales']);
+                fputcsv($file, ['Metal Type', 'Total CFT', 'Total Sales']);
                 foreach ($data as $row) {
                     fputcsv($file, [$row->metalType->name ?? 'Unknown', $row->total_weight, $row->total_amount]);
                 }
             } elseif ($type == 'vehicle') {
-                fputcsv($file, ['Vehicle', 'Total Trips', 'Total Weight']);
+                fputcsv($file, ['Vehicle', 'Total Trips', 'Total CFT']);
                 foreach ($data as $row) {
                     fputcsv($file, [$row->vehicle->vehicle_number ?? 'Unknown', $row->trips, $row->total_weight]);
                 }

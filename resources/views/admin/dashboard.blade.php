@@ -56,8 +56,8 @@
         </div>
         <div class="col-sm-6 col-lg-4">
             <x-card>
-                <div class="subheader">Today's Tonnage</div>
-                <div class="h1 mb-3 text-primary">{{ number_format($dailyStats['tonnage'], 2) }} Tons</div>
+                <div class="subheader">Today's Volume</div>
+                <div class="h1 mb-3 text-primary">{{ number_format($dailyStats['tonnage'], 2) }} CFT</div>
                 <div class="d-flex mb-2">
                     <div>Material Out</div>
                 </div>
@@ -273,7 +273,7 @@
                         type: "column",
                         data: {!! $chartData['revenue'] !!}.reverse()
                     }, {
-                        name: "Tonnage (T)",
+                        name: "Volume (CFT)",
                         type: "line",
                         data: {!! $chartData['tonnage'] !!}.reverse()
                     }],
@@ -283,7 +283,7 @@
                     xaxis: { categories: dates, tooltip: { enabled: false } },
                     yaxis: [
                         { title: { text: "Revenue (₹)" }, labels: { formatter: (val) => "₹ " + val } },
-                        { opposite: true, title: { text: "Tonnage (T)" } }
+                        { opposite: true, title: { text: "Volume (CFT)" } }
                     ],
                     legend: { position: 'top', horizontalAlign: 'right' }
                 })).render();

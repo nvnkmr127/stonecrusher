@@ -6,6 +6,9 @@ export default function gatePassForm(config = {}) {
         metalTypeId: config.metalTypeId || '',
         netWeight: config.netWeight || 0,
         transportCost: config.transportCost || 0,
+        dieselAmount: config.dieselAmount || 0,
+        ratePerTon: config.ratePerTon || 0,
+        totalAmount: 0,
         activityType: config.activityType || 'Sales',
         sourceUnitId: config.sourceUnitId || 2,
         destinationUnitId: config.destinationUnitId || 3,
@@ -24,6 +27,7 @@ export default function gatePassForm(config = {}) {
         init() {
             // Initial calculations
             this.checkVehicleMultiplier();
+            this.calculateTotal();
 
             this.$watch('clientId', (value) => {
                 if (value && this.activityType === 'Sales') {
@@ -111,7 +115,22 @@ export default function gatePassForm(config = {}) {
         },
 
         calculateTotal() {
-            // UI feedback
+            if (this.destinationType === 'transfer' || this.destinationType === 'internal') {
+                this.totalAmount = 0;
+                return;
+            }
+
+            const quantity = parseFloat(this.netWeight) || 0;
+            const rate = parseFloat(this.ratePerTon) || 0;
+            const diesel = parseFloat(this.dieselAmount) || 0;
+            const transport = this.isBillable ? (parseFloat(this.transportCost) || 0) : 0;
+
+            // Base amount from Quantity * Rate
+            const baseAmount = quantity * rate;
+            
+            // Total = Base Amount + Diesel + Transport
+            // Note: Diesel is added to the total amount as per user request
+            this.totalAmount = (baseAmount + diesel + transport).toFixed(2);
         }
     };
 }

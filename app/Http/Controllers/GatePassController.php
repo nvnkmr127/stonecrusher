@@ -89,6 +89,8 @@ class GatePassController extends Controller
             'transport_cost' => 'nullable|numeric|min:0',
             'transport_is_billable' => 'nullable|boolean',
             'diesel_qty' => 'nullable|numeric|min:0',
+            'diesel_amount' => 'nullable|numeric|min:0',
+            'rate_per_ton' => 'nullable|numeric|min:0',
         ];
 
         // Conditional Validation
@@ -160,6 +162,11 @@ class GatePassController extends Controller
 
             // Total = (Qty * Rate) + Diesel + Transport
             $calculatedTotal = ($qty * $rate) + $diesel + $transport;
+
+            // Override for internal movement
+            if ($validated['activity_type'] === \App\Enums\ActivityType::INTERNAL_MOVEMENT->value) {
+                $calculatedTotal = 0;
+            }
 
             // Override for internal projects
             if (!empty($validated['project_id'])) {
@@ -325,10 +332,13 @@ class GatePassController extends Controller
             // Total = (Qty * Rate) + Diesel + Transport
             $calculatedTotal = ($qty * $rate) + $diesel + $transport;
 
-            // Override for internal projects or specific activity types
-            if ($validated['activity_type'] !== \App\Enums\ActivityType::SALES->value) {
+            // Override for internal movement
+            if ($validated['activity_type'] === \App\Enums\ActivityType::INTERNAL_MOVEMENT->value) {
                 $calculatedTotal = 0;
-            } elseif (!empty($validated['project_id'])) {
+            }
+
+            // Override for internal projects
+            if (!empty($validated['project_id'])) {
                 $project = \App\Models\Project::find($validated['project_id']);
                 if ($project && $project->is_internal) {
                     $calculatedTotal = 0;
@@ -508,7 +518,7 @@ class GatePassController extends Controller
 
         // Efficiency Metrics
         $summary['avg_cost_per_km'] = $summary['total_distance'] > 0 ? $summary['total_cost'] / $summary['total_distance'] : 0;
-        $summary['avg_cost_per_ton'] = $summary['total_volume'] > 0 ? $summary['total_cost'] / $summary['total_volume'] : 0;
+        $summary['avg_cost_per_cft'] = $summary['total_volume'] > 0 ? $summary['total_cost'] / $summary['total_volume'] : 0;
         $summary['cost_to_sales_ratio'] = $summary['total_sales'] > 0 ? ($summary['total_cost'] / $summary['total_sales']) * 100 : 0;
 
         // Location-wise Breakdown with efficiency
@@ -525,7 +535,7 @@ class GatePassController extends Controller
             ->get()
             ->map(function ($row) {
                 $row->cost_per_km = $row->total_distance > 0 ? $row->total_cost / $row->total_distance : 0;
-                $row->cost_per_ton = $row->total_qty > 0 ? $row->total_cost / $row->total_qty : 0;
+                $row->cost_per_cft = $row->total_qty > 0 ? $row->total_cost / $row->total_qty : 0;
                 return $row;
             });
 

@@ -33,7 +33,7 @@
                             <th>Project Name</th>
                             <th>Client</th>
                             <th>Location</th>
-                            <th>Quantity (Tons)</th>
+                            <th>Quantity (CFT)</th>
                             <th>Progress</th>
                             <th>Status</th>
                             <th>Actions</th>

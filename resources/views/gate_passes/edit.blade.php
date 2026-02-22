@@ -26,6 +26,8 @@
                 x-data="gatePassEditForm({
                     netWeight: {{ (float) old('net_weight', $gatePass->net_weight) }},
                     transportCost: {{ (float) old('transport_cost', $gatePass->transport_cost ?? 0) }},
+                    dieselAmount: {{ (float) old('diesel_amount', $gatePass->diesel_amount ?? 0) }},
+                    ratePerTon: {{ (float) old('rate_per_ton', $gatePass->rate_per_ton ?? 0) }},
                     activityType: '{{ old('activity_type', $gatePass->activity_type->value) }}',
                     sourceUnitId: {{ old('source_unit_id', $gatePass->source_unit_id ?? 2) }},
                     destinationUnitId: {{ old('destination_unit_id', $gatePass->destination_unit_id ?? 3) }},
@@ -218,13 +220,13 @@
                             </div>
 
                             <!-- Section 3: Quantity & Cost -->
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
                                     <label class="form-label" x-text="destinationType === 'transfer' ? 'Quantity (Optional)' : 'Weight / Quantity (CFT)'"></label>
                                     <div class="input-group">
                                         <input type="number" step="0.01"
                                             class="form-control @error('net_weight') is-invalid @enderror" name="net_weight"
-                                            x-model.number="netWeight" :required="destinationType !== 'transfer'">
+                                            x-model.number="netWeight" @input="calculateTotal()" :required="destinationType !== 'transfer'">
                                         <span class="input-group-text">CFT</span>
                                     </div>
                                     <x-input-error :messages="$errors->get('net_weight')" />
@@ -233,22 +235,54 @@
                                 <input type="hidden" name="tare_weight" value="{{ $gatePass->tare_weight ?? 0 }}">
                             </div>
 
-                            <div class="col-md-4">
+                            <div class="col-md-3" x-show="destinationType !== 'transfer' && destinationType !== 'internal'" x-transition>
+                                <label class="form-label required">Rate per CFT</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" step="0.01"
+                                        class="form-control text-end @error('rate_per_ton') is-invalid @enderror"
+                                        name="rate_per_ton" x-model.number="ratePerTon" @input="calculateTotal()"
+                                        :required="destinationType !== 'transfer' && destinationType !== 'internal'">
+                                </div>
+                                <x-input-error :messages="$errors->get('rate_per_ton')" />
+                            </div>
+
+                            <div class="col-md-3">
                                 <div class="mb-3">
                                     <label class="form-label">Transport Cost (₹)</label>
                                     <div class="input-group mb-2">
                                         <span class="input-group-text">₹</span>
                                         <input type="number" step="0.01"
                                             class="form-control @error('transport_cost') is-invalid @enderror"
-                                            name="transport_cost" x-model.number="transportCost">
+                                            name="transport_cost" x-model.number="transportCost" @input="calculateTotal()">
                                     </div>
                                     <label class="form-check form-check-inline" x-show="activityType === 'Sales'">
                                         <input class="form-check-input" type="checkbox" name="transport_is_billable"
-                                            value="1" id="billTransport" x-model="isBillable"
+                                            value="1" id="billTransport" x-model="isBillable" @change="calculateTotal()"
                                             {{ $gatePass->transport_is_billable ? 'checked' : '' }}>
                                         <span class="form-check-label">Bill transport to client?</span>
                                     </label>
                                     <x-input-error :messages="$errors->get('transport_cost')" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Diesel Amount (₹)</label>
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text">₹</span>
+                                        <input type="number" step="0.01"
+                                            class="form-control @error('diesel_amount') is-invalid @enderror"
+                                            name="diesel_amount" x-model.number="dieselAmount" @input="calculateTotal()">
+                                    </div>
+                                    <x-input-error :messages="$errors->get('diesel_amount')" />
+                                </div>
+                            </div>
+
+                            <div class="col-12 mt-2" x-show="destinationType !== 'transfer' && destinationType !== 'internal'" x-transition>
+                                <div class="col-12 text-end">
+                                    <h2 class="mb-0 text-muted">Total Amount: <span class="text-primary" x-text="'₹ ' + totalAmount"></span></h2>
+                                    <small class="text-muted" x-show="isBillable">(Includes Transport Cost & Diesel)</small>
                                 </div>
                             </div>
 
@@ -272,6 +306,7 @@
                 Alpine.data('gatePassEditForm', (initial) => ({
                     netWeight: initial.netWeight,
                     transportCost: initial.transportCost,
+                    dieselAmount: initial.dieselAmount,
                     activityType: initial.activityType,
                     sourceUnitId: initial.sourceUnitId,
                     destinationUnitId: initial.destinationUnitId,
@@ -282,8 +317,12 @@
                     manualVehicleNumber: initial.manualVehicleNumber,
                     destinationType: initial.destinationType,
                     isBillable: initial.isBillable,
+                    ratePerTon: initial.ratePerTon,
+                    totalAmount: 0,
 
                     init() {
+                        this.calculateTotal();
+
                         this.$watch('clientId', (value) => {
                             if (value && this.activityType === 'Sales') {
                                 this.isBillable = true;
@@ -343,6 +382,24 @@
                                 this.clientId = clientId;
                             }
                         }
+                    },
+
+                    calculateTotal() {
+                        if (this.destinationType === 'transfer' || this.destinationType === 'internal') {
+                            this.totalAmount = 0;
+                            return;
+                        }
+
+                        const quantity = parseFloat(this.netWeight) || 0;
+                        const rate = parseFloat(this.ratePerTon) || 0;
+                        const diesel = parseFloat(this.dieselAmount) || 0;
+                        const transport = this.isBillable ? (parseFloat(this.transportCost) || 0) : 0;
+
+                        // Base amount from Quantity * Rate
+                        const baseAmount = quantity * rate;
+                        
+                        // Total = Base Amount + Diesel + Transport
+                        this.totalAmount = (baseAmount + diesel + transport).toFixed(2);
                     }
                 }));
             });

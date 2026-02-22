@@ -28,7 +28,7 @@ class SalesService
 
             $qtyDesc = $gatePass->loading_quantity > 0
                 ? "{$gatePass->loading_quantity} CFT"
-                : "{$gatePass->net_weight} Tons";
+                : "{$gatePass->net_weight} CFT";
 
             $data = [
                 'client_id' => $gatePass->client_id,

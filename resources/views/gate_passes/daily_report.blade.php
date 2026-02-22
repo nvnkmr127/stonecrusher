@@ -166,7 +166,6 @@
                             <tr>
                                 <th>Material / Metal Type</th>
                                 <th>No. of Loads</th>
-                                <th>Total Quantity (CFT)</th>
                                 <th>Total Volume (CFT)</th>
                                 <th class="text-end">Total Amount</th>
                             </tr>
@@ -177,15 +176,10 @@
                                     <td>{{ $stat->metalType->name ?? 'Unknown' }}</td>
                                     <td>{{ $stat->count }}</td>
                                     <td>
-                                        @if($stat->total_tons > 0)
-                                            {{ number_format($stat->total_tons, 2) }} CFT
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
-                                    <td>
                                         @if($stat->total_cft > 0)
                                             {{ number_format($stat->total_cft, 2) }} CFT
+                                        @elseif($stat->total_tons > 0)
+                                            {{ number_format($stat->total_tons, 2) }} CFT
                                         @else
                                             -
                                         @endif
@@ -202,7 +196,6 @@
                             <tr class="fw-bold bg-light">
                                 <td>TOTAL</td>
                                 <td>{{ $summary['total_loads'] }}</td>
-                                <td>-</td>
                                 <td>-</td>
                                 <td class="text-end">₹ {{ number_format($summary['total_sales'], 2) }}</td>
                             </tr>

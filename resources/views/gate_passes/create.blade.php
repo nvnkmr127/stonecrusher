@@ -35,6 +35,8 @@
                 manualCustomerName: {{ Illuminate\Support\Js::from(old('manual_customer_name', '')) }},
                 manualVehicleNumber: {{ Illuminate\Support\Js::from(old('manual_vehicle_number', '')) }},
                 destinationType: {{ Illuminate\Support\Js::from(old('manual_customer_name') ? 'regular' : (old('activity_type') == 'Material Transfer' ? 'transfer' : (old('project_id') && count($projects->where('id', old('project_id'))->where('is_internal', true)) > 0 ? 'internal' : 'registered'))) }},
+                dieselAmount: {{ (float) old('diesel_amount', 0) }},
+                ratePerTon: {{ (float) old('rate_per_ton', 0) }},
                 isBillable: {{ (old('client_id') || old('manual_customer_name') || old('transport_is_billable')) ? 'true' : 'false' }},
                 isManualVehicle: true,
                 vehicles: {{ Illuminate\Support\Js::from($vehicles->map(fn($v) => ['number' => $v->registration_number, 'multiplier' => (float) $v->transport_multiplier, 'unit_id' => $v->operational_unit_id])) }}
@@ -276,7 +278,7 @@
                                     </select>
                                     <x-input-error :messages="$errors->get('metal_type_id')" />
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-3">
                                     <label class="form-label" :class="destinationType !== 'transfer' && 'required'"
                                         x-text="destinationType === 'transfer' ? 'Quantity (Optional)' : 'Total Quantity (CFT)'"></label>
                                     <div class="input-group">
@@ -288,9 +290,26 @@
                                     </div>
                                     <x-input-error :messages="$errors->get('net_weight')" />
                                 </div>
+                                <div class="col-md-3" x-show="destinationType !== 'transfer' && destinationType !== 'internal'" x-transition>
+                                    <label class="form-label required">Rate per CFT</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">₹</span>
+                                        <input type="number" step="0.01"
+                                            class="form-control text-end fs-2 fw-bold @error('rate_per_ton') is-invalid @enderror"
+                                            name="rate_per_ton" x-model.number="ratePerTon" @input="calculateTotal()"
+                                            :required="destinationType !== 'transfer' && destinationType !== 'internal'">
+                                    </div>
+                                    <x-input-error :messages="$errors->get('rate_per_ton')" />
+                                </div>
                                 <input type="hidden" name="trips" value="1">
                                 <input type="hidden" name="gross_weight" value="0">
                                 <input type="hidden" name="tare_weight" value="0">
+                            </div>
+                            <div class="row g-3 mt-2" x-show="destinationType !== 'transfer' && destinationType !== 'internal'" x-transition>
+                                <div class="col-12 text-end">
+                                    <h2 class="mb-0 text-muted">Total Amount: <span class="text-primary" x-text="'₹ ' + totalAmount"></span></h2>
+                                    <small class="text-muted" x-show="isBillable">(Includes Transport Cost & Diesel)</small>
+                                </div>
                             </div>
                         </div>
 
@@ -335,6 +354,17 @@
                                             The transport cost will be added to the customer's invoice.
                                         </div>
                                     </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Diesel Amount (₹)</label>
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text bg-light">₹</span>
+                                        <input type="number" step="0.01"
+                                            class="form-control text-end fs-3 @error('diesel_amount') is-invalid @enderror"
+                                            name="diesel_amount" x-model.number="dieselAmount" @input="calculateTotal()"
+                                            placeholder="0.00">
+                                    </div>
+                                    <x-input-error :messages="$errors->get('diesel_amount')" />
                                 </div>
                             </div>
                         </div>

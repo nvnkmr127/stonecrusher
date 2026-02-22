@@ -116,10 +116,10 @@
                             </div>
                             <div class="col">
                                 <div class="font-weight-medium">
-                                    ₹{{ number_format($summary['avg_cost_per_km'], 2) }} / km
+                                    ₹{{ number_format($summary['avg_cost_per_cft'], 2) }} / CFT
                                 </div>
                                 <div class="text-muted">
-                                    Avg Cost Efficiency
+                                    Avg Cost per CFT
                                 </div>
                             </div>
                         </div>
@@ -257,7 +257,7 @@
                                 <td class="text-end">{{ number_format($row->total_distance, 0) }} km</td>
                                 <td class="text-end">{{ number_format($row->total_qty, 0) }}</td>
                                 <td class="text-end">₹{{ number_format($row->cost_per_km, 2) }}</td>
-                                <td class="text-end">₹{{ number_format($row->cost_per_ton, 2) }}</td>
+                                <td class="text-end">₹{{ number_format($row->cost_per_cft, 2) }}</td>
                                 <td class="text-end fw-bold">₹{{ number_format($row->total_cost, 2) }}</td>
                             </tr>
                         @endforeach
