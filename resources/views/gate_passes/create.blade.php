@@ -22,7 +22,7 @@
 
     <div class="row row-cards">
         <div class="col-lg-10 mx-auto">
-            <form action="{{ route('gate-passes.store') }}" method="POST" x-data="gatePassForm({
+            <form action="{{ route('gate-passes.store') }}" method="POST" x-data="gatePassCreateForm({
                 grossWeight: {{ (float) old('gross_weight', 0) }},
                 tareWeight: {{ (float) old('tare_weight', 0) }},
                 netWeight: {{ (float) old('net_weight', 0) }},
@@ -37,6 +37,7 @@
                 destinationType: {{ Illuminate\Support\Js::from(old('manual_customer_name') ? 'regular' : (old('activity_type') == 'Material Transfer' ? 'transfer' : (old('project_id') && count($projects->where('id', old('project_id'))->where('is_internal', true)) > 0 ? 'internal' : 'registered'))) }},
                 dieselAmount: {{ (float) old('diesel_amount', 0) }},
                 ratePerTon: {{ (float) old('rate_per_ton', 0) }},
+                totalAmount: 0,
                 isBillable: {{ (old('client_id') || old('manual_customer_name') || old('transport_is_billable')) ? 'true' : 'false' }},
                 isManualVehicle: true,
                 vehicles: {{ Illuminate\Support\Js::from($vehicles->map(fn($v) => ['number' => $v->registration_number, 'multiplier' => (float) $v->transport_multiplier, 'unit_id' => $v->operational_unit_id])) }}
@@ -386,4 +387,113 @@
             </form>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('gatePassCreateForm', (config) => ({
+                // Form Data
+                gatePassId: config.gatePassId || null,
+                status: config.status || 'pending',
+                metalTypeId: config.metalTypeId || '',
+                netWeight: config.netWeight || 0,
+                transportCost: config.transportCost || 0,
+                dieselAmount: config.dieselAmount || 0,
+                ratePerTon: config.ratePerTon || 0,
+                totalAmount: 0,
+                activityType: config.activityType || 'Sales',
+                sourceUnitId: config.sourceUnitId || 2,
+                destinationUnitId: config.destinationUnitId || 3,
+                trips: config.trips || 1,
+                clientId: config.clientId || '',
+                projectId: config.projectId || '',
+                manualCustomerName: config.manualCustomerName || '',
+                destinationType: config.destinationType || 'registered', // registered, regular
+                manualVehicleNumber: config.manualVehicleNumber || '',
+                isBillable: config.isBillable || false,
+                isManualTransportCost: false,
+                vehicles: config.vehicles || [],
+
+                init() {
+                    this.checkVehicleMultiplier();
+                    this.calculateTotal();
+
+                    this.$watch('clientId', (value) => {
+                        if (value && this.activityType === 'Sales') this.isBillable = true;
+                    });
+
+                    this.$watch('manualCustomerName', (value) => {
+                        if (value && this.activityType === 'Sales') this.isBillable = true;
+                    });
+
+                    this.$watch('destinationType', (value) => {
+                        if (value === 'registered' && this.clientId) this.isBillable = true;
+                        if (value === 'regular' && this.manualCustomerName) this.isBillable = true;
+                    });
+                },
+
+                checkVehicleMultiplier() {
+                    if (!this.manualVehicleNumber) return;
+                    const normalizedInput = this.manualVehicleNumber.toLowerCase().trim();
+                    const vehicle = this.vehicles.find(v => v.number && v.number.toLowerCase() === normalizedInput);
+                },
+
+                onUsageChange() {
+                    if (this.destinationType === 'transfer') {
+                        this.activityType = 'Material Transfer';
+                        this.sourceUnitId = 1;
+                        this.destinationUnitId = 2;
+                        this.isBillable = false;
+                    } else if (this.destinationType === 'internal') {
+                        this.activityType = 'Internal Movement';
+                        this.sourceUnitId = 2;
+                        this.destinationUnitId = 3;
+                        this.isBillable = false;
+                    } else {
+                        this.activityType = 'Sales';
+                        this.sourceUnitId = 2;
+                        this.destinationUnitId = 3;
+                        this.isBillable = true;
+                    }
+
+                    if (this.destinationType !== 'registered' && this.destinationType !== 'internal') {
+                        this.clientId = '';
+                        this.projectId = '';
+                    }
+                    if (this.destinationType !== 'regular') {
+                        this.manualCustomerName = '';
+                    }
+                },
+
+                onProjectChange(e) {
+                    if (!this.projectId) return;
+                    const select = e ? e.target : null;
+                    if (!select) return;
+                    const option = select.options[select.selectedIndex];
+                    if (option) {
+                        const clientId = option.getAttribute('data-client-id');
+                        if (this.destinationType === 'registered' && clientId) {
+                            this.clientId = clientId;
+                        }
+                    }
+                },
+
+                calculateTotal() {
+                    if (this.destinationType === 'transfer' || this.destinationType === 'internal') {
+                        this.totalAmount = 0;
+                        return;
+                    }
+
+                    const quantity = parseFloat(this.netWeight) || 0;
+                    const rate = parseFloat(this.ratePerTon) || 0;
+                    const diesel = parseFloat(this.dieselAmount) || 0;
+                    const transport = this.isBillable ? (parseFloat(this.transportCost) || 0) : 0;
+
+                    const baseAmount = quantity * rate;
+                    this.totalAmount = (baseAmount + diesel + transport).toFixed(2);
+                }
+            }));
+        });
+    </script>
+    @endpush
 </x-tabler-layout>
