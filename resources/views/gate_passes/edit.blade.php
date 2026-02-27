@@ -246,7 +246,8 @@
                             <!-- Section 3: Quantity & Cost -->
                             <div class="col-md-3">
                                 <div class="mb-3">
-                                    <label class="form-label" x-text="destinationType === 'transfer' ? 'Quantity (Optional)' : 'Weight / Quantity (CFT)'"></label>
+                                    <label class="form-label" :class="destinationType !== 'transfer' && 'required'"
+                                        x-text="destinationType === 'transfer' ? 'Quantity (Optional)' : 'Weight / Quantity (CFT)'"></label>
                                     <div class="input-group">
                                         <input type="number" step="0.01"
                                             class="form-control @error('net_weight') is-invalid @enderror" name="net_weight"

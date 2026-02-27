@@ -93,22 +93,17 @@ class GatePassController extends Controller
             'rate_per_ton' => 'nullable|numeric|min:0',
         ];
 
-        // Conditional Validation
+        // Conditional Validation based on Status
         if ($status === \App\Enums\GatePassStatus::COMPLETED->value) {
             $rules['metal_type_id'] = 'required|exists:metal_types,id';
-            $rules['driver_name'] = 'nullable|string|max:255';
-            $rules['gross_weight'] = 'nullable|numeric|min:0';
-            $rules['tare_weight'] = 'nullable|numeric|min:0';
             $rules['net_weight'] = 'required|numeric|min:0';
-            $rules['total_amount'] = 'nullable|numeric|min:0';
-        } else {
-            // For pending, these are optional
-            $rules['metal_type_id'] = 'nullable|exists:metal_types,id';
-            $rules['driver_name'] = 'nullable|string|max:255';
-            $rules['gross_weight'] = 'nullable|numeric|min:0';
-            $rules['tare_weight'] = 'nullable|numeric|min:0';
-            $rules['net_weight'] = 'nullable|numeric|min:0';
-            $rules['total_amount'] = 'nullable|numeric|min:0';
+        }
+
+        // Conditional Validation based on Activity Type
+        if ($request->input('activity_type') === \App\Enums\ActivityType::SALES->value) {
+            $rules['rate_per_ton'] = 'required|numeric|min:0';
+            $rules['net_weight'] = 'required|numeric|min:0';
+            $rules['metal_type_id'] = 'required|exists:metal_types,id';
         }
 
         $validated = $request->validate($rules);
@@ -277,6 +272,11 @@ class GatePassController extends Controller
 
         if ($request->input('status') === \App\Enums\GatePassStatus::COMPLETED->value) {
             $rules['metal_type_id'] = 'required|exists:metal_types,id';
+        }
+
+        if ($request->input('activity_type') === \App\Enums\ActivityType::SALES->value) {
+            $rules['rate_per_ton'] = 'required|numeric|min:0';
+            $rules['net_weight'] = 'required|numeric|min:0';
         }
 
         $validated = $request->validate($rules);
