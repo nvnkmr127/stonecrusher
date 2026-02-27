@@ -34,7 +34,7 @@
                 projectId: {{ Illuminate\Support\Js::from(old('project_id', '')) }},
                 manualCustomerName: {{ Illuminate\Support\Js::from(old('manual_customer_name', '')) }},
                 manualVehicleNumber: {{ Illuminate\Support\Js::from(old('manual_vehicle_number', '')) }},
-                destinationType: {{ Illuminate\Support\Js::from(old('destination_type') ?: (old('manual_customer_name') ? 'regular' : (old('activity_type') == 'Material Transfer' ? 'transfer' : (old('project_id') && count($projects->where('id', old('project_id'))->where('is_internal', true)) > 0 ? 'internal' : 'registered'))) }},
+                destinationType: {{ Illuminate\Support\Js::from(old('destination_type') ?: (old('manual_customer_name') ? 'regular' : (old('activity_type') == 'Material Transfer' ? 'transfer' : (old('project_id') && $projects->where('id', old('project_id'))->where('is_internal', true)->count() > 0 ? 'internal' : 'registered')))) }},
                 dieselAmount: {{ (float) old('diesel_amount', 0) }},
                 ratePerTon: {{ (float) old('rate_per_ton', 0) }},
                 totalAmount: 0,
@@ -219,7 +219,8 @@
                                     <div class="col-md-6" x-show="destinationType === 'registered'">
                                         <label class="form-label required">Client / Customer</label>
                                         <select class="form-select @error('client_id') is-invalid @enderror"
-                                            name="client_id" x-model="clientId" :required="destinationType === 'registered'">
+                                            name="client_id" x-model="clientId"
+                                            :required="destinationType === 'registered'">
                                             <option value="">Select Client</option>
                                             @foreach($clients as $client)
                                                 <option value="{{ $client->id }}">{{ $client->name }}</option>
@@ -248,8 +249,7 @@
                                         <input type="text"
                                             class="form-control @error('manual_customer_name') is-invalid @enderror"
                                             name="manual_customer_name" x-model="manualCustomerName"
-                                            placeholder="Enter Customer Name"
-                                            :required="destinationType === 'regular'">
+                                            placeholder="Enter Customer Name" :required="destinationType === 'regular'">
                                         <x-input-error :messages="$errors->get('manual_customer_name')" />
                                     </div>
 
