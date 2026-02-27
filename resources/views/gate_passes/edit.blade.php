@@ -153,7 +153,7 @@
                                 </div>
                             </div>
 
-                            <input type="hidden" name="activity_type" x-model="activityType">
+                            <input type="hidden" name="activity_type" :value="activityType">
                             <input type="hidden" name="source_unit_id" x-model="sourceUnitId">
                             <input type="hidden" name="destination_unit_id" x-model="destinationUnitId">
 
@@ -250,7 +250,7 @@
                                         x-text="destinationType === 'transfer' ? 'Quantity (Optional)' : 'Weight / Quantity (CFT)'"></label>
                                     <div class="input-group">
                                         <input type="number" step="0.01"
-                                            class="form-control @error('net_weight') is-invalid @enderror" name="net_weight"
+                                            class="form-control text-end fs-2 fw-bold @error('net_weight') is-invalid @enderror" name="net_weight"
                                             x-model.number="netWeight" @input="calculateTotal()" :required="destinationType !== 'transfer'">
                                         <span class="input-group-text">CFT</span>
                                     </div>

@@ -207,7 +207,7 @@
                                 </div>
                             </div>
 
-                            <input type="hidden" name="activity_type" x-model="activityType">
+                            <input type="hidden" name="activity_type" :value="activityType">
                             <input type="hidden" name="source_unit_id" x-model="sourceUnitId">
                             <input type="hidden" name="destination_unit_id" x-model="destinationUnitId">
 

@@ -70,19 +70,18 @@ class GatePassController extends Controller
 
         $status = $request->input('status');
 
+        // Base Rules
         $rules = [
             'gate_pass_number' => 'required|unique:gate_passes',
             'date' => 'required|date',
             'vehicle_id' => 'nullable|exists:vehicles,id',
             'manual_vehicle_number' => 'nullable|required_without:vehicle_id|string|max:20',
-            'client_id' => 'nullable|exists:clients,id',
-            'manual_customer_name' => 'nullable|string|max:255',
-            'project_id' => 'nullable|exists:projects,id',
+            'activity_type' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\ActivityType::class)],
+            'status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\GatePassStatus::class)],
             'source_unit_id' => 'required|exists:operational_units,id',
             'destination_unit_id' => 'required|exists:operational_units,id',
-            'activity_type' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\ActivityType::class)],
             'trips' => 'required|integer|min:1',
-            'status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\GatePassStatus::class)],
+            'destination_type' => 'nullable|string', // Used for conditional logic
             'remarks' => 'nullable|string',
             'delivery_location' => 'nullable|string|max:255',
             'distance_km' => 'nullable|numeric|min:0',
@@ -90,18 +89,21 @@ class GatePassController extends Controller
             'transport_is_billable' => 'nullable|boolean',
             'diesel_qty' => 'nullable|numeric|min:0',
             'diesel_amount' => 'nullable|numeric|min:0',
-            'rate_per_ton' => 'nullable|numeric|min:0',
+            'rate_per_ton' => 'nullable|numeric',
+            'metal_type_id' => 'nullable|exists:metal_types,id',
+            'net_weight' => 'nullable|numeric',
         ];
 
-        // Conditional Validation based on Status
-        if ($status === \App\Enums\GatePassStatus::COMPLETED->value) {
-            $rules['metal_type_id'] = 'required|exists:metal_types,id';
-            $rules['net_weight'] = 'required|numeric|min:0';
-        }
-
-        // Conditional Validation based on Activity Type
+        // Strict validation for Sales
         if ($request->input('activity_type') === \App\Enums\ActivityType::SALES->value) {
-            $rules['rate_per_ton'] = 'required|numeric|min:0';
+            $rules['net_weight'] = 'required|numeric|gt:0';
+            $rules['rate_per_ton'] = 'required|numeric|gt:0';
+            $rules['metal_type_id'] = 'required|exists:metal_types,id';
+            $rules['client_id'] = 'nullable|required_if:destination_type,registered|exists:clients,id';
+            $rules['manual_customer_name'] = 'nullable|required_if:destination_type,regular|string|max:255';
+        }
+        // Validation for other Completed passes
+        elseif ($status === \App\Enums\GatePassStatus::COMPLETED->value) {
             $rules['net_weight'] = 'required|numeric|min:0';
             $rules['metal_type_id'] = 'required|exists:metal_types,id';
         }
@@ -244,39 +246,39 @@ class GatePassController extends Controller
             'date' => 'required|date',
             'vehicle_id' => 'nullable|exists:vehicles,id',
             'manual_vehicle_number' => 'nullable|required_without:vehicle_id|string|max:20',
-            'client_id' => 'nullable|exists:clients,id',
-            'manual_customer_name' => 'nullable|string|max:255',
-            'project_id' => 'nullable|exists:projects,id',
+            'activity_type' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\ActivityType::class)],
+            'status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\GatePassStatus::class)],
             'source_unit_id' => 'required|exists:operational_units,id',
             'destination_unit_id' => 'required|exists:operational_units,id',
-            'activity_type' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\ActivityType::class)],
             'trips' => 'required|integer|min:1',
-            'metal_type_id' => 'nullable|exists:metal_types,id',
-            'driver_name' => 'nullable|string|max:255',
-            'gross_weight' => 'nullable|numeric|min:0',
-            'tare_weight' => 'nullable|numeric|min:0',
-            'net_weight' => 'required_unless:activity_type,' . \App\Enums\ActivityType::INTERNAL_MOVEMENT->value . '|numeric|min:0',
-            'loading_quantity' => 'nullable|numeric|min:0',
-            'rate_per_ton' => 'nullable|numeric|min:0',
-            'total_amount' => 'nullable|numeric|min:0',
-            'diesel_amount' => 'nullable|numeric|min:0',
-            'advance_amount' => 'nullable|numeric|min:0',
-            'status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\GatePassStatus::class)],
+            'destination_type' => 'nullable|string',
             'remarks' => 'nullable|string',
             'delivery_location' => 'nullable|string|max:255',
             'distance_km' => 'nullable|numeric|min:0',
             'transport_cost' => 'nullable|numeric|min:0',
             'transport_is_billable' => 'nullable|boolean',
             'diesel_qty' => 'nullable|numeric|min:0',
+            'diesel_amount' => 'nullable|numeric|min:0',
+            'rate_per_ton' => 'nullable|numeric',
+            'metal_type_id' => 'nullable|exists:metal_types,id',
+            'net_weight' => 'nullable|numeric',
+            'client_id' => 'nullable|exists:clients,id',
+            'project_id' => 'nullable|exists:projects,id',
+            'manual_customer_name' => 'nullable|string|max:255',
         ];
 
-        if ($request->input('status') === \App\Enums\GatePassStatus::COMPLETED->value) {
-            $rules['metal_type_id'] = 'required|exists:metal_types,id';
-        }
-
+        // Strict validation for Sales
         if ($request->input('activity_type') === \App\Enums\ActivityType::SALES->value) {
-            $rules['rate_per_ton'] = 'required|numeric|min:0';
+            $rules['net_weight'] = 'required|numeric|gt:0';
+            $rules['rate_per_ton'] = 'required|numeric|gt:0';
+            $rules['metal_type_id'] = 'required|exists:metal_types,id';
+            $rules['client_id'] = 'nullable|required_if:destination_type,registered|exists:clients,id';
+            $rules['manual_customer_name'] = 'nullable|required_if:destination_type,regular|string|max:255';
+        }
+        // Validation for other Completed passes
+        elseif ($request->input('status') === \App\Enums\GatePassStatus::COMPLETED->value) {
             $rules['net_weight'] = 'required|numeric|min:0';
+            $rules['metal_type_id'] = 'required|exists:metal_types,id';
         }
 
         $validated = $request->validate($rules);
