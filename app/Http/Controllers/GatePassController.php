@@ -211,7 +211,8 @@ class GatePassController extends Controller
      */
     public function show(GatePass $gate_pass)
     {
-        return redirect()->route('gate-passes.edit', $gate_pass);
+        $gatePass = $gate_pass->load(['client', 'project', 'vehicle', 'metalType', 'transaction', 'sourceUnit', 'destinationUnit']);
+        return view('gate_passes.show', compact('gatePass'));
     }
 
     /**

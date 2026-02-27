@@ -72,7 +72,7 @@
                         @forelse($gatePasses as $gp)
                             <tr>
                                 <td>
-                                    <a href="{{ route('gate-passes.edit', $gp) }}"
+                                    <a href="{{ route('gate-passes.show', $gp) }}"
                                         class="text-reset fw-bold">{{ $gp->gate_pass_number }}</a>
                                 </td>
                                 <td>{{ $gp->date->format('d M, Y h:i A') }}</td>
@@ -118,6 +118,8 @@
                                 </td>
                                 <td>
                                     <div class="btn-list">
+                                        <a href="{{ route('gate-passes.show', $gp) }}"
+                                            class="btn btn-sm btn-ghost-info">View</a>
                                         @if($gp->status == 'completed' && $gp->paid_amount < $gp->total_amount)
                                             <button type="button" class="btn btn-sm btn-outline-success" x-data
                                                 x-on:click="$dispatch('open-payment-modal', { id: '{{ $gp->id }}', number: '{{ $gp->gate_pass_number }}', balance: '{{ $gp->total_amount - $gp->paid_amount }}' })">

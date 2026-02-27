@@ -138,7 +138,7 @@
                         @forelse($gatePasses as $gp)
                             <tr>
                                 <td>
-                                    <a href="{{ route('gate-passes.edit', $gp) }}"
+                                    <a href="{{ route('gate-passes.show', $gp) }}"
                                         class="text-reset fw-bold">{{ $gp->gate_pass_number }}</a>
                                 </td>
                                 <td>{{ $gp->date->format('d M, Y h:i A') }}</td>

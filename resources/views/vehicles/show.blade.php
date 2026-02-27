@@ -121,7 +121,7 @@
                                             <tr>
                                                 <td>{{ $gp->date ? $gp->date->format('d/m/Y') : '-' }}</td>
                                                 <td><a
-                                                        href="{{ route('gate-passes.edit', $gp) }}">{{ $gp->gate_pass_number }}</a>
+                                                        href="{{ route('gate-passes.show', $gp) }}">{{ $gp->gate_pass_number }}</a>
                                                 </td>
                                                 <td>{{ $gp->activity_type->value ?? 'N/A' }}</td>
                                                 <td>{{ $gp->client->name ?? $gp->manual_customer_name ?? $gp->project->name ?? '-' }}
