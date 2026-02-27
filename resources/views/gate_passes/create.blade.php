@@ -34,7 +34,7 @@
                 projectId: {{ Illuminate\Support\Js::from(old('project_id', '')) }},
                 manualCustomerName: {{ Illuminate\Support\Js::from(old('manual_customer_name', '')) }},
                 manualVehicleNumber: {{ Illuminate\Support\Js::from(old('manual_vehicle_number', '')) }},
-                destinationType: {{ Illuminate\Support\Js::from(old('manual_customer_name') ? 'regular' : (old('activity_type') == 'Material Transfer' ? 'transfer' : (old('project_id') && count($projects->where('id', old('project_id'))->where('is_internal', true)) > 0 ? 'internal' : 'registered'))) }},
+                destinationType: {{ Illuminate\Support\Js::from(old('destination_type') ?: (old('manual_customer_name') ? 'regular' : (old('activity_type') == 'Material Transfer' ? 'transfer' : (old('project_id') && count($projects->where('id', old('project_id'))->where('is_internal', true)) > 0 ? 'internal' : 'registered'))) }},
                 dieselAmount: {{ (float) old('diesel_amount', 0) }},
                 ratePerTon: {{ (float) old('rate_per_ton', 0) }},
                 totalAmount: 0,
@@ -216,65 +216,58 @@
                                 x-show="destinationType !== 'transfer'" x-transition>
                                 <div class="row g-3">
                                     <!-- Registered Mode Fields -->
-                                    <template x-if="destinationType === 'registered'">
-                                        <div class="col-md-6">
-                                            <label class="form-label required">Client / Customer</label>
-                                            <select class="form-select @error('client_id') is-invalid @enderror"
-                                                name="client_id" x-model="clientId" required>
-                                                <option value="">Select Client</option>
-                                                @foreach($clients as $client)
-                                                    <option value="{{ $client->id }}">{{ $client->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <x-input-error :messages="$errors->get('client_id')" />
-                                        </div>
-                                    </template>
-                                    <template x-if="destinationType === 'registered'">
-                                        <div class="col-md-6">
-                                            <label class="form-label">Project (Optional)</label>
-                                            <select class="form-select @error('project_id') is-invalid @enderror"
-                                                name="project_id" x-model="projectId" @change="onProjectChange($event)">
-                                                <option value="">Select Project</option>
-                                                @foreach($projects->where('is_internal', false) as $project)
-                                                    <option value="{{ $project->id }}"
-                                                        data-client-id="{{ $project->client_id }}">
-                                                        {{ $project->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <x-input-error :messages="$errors->get('project_id')" />
-                                        </div>
-                                    </template>
+                                    <div class="col-md-6" x-show="destinationType === 'registered'">
+                                        <label class="form-label required">Client / Customer</label>
+                                        <select class="form-select @error('client_id') is-invalid @enderror"
+                                            name="client_id" x-model="clientId" :required="destinationType === 'registered'">
+                                            <option value="">Select Client</option>
+                                            @foreach($clients as $client)
+                                                <option value="{{ $client->id }}">{{ $client->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <x-input-error :messages="$errors->get('client_id')" />
+                                    </div>
+                                    <div class="col-md-6" x-show="destinationType === 'registered'">
+                                        <label class="form-label">Project (Optional)</label>
+                                        <select class="form-select @error('project_id') is-invalid @enderror"
+                                            name="project_id" x-model="projectId" @change="onProjectChange($event)">
+                                            <option value="">Select Project</option>
+                                            @foreach($projects->where('is_internal', false) as $project)
+                                                <option value="{{ $project->id }}"
+                                                    data-client-id="{{ $project->client_id }}">
+                                                    {{ $project->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <x-input-error :messages="$errors->get('project_id')" />
+                                    </div>
 
                                     <!-- Regular Sale Mode Fields -->
-                                    <template x-if="destinationType === 'regular'">
-                                        <div class="col-12">
-                                            <label class="form-label required">Customer Name</label>
-                                            <input type="text"
-                                                class="form-control @error('manual_customer_name') is-invalid @enderror"
-                                                name="manual_customer_name" x-model="manualCustomerName"
-                                                placeholder="Enter Customer Name" required>
-                                            <x-input-error :messages="$errors->get('manual_customer_name')" />
-                                        </div>
-                                    </template>
+                                    <div class="col-12" x-show="destinationType === 'regular'">
+                                        <label class="form-label required">Customer Name (Manual)</label>
+                                        <input type="text"
+                                            class="form-control @error('manual_customer_name') is-invalid @enderror"
+                                            name="manual_customer_name" x-model="manualCustomerName"
+                                            placeholder="Enter Customer Name"
+                                            :required="destinationType === 'regular'">
+                                        <x-input-error :messages="$errors->get('manual_customer_name')" />
+                                    </div>
 
                                     <!-- Internal Mode Fields -->
-                                    <template x-if="destinationType === 'internal'">
-                                        <div class="col-12">
-                                            <label class="form-label required">Internal Project</label>
-                                            <select class="form-select @error('project_id') is-invalid @enderror"
-                                                name="project_id" x-model="projectId" @change="onProjectChange($event)"
-                                                required>
-                                                <option value="">Select Internal Project</option>
-                                                @foreach($projects->where('is_internal', true) as $project)
-                                                    <option value="{{ $project->id }}" data-is-internal="1">
-                                                        {{ $project->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <x-input-error :messages="$errors->get('project_id')" />
-                                        </div>
-                                    </template>
+                                    <div class="col-12" x-show="destinationType === 'internal'">
+                                        <label class="form-label required">Internal Project</label>
+                                        <select class="form-select @error('project_id') is-invalid @enderror"
+                                            name="project_id" x-model="projectId" @change="onProjectChange($event)"
+                                            :required="destinationType === 'internal'">
+                                            <option value="">Select Internal Project</option>
+                                            @foreach($projects->where('is_internal', true) as $project)
+                                                <option value="{{ $project->id }}" data-is-internal="1">
+                                                    {{ $project->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <x-input-error :messages="$errors->get('project_id')" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -297,7 +290,7 @@
                             </h3>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Material Type</label>
+                                    <label class="form-label required">Material Type</label>
                                     <select class="form-select @error('metal_type_id') is-invalid @enderror"
                                         name="metal_type_id" required>
                                         <option value="">Select Material</option>

@@ -37,7 +37,7 @@
                     projectId: {{ Illuminate\Support\Js::from(old('project_id', $gatePass->project_id)) }},
                     manualCustomerName: {{ Illuminate\Support\Js::from(old('manual_customer_name', $gatePass->manual_customer_name)) }},
                     manualVehicleNumber: {{ Illuminate\Support\Js::from(old('manual_vehicle_number', $gatePass->vehicle ? $gatePass->vehicle->registration_number : $gatePass->manual_vehicle_number)) }},
-                    destinationType: {{ Illuminate\Support\Js::from(old('manual_customer_name', $gatePass->manual_customer_name) ? 'regular' : ($gatePass->activity_type->value == 'Material Transfer' ? 'transfer' : ($gatePass->project && $gatePass->project->is_internal ? 'internal' : 'registered'))) }}
+                    destinationType: {{ Illuminate\Support\Js::from(old('destination_type') ?: (old('manual_customer_name', $gatePass->manual_customer_name) ? 'regular' : ($gatePass->activity_type->value == 'Material Transfer' ? 'transfer' : ($gatePass->project && $gatePass->project->is_internal ? 'internal' : 'registered')))) }}
                 })">
                 @csrf
                 @method('PUT')
@@ -225,7 +225,7 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="mb-3">
-                                        <label class="form-label">Material Type</label>
+                                        <label class="form-label required">Material Type</label>
                                         <select class="form-select @error('metal_type_id') is-invalid @enderror"
                                             name="metal_type_id" required>
                                             <option value="">Select Material</option>
