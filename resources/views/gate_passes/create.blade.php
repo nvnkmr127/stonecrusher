@@ -45,6 +45,33 @@
                 @csrf
                 <x-card>
                     <div class="card-body p-4">
+                        @if ($errors->any())
+                            <div class="alert alert-danger alert-dismissible" role="alert">
+                                <div class="d-flex">
+                                    <div>
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="alert-icon icon icon-tabler icon-tabler-alert-circle me-2" width="24"
+                                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                            <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path>
+                                            <path d="M12 8v4"></path>
+                                            <path d="M12 16h.01"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="alert-title">Please correct the following errors:</h4>
+                                        <ul class="mb-0">
+                                            @foreach ($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
+                                <a href="#" class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+                            </div>
+                        @endif
+
                         <!-- Section 1: Trip & Vehicle -->
                         <div class="mb-4">
                             <h3 class="card-title text-primary border-bottom pb-2 mb-3">
@@ -92,19 +119,20 @@
                                             </svg>
                                         </span>
                                         <input type="text"
-                                            class="form-control text-uppercase fw-medium @error('manual_vehicle_number') is-invalid @enderror"
+                                            class="form-control text-uppercase fw-medium @if($errors->has('manual_vehicle_number') || $errors->has('vehicle_id')) is-invalid @endif"
                                             name="manual_vehicle_number" list="vehicleList"
                                             x-model="manualVehicleNumber" @input="checkVehicleMultiplier()"
                                             placeholder="ABC-1234" required autocomplete="off">
                                     </div>
                                     <datalist id="vehicleList">
                                         @foreach($vehicles as $vehicle)
-                                            <option value="{{ $vehicle->vehicle_number }}">
+                                            <option value="{{ $vehicle->registration_number }}">
                                                 {{ $vehicle->registration_number }}
                                             </option>
                                         @endforeach
                                     </datalist>
                                     <x-input-error :messages="$errors->get('manual_vehicle_number')" />
+                                    <x-input-error :messages="$errors->get('vehicle_id')" />
                                 </div>
                             </div>
                         </div>
@@ -271,7 +299,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label">Material Type</label>
                                     <select class="form-select @error('metal_type_id') is-invalid @enderror"
-                                        name="metal_type_id">
+                                        name="metal_type_id" required>
                                         <option value="">Select Material</option>
                                         @foreach($metalTypes as $type)
                                             <option value="{{ $type->id }}" {{ old('metal_type_id') == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
@@ -291,7 +319,9 @@
                                     </div>
                                     <x-input-error :messages="$errors->get('net_weight')" />
                                 </div>
-                                <div class="col-md-3" x-show="destinationType !== 'transfer' && destinationType !== 'internal'" x-transition>
+                                <div class="col-md-3"
+                                    x-show="destinationType !== 'transfer' && destinationType !== 'internal'"
+                                    x-transition>
                                     <label class="form-label required">Rate per CFT</label>
                                     <div class="input-group">
                                         <span class="input-group-text">₹</span>
@@ -306,10 +336,13 @@
                                 <input type="hidden" name="gross_weight" value="0">
                                 <input type="hidden" name="tare_weight" value="0">
                             </div>
-                            <div class="row g-3 mt-2" x-show="destinationType !== 'transfer' && destinationType !== 'internal'" x-transition>
+                            <div class="row g-3 mt-2"
+                                x-show="destinationType !== 'transfer' && destinationType !== 'internal'" x-transition>
                                 <div class="col-12 text-end">
-                                    <h2 class="mb-0 text-muted">Total Amount: <span class="text-primary" x-text="'₹ ' + totalAmount"></span></h2>
-                                    <small class="text-muted" x-show="isBillable">(Includes Transport Cost & Diesel)</small>
+                                    <h2 class="mb-0 text-muted">Total Amount: <span class="text-primary"
+                                            x-text="'₹ ' + totalAmount"></span></h2>
+                                    <small class="text-muted" x-show="isBillable">(Includes Transport Cost &
+                                        Diesel)</small>
                                 </div>
                             </div>
                         </div>
@@ -389,111 +422,111 @@
     </div>
 
     @push('scripts')
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('gatePassCreateForm', (config) => ({
-                // Form Data
-                gatePassId: config.gatePassId || null,
-                status: config.status || 'pending',
-                metalTypeId: config.metalTypeId || '',
-                netWeight: config.netWeight || 0,
-                transportCost: config.transportCost || 0,
-                dieselAmount: config.dieselAmount || 0,
-                ratePerTon: config.ratePerTon || 0,
-                totalAmount: 0,
-                activityType: config.activityType || 'Sales',
-                sourceUnitId: config.sourceUnitId || 2,
-                destinationUnitId: config.destinationUnitId || 3,
-                trips: config.trips || 1,
-                clientId: config.clientId || '',
-                projectId: config.projectId || '',
-                manualCustomerName: config.manualCustomerName || '',
-                destinationType: config.destinationType || 'registered', // registered, regular
-                manualVehicleNumber: config.manualVehicleNumber || '',
-                isBillable: config.isBillable || false,
-                isManualTransportCost: false,
-                vehicles: config.vehicles || [],
+        <script>
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('gatePassCreateForm', (config) => ({
+                    // Form Data
+                    gatePassId: config.gatePassId || null,
+                    status: config.status || 'pending',
+                    metalTypeId: config.metalTypeId || '',
+                    netWeight: config.netWeight || 0,
+                    transportCost: config.transportCost || 0,
+                    dieselAmount: config.dieselAmount || 0,
+                    ratePerTon: config.ratePerTon || 0,
+                    totalAmount: 0,
+                    activityType: config.activityType || 'Sales',
+                    sourceUnitId: config.sourceUnitId || 2,
+                    destinationUnitId: config.destinationUnitId || 3,
+                    trips: config.trips || 1,
+                    clientId: config.clientId || '',
+                    projectId: config.projectId || '',
+                    manualCustomerName: config.manualCustomerName || '',
+                    destinationType: config.destinationType || 'registered', // registered, regular
+                    manualVehicleNumber: config.manualVehicleNumber || '',
+                    isBillable: config.isBillable || false,
+                    isManualTransportCost: false,
+                    vehicles: config.vehicles || [],
 
-                init() {
-                    this.checkVehicleMultiplier();
-                    this.calculateTotal();
+                    init() {
+                        this.checkVehicleMultiplier();
+                        this.calculateTotal();
 
-                    this.$watch('clientId', (value) => {
-                        if (value && this.activityType === 'Sales') this.isBillable = true;
-                    });
+                        this.$watch('clientId', (value) => {
+                            if (value && this.activityType === 'Sales') this.isBillable = true;
+                        });
 
-                    this.$watch('manualCustomerName', (value) => {
-                        if (value && this.activityType === 'Sales') this.isBillable = true;
-                    });
+                        this.$watch('manualCustomerName', (value) => {
+                            if (value && this.activityType === 'Sales') this.isBillable = true;
+                        });
 
-                    this.$watch('destinationType', (value) => {
-                        if (value === 'registered' && this.clientId) this.isBillable = true;
-                        if (value === 'regular' && this.manualCustomerName) this.isBillable = true;
-                    });
-                },
+                        this.$watch('destinationType', (value) => {
+                            if (value === 'registered' && this.clientId) this.isBillable = true;
+                            if (value === 'regular' && this.manualCustomerName) this.isBillable = true;
+                        });
+                    },
 
-                checkVehicleMultiplier() {
-                    if (!this.manualVehicleNumber) return;
-                    const normalizedInput = this.manualVehicleNumber.toLowerCase().trim();
-                    const vehicle = this.vehicles.find(v => v.number && v.number.toLowerCase() === normalizedInput);
-                },
+                    checkVehicleMultiplier() {
+                        if (!this.manualVehicleNumber) return;
+                        const normalizedInput = this.manualVehicleNumber.toLowerCase().trim();
+                        const vehicle = this.vehicles.find(v => v.number && v.number.toLowerCase() === normalizedInput);
+                    },
 
-                onUsageChange() {
-                    if (this.destinationType === 'transfer') {
-                        this.activityType = 'Material Transfer';
-                        this.sourceUnitId = 1;
-                        this.destinationUnitId = 2;
-                        this.isBillable = false;
-                    } else if (this.destinationType === 'internal') {
-                        this.activityType = 'Internal Movement';
-                        this.sourceUnitId = 2;
-                        this.destinationUnitId = 3;
-                        this.isBillable = false;
-                    } else {
-                        this.activityType = 'Sales';
-                        this.sourceUnitId = 2;
-                        this.destinationUnitId = 3;
-                        this.isBillable = true;
-                    }
-
-                    if (this.destinationType !== 'registered' && this.destinationType !== 'internal') {
-                        this.clientId = '';
-                        this.projectId = '';
-                    }
-                    if (this.destinationType !== 'regular') {
-                        this.manualCustomerName = '';
-                    }
-                },
-
-                onProjectChange(e) {
-                    if (!this.projectId) return;
-                    const select = e ? e.target : null;
-                    if (!select) return;
-                    const option = select.options[select.selectedIndex];
-                    if (option) {
-                        const clientId = option.getAttribute('data-client-id');
-                        if (this.destinationType === 'registered' && clientId) {
-                            this.clientId = clientId;
+                    onUsageChange() {
+                        if (this.destinationType === 'transfer') {
+                            this.activityType = 'Material Transfer';
+                            this.sourceUnitId = 1;
+                            this.destinationUnitId = 2;
+                            this.isBillable = false;
+                        } else if (this.destinationType === 'internal') {
+                            this.activityType = 'Internal Movement';
+                            this.sourceUnitId = 2;
+                            this.destinationUnitId = 3;
+                            this.isBillable = false;
+                        } else {
+                            this.activityType = 'Sales';
+                            this.sourceUnitId = 2;
+                            this.destinationUnitId = 3;
+                            this.isBillable = true;
                         }
+
+                        if (this.destinationType !== 'registered' && this.destinationType !== 'internal') {
+                            this.clientId = '';
+                            this.projectId = '';
+                        }
+                        if (this.destinationType !== 'regular') {
+                            this.manualCustomerName = '';
+                        }
+                    },
+
+                    onProjectChange(e) {
+                        if (!this.projectId) return;
+                        const select = e ? e.target : null;
+                        if (!select) return;
+                        const option = select.options[select.selectedIndex];
+                        if (option) {
+                            const clientId = option.getAttribute('data-client-id');
+                            if (this.destinationType === 'registered' && clientId) {
+                                this.clientId = clientId;
+                            }
+                        }
+                    },
+
+                    calculateTotal() {
+                        if (this.destinationType === 'transfer' || this.destinationType === 'internal') {
+                            this.totalAmount = 0;
+                            return;
+                        }
+
+                        const quantity = parseFloat(this.netWeight) || 0;
+                        const rate = parseFloat(this.ratePerTon) || 0;
+                        const diesel = parseFloat(this.dieselAmount) || 0;
+                        const transport = this.isBillable ? (parseFloat(this.transportCost) || 0) : 0;
+
+                        const baseAmount = quantity * rate;
+                        this.totalAmount = (baseAmount + diesel + transport).toFixed(2);
                     }
-                },
-
-                calculateTotal() {
-                    if (this.destinationType === 'transfer' || this.destinationType === 'internal') {
-                        this.totalAmount = 0;
-                        return;
-                    }
-
-                    const quantity = parseFloat(this.netWeight) || 0;
-                    const rate = parseFloat(this.ratePerTon) || 0;
-                    const diesel = parseFloat(this.dieselAmount) || 0;
-                    const transport = this.isBillable ? (parseFloat(this.transportCost) || 0) : 0;
-
-                    const baseAmount = quantity * rate;
-                    this.totalAmount = (baseAmount + diesel + transport).toFixed(2);
-                }
-            }));
-        });
-    </script>
+                }));
+            });
+        </script>
     @endpush
 </x-tabler-layout>

@@ -43,6 +43,29 @@
                 @method('PUT')
                 <x-card>
                     <div class="card-body">
+                        @if ($errors->any())
+                            <div class="alert alert-danger alert-dismissible" role="alert">
+                                <div class="d-flex">
+                                    <div>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="alert-icon icon icon-tabler icon-tabler-alert-circle me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                            <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path>
+                                            <path d="M12 8v4"></path>
+                                            <path d="M12 16h.01"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="alert-title">Please correct the following errors:</h4>
+                                        <ul class="mb-0">
+                                            @foreach ($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
+                                <a href="#" class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+                            </div>
+                        @endif
                         <div class="row g-3">
                             <!-- Section 1: Identification -->
                             <div class="col-md-4">
@@ -65,7 +88,7 @@
                                 <div class="mb-3">
                                     <label class="form-label required">Vehicle Number</label>
                                     <input type="text"
-                                        class="form-control @error('manual_vehicle_number') is-invalid @enderror"
+                                        class="form-control @if($errors->has('manual_vehicle_number') || $errors->has('vehicle_id')) is-invalid @endif"
                                         name="manual_vehicle_number" list="vehicleList"
                                         x-model="manualVehicleNumber"
                                         placeholder="Enter Vehicle Number" required autocomplete="off">
@@ -75,6 +98,7 @@
                                         @endforeach
                                     </datalist>
                                     <x-input-error :messages="$errors->get('manual_vehicle_number')" />
+                                    <x-input-error :messages="$errors->get('vehicle_id')" />
                                 </div>
                             </div>
 
@@ -203,7 +227,7 @@
                                     <div class="mb-3">
                                         <label class="form-label">Material Type</label>
                                         <select class="form-select @error('metal_type_id') is-invalid @enderror"
-                                            name="metal_type_id">
+                                            name="metal_type_id" required>
                                             <option value="">Select Material</option>
                                             @foreach($metalTypes as $type)
                                                 <option value="{{ $type->id }}" {{ old('metal_type_id', $gatePass->metal_type_id) == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
