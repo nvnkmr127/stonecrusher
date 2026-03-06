@@ -209,7 +209,10 @@ class GatePassController extends Controller
             $calculatedTotal = ($qty * $rate) + $transportCharge;
 
             // Override for internal movement
-            if ($validated['activity_type'] === \App\Enums\ActivityType::INTERNAL_MOVEMENT->value) {
+            if (
+                $validated['activity_type'] === \App\Enums\ActivityType::INTERNAL_MOVEMENT->value ||
+                $validated['activity_type'] === \App\Enums\ActivityType::MATERIAL_TRANSFER->value
+            ) {
                 $calculatedTotal = 0;
             }
 
@@ -394,7 +397,10 @@ class GatePassController extends Controller
             $calculatedTotal = ($qty * $rate) + $transportCharge;
 
             // Override for internal movement
-            if ($validated['activity_type'] === \App\Enums\ActivityType::INTERNAL_MOVEMENT->value) {
+            if (
+                $validated['activity_type'] === \App\Enums\ActivityType::INTERNAL_MOVEMENT->value ||
+                $validated['activity_type'] === \App\Enums\ActivityType::MATERIAL_TRANSFER->value
+            ) {
                 $calculatedTotal = 0;
             }
 

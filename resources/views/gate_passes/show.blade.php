@@ -37,6 +37,32 @@
         </div>
     </x-slot>
 
+    @php
+        $destType = 'registered';
+        $destAlert = 'success';
+        $destTitle = 'Selling to Client';
+        $destDesc = 'Registered account';
+        $destIcon = 'shopping-cart';
+
+        if ($gatePass->activity_type->value === 'Material Transfer') {
+            $destType = 'transfer';
+            $destAlert = 'azure';
+            $destTitle = 'Transfer';
+            $destDesc = 'Quarry to Crusher';
+            $destIcon = 'truck-delivery';
+        } elseif ($gatePass->activity_type->value === 'Internal Movement' || ($gatePass->project && $gatePass->project->is_internal)) {
+            $destType = 'internal';
+            $destAlert = 'info';
+            $destTitle = 'Internal Project';
+            $destDesc = 'Own project usage';
+            $destIcon = 'refresh';
+        } elseif ($gatePass->manual_customer_name) {
+            $destType = 'regular';
+            $destTitle = 'Regular Sale';
+            $destDesc = 'Manual customer';
+        }
+    @endphp
+
     <div class="row row-cards">
         <!-- Main Status & Quick Info -->
         <div class="col-md-4">
@@ -86,7 +112,7 @@
 
             <x-card class="mt-3">
                 <div class="card-header">
-                    <h3 class="card-title">Vehicle & Driver</h3>
+                    <h3 class="card-title">Vehicle</h3>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -107,10 +133,6 @@
                 </div>
                 <div class="card-table">
                     <table class="table table-vcenter">
-                        <tr>
-                            <td class="text-muted">Trips</td>
-                            <td class="text-end fw-bold">{{ $gatePass->trips }}</td>
-                        </tr>
                         @if($gatePass->sourceUnit)
                             <tr>
                                 <td class="text-muted">Source</td>
@@ -129,14 +151,13 @@
 
             <x-card class="mt-3">
                 <div class="card-header">
-                    <h3 class="card-title">Movement Type</h3>
+                    <h3 class="card-title">Selling To / Movement Type</h3>
                 </div>
                 <div class="card-body">
-                    <div
-                        class="alert alert-{{ $gatePass->activity_type->value === 'Sales' ? 'success' : ($gatePass->activity_type->value === 'Internal Movement' ? 'info' : 'azure') }} mb-0">
+                    <div class="alert alert-{{ $destAlert }} mb-0">
                         <div class="d-flex align-items-center">
                             <div class="me-3">
-                                @if($gatePass->activity_type->value === 'Sales')
+                                @if($destIcon === 'shopping-cart')
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                         class="icon icon-tabler icon-tabler-shopping-cart" width="24" height="24"
                                         viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -147,7 +168,7 @@
                                         <path d="M17 17h-11v-14h-2" />
                                         <path d="M6 5l14 1l-1 7h-13" />
                                     </svg>
-                                @elseif($gatePass->activity_type->value === 'Internal Movement')
+                                @elseif($destIcon === 'refresh')
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-refresh"
                                         width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
                                         fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -155,7 +176,7 @@
                                         <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
                                         <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
                                     </svg>
-                                @else
+                                @elseif($destIcon === 'truck-delivery')
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                         class="icon icon-tabler icon-tabler-truck-delivery" width="24" height="24"
                                         viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -169,16 +190,8 @@
                                 @endif
                             </div>
                             <div>
-                                <div class="fw-bold">{{ $gatePass->activity_type->value }}</div>
-                                <div class="small">
-                                    @if($gatePass->activity_type->value === 'Sales')
-                                        Revenue generating movement.
-                                    @elseif($gatePass->activity_type->value === 'Internal Movement')
-                                        Usage within own units/projects.
-                                    @else
-                                        Moving material between stock points.
-                                    @endif
-                                </div>
+                                <div class="fw-bold">{{ $destTitle }}</div>
+                                <div class="small">{{ $destDesc }}</div>
                             </div>
                         </div>
                     </div>
@@ -193,48 +206,76 @@
                 <div class="col-12">
                     <x-card>
                         <div class="card-header">
-                            <h3 class="card-title">Customer / Client Details</h3>
+                            <h3 class="card-title">
+                                @if($destType === 'transfer')
+                                    Transfer Details
+                                @elseif($destType === 'internal')
+                                    Internal Project Details
+                                @else
+                                    Customer / Client Details
+                                @endif
+                            </h3>
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-6">
-                                    <label class="form-label text-muted">Customer Name</label>
-                                    <div class="fw-bold fs-3">
-                                        @if($gatePass->client)
-                                            <a
-                                                href="{{ route('clients.show', $gatePass->client) }}">{{ $gatePass->client->name }}</a>
-                                        @else
-                                            {{ $gatePass->manual_customer_name ?: 'N/A' }}
-                                            @if($gatePass->village_area)
-                                                <div class="small text-muted mt-1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                        class="icon icon-tabler icon-tabler-map-pin" width="16" height="16"
-                                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                                        stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                                        <path d="M9 11a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
-                                                        <path
-                                                            d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" />
-                                                    </svg>
-                                                    {{ $gatePass->village_area }}
-                                                </div>
-                                            @endif
-                                        @endif
+                                @if($destType === 'transfer')
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted">Source Unit</label>
+                                        <div class="fw-bold fs-3">{{ $gatePass->sourceUnit->name ?? 'N/A' }}</div>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label text-muted">Project</label>
-                                    <div class="fw-bold fs-3">
-                                        @if($gatePass->project)
-                                            {{ $gatePass->project->name }}
-                                            @if($gatePass->project->is_internal)
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted">Destination Unit</label>
+                                        <div class="fw-bold fs-3">{{ $gatePass->destinationUnit->name ?? 'N/A' }}</div>
+                                    </div>
+                                @elseif($destType === 'internal')
+                                    <div class="col-12">
+                                        <label class="form-label text-muted">Internal Project</label>
+                                        <div class="fw-bold fs-3">
+                                            @if($gatePass->project)
+                                                {{ $gatePass->project->name }}
                                                 <span class="badge bg-info-lt ms-2">Internal Project</span>
+                                            @else
+                                                <span class="text-muted">N/A</span>
                                             @endif
-                                        @else
-                                            <span class="text-muted">Direct Sale / No Project</span>
-                                        @endif
+                                        </div>
                                     </div>
-                                </div>
+                                @else
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted">Customer Name</label>
+                                        <div class="fw-bold fs-3">
+                                            @if($gatePass->client)
+                                                <a
+                                                    href="{{ route('clients.show', $gatePass->client) }}">{{ $gatePass->client->name }}</a>
+                                            @else
+                                                {{ $gatePass->manual_customer_name ?: 'N/A' }}
+                                                @if($gatePass->village_area)
+                                                    <div class="small text-muted mt-1">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                            class="icon icon-tabler icon-tabler-map-pin" width="16" height="16"
+                                                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                                            stroke-linecap="round" stroke-linejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                            <path d="M9 11a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                                                            <path
+                                                                d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" />
+                                                        </svg>
+                                                        {{ $gatePass->village_area }}
+                                                    </div>
+                                                @endif
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted">Project</label>
+                                        <div class="fw-bold fs-3">
+                                            @if($gatePass->project)
+                                                {{ $gatePass->project->name }}
+                                            @else
+                                                <span class="text-muted">Direct Sale / No Project</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </x-card>
@@ -301,35 +342,26 @@
                         </div>
                         <div class="card-body p-0">
                             <table class="table table-vcenter">
-                                <tr>
-                                    <td class="text-muted ps-3">Rate per CFT</td>
-                                    <td class="text-end fw-bold pe-3">₹{{ number_format($gatePass->rate_per_ton, 2) }}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted ps-3">Material Cost</td>
-                                    <td class="text-end fw-bold pe-3">
-                                        ₹{{ number_format(($gatePass->loading_quantity ?: $gatePass->net_weight) * $gatePass->rate_per_ton, 2) }}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted ps-3">Diesel Allowance</td>
-                                    <td class="text-end fw-bold text-azure pe-3">+
-                                        ₹{{ number_format($gatePass->diesel_amount, 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted ps-3">
-                                        Transport Cost
-                                        @if($gatePass->transport_is_billable)
-                                            <span class="badge bg-success-lt ms-1">Billed</span>
-                                        @else
-                                            <span class="badge bg-secondary-lt ms-1">Internal</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-end fw-bold text-azure pe-3">
-                                        + ₹{{ number_format($gatePass->transport_cost, 2) }}
-                                    </td>
-                                </tr>
+                                @if($destType !== 'internal' && $destType !== 'transfer')
+                                    <tr>
+                                        <td class="text-muted ps-3">Rate per CFT</td>
+                                        <td class="text-end fw-bold pe-3">₹{{ number_format($gatePass->rate_per_ton, 2) }}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td class="text-muted ps-3">
+                                            Lead Charges
+                                            @if($gatePass->transport_is_billable)
+                                                <span class="badge bg-success-lt ms-1">Billed</span>
+                                            @else
+                                                <span class="badge bg-secondary-lt ms-1">Internal</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end fw-bold text-azure pe-3">+
+                                            ₹{{ number_format($gatePass->lead, 2) }}</td>
+                                    </tr>
+                                @endif
                                 <tr class="bg-primary-lt">
                                     <td class="ps-3 fw-bold text-primary">Total Amount</td>
                                     <td class="text-end fw-bold text-primary pe-3 fs-3">
@@ -380,10 +412,19 @@
                                     <label class="form-label text-muted small">Distance (KM)</label>
                                     <div class="fw-medium">{{ $gatePass->distance_km ?: 0 }} KM</div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label text-muted small">Diesel Quantity</label>
-                                    <div class="fw-medium">{{ number_format($gatePass->diesel_qty, 2) }} Liters</div>
-                                </div>
+                                @if($destType !== 'internal' && $destType !== 'transfer')
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small">Lead Charges</label>
+                                        <div class="fw-medium">
+                                            ₹{{ number_format($gatePass->lead, 2) }}
+                                            @if($gatePass->transport_is_billable)
+                                                <span class="badge bg-success-lt ms-1">Billable</span>
+                                            @else
+                                                <span class="badge bg-secondary-lt ms-1">Non-Billable</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
                                 @if($gatePass->remarks)
                                     <div class="col-12 border-top pt-3">
                                         <label class="form-label text-muted small">Remarks / Notes</label>
