@@ -107,59 +107,74 @@
                                 <div class="col-md-4">
                                     <label class="form-label required">Vehicle Number</label>
                                     <div class="position-relative" @click.away="showSuggestions = false">
-                                         <div class="input-icon">
-                                             <span class="input-icon-addon">
-                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-truck" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                     <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                                     <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                                     <path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"></path>
-                                                 </svg>
-                                             </span>
-                                             <input type="text"
-                                                 class="form-control text-uppercase fw-medium @if($errors->has('manual_vehicle_number')) is-invalid @endif"
-                                                 x-model="searchTerm" 
-                                                 @input.debounce.300ms="searchVehicles()"
-                                                 @focus="if(searchTerm.length >= 2) showSuggestions = true"
-                                                 placeholder="ABC-1234" required autocomplete="off">
-                                             <input type="hidden" name="manual_vehicle_number" x-model="manualVehicleNumber">
-                                         </div>
-                                         
-                                         <!-- Suggestions Dropdown -->
-                                         <div x-show="showSuggestions && (suggestions.length > 0 || searchTerm.length >= 2)" 
-                                              class="dropdown-menu show w-100 shadow-lg border-primary" 
-                                              style="max-height: 300px; overflow-y: auto; z-index: 1050;"
-                                              x-transition>
-                                             <div x-show="isLoading" class="p-3 text-center">
-                                                 <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                                                 <span class="ms-2">Searching...</span>
-                                             </div>
-                                             
-                                             <template x-for="vehicle in suggestions" :key="vehicle.id">
-                                                 <button type="button" class="dropdown-item py-2 border-bottom" @click="selectVehicle(vehicle)">
-                                                     <div class="d-flex justify-content-between align-items-center">
-                                                         <div>
-                                                             <div class="fw-bold text-primary" x-text="vehicle.registration_number"></div>
-                                                             <div class="text-muted small" x-text="vehicle.model || 'No model specified'"></div>
-                                                         </div>
-                                                         <div class="text-end">
-                                                             <span class="badge bg-green-lt px-2">CFT: <span x-text="vehicle.cft"></span></span>
-                                                         </div>
-                                                     </div>
-                                                 </button>
-                                             </template>
+                                        <div class="input-icon">
+                                            <span class="input-icon-addon">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                    class="icon icon-tabler icon-tabler-truck" width="24" height="24"
+                                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                                    <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                                    <path
+                                                        d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5">
+                                                    </path>
+                                                </svg>
+                                            </span>
+                                            <input type="text"
+                                                class="form-control text-uppercase fw-medium @if($errors->has('manual_vehicle_number')) is-invalid @endif"
+                                                x-model="searchTerm" @input.debounce.300ms="searchVehicles()"
+                                                @focus="if(searchTerm.length >= 2) showSuggestions = true"
+                                                placeholder="ABC-1234" required autocomplete="off">
+                                            <input type="hidden" name="manual_vehicle_number"
+                                                x-model="manualVehicleNumber">
+                                        </div>
 
-                                             <div x-show="!isLoading && searchTerm.length >= 2" class="p-2 border-top bg-light">
-                                                 <button type="button" class="btn btn-outline-primary btn-sm w-100" @click="openCreateVehicleModal()">
-                                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <!-- Suggestions Dropdown -->
+                                        <div x-show="showSuggestions && (suggestions.length > 0 || searchTerm.length >= 2)"
+                                            class="dropdown-menu show w-100 shadow-lg border-primary"
+                                            style="max-height: 300px; overflow-y: auto; z-index: 1050;" x-transition>
+                                            <div x-show="isLoading" class="p-3 text-center">
+                                                <div class="spinner-border spinner-border-sm text-primary"
+                                                    role="status"></div>
+                                                <span class="ms-2">Searching...</span>
+                                            </div>
+
+                                            <template x-for="vehicle in suggestions" :key="vehicle.id">
+                                                <button type="button" class="dropdown-item py-2 border-bottom"
+                                                    @click="selectVehicle(vehicle)">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <div class="fw-bold text-primary"
+                                                                x-text="vehicle.registration_number"></div>
+                                                            <div class="text-muted small"
+                                                                x-text="vehicle.model || 'No model specified'"></div>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <span class="badge bg-green-lt px-2">CFT: <span
+                                                                    x-text="vehicle.cft"></span></span>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            </template>
+
+                                            <div x-show="!isLoading && searchTerm.length >= 2"
+                                                class="p-2 border-top bg-light">
+                                                <button type="button" class="btn btn-outline-primary btn-sm w-100"
+                                                    @click="openCreateVehicleModal()">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                        class="icon icon-tabler icon-tabler-plus" width="24" height="24"
+                                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                         <path d="M12 5l0 14"></path>
                                                         <path d="M5 12l14 0"></path>
-                                                     </svg>
-                                                     Create "<span x-text="searchTerm" class="text-uppercase"></span>" as New
-                                                 </button>
-                                             </div>
-                                         </div>
+                                                    </svg>
+                                                    Create "<span x-text="searchTerm" class="text-uppercase"></span>" as
+                                                    New
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                     <x-input-error :messages="$errors->get('manual_vehicle_number')" />
                                 </div>
@@ -167,51 +182,64 @@
                         </div>
 
                         <!-- Modal: Create New Vehicle -->
-                        <div class="modal modal-blur fade" id="modal-new-vehicle" tabindex="-1" role="dialog" aria-hidden="true">
-                          <div class="modal-dialog modal-dialog-centered" role="document">
-                            <div class="modal-content shadow-lg border-primary">
-                              <div class="modal-header bg-primary text-white">
-                                <h5 class="modal-title">Quick Add New Vehicle</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                              </div>
-                              <div class="modal-body">
-                                <div class="mb-3">
-                                  <label class="form-label required">Registration Number</label>
-                                  <input type="text" class="form-control text-uppercase fw-bold" x-model="newVehicle.registration_number" placeholder="ABC-1234">
-                                </div>
-                                <div class="row">
-                                  <div class="col-md-7">
-                                    <div class="mb-3">
-                                      <label class="form-label">Vehicle Model</label>
-                                      <input type="text" class="form-control" x-model="newVehicle.model" placeholder="e.g. Tata Tiara, Leyland">
+                        <div class="modal modal-blur fade" id="modal-new-vehicle" tabindex="-1" role="dialog"
+                            aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content shadow-lg border-primary">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title">Quick Add New Vehicle</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
                                     </div>
-                                  </div>
-                                  <div class="col-md-5">
-                                    <div class="mb-3">
-                                      <label class="form-label required">Vehicle CFT</label>
-                                      <div class="input-group">
-                                        <input type="number" step="0.01" class="form-control" x-model.number="newVehicle.cft">
-                                        <span class="input-group-text">CFT</span>
-                                      </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label required">Registration Number</label>
+                                            <input type="text" class="form-control text-uppercase fw-bold"
+                                                x-model="newVehicle.registration_number" placeholder="ABC-1234">
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-7">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Vehicle Model</label>
+                                                    <input type="text" class="form-control" x-model="newVehicle.model"
+                                                        placeholder="e.g. Tata Tiara, Leyland">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-5">
+                                                <div class="mb-3">
+                                                    <label class="form-label required">Vehicle CFT</label>
+                                                    <div class="input-group">
+                                                        <input type="number" step="0.01" class="form-control"
+                                                            x-model.number="newVehicle.cft">
+                                                        <span class="input-group-text">CFT</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                  </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-link link-secondary me-auto"
+                                            data-bs-dismiss="modal">Cancel</button>
+                                        <button type="button" class="btn btn-primary shadow" @click="saveNewVehicle()"
+                                            :disabled="isSavingVehicle">
+                                            <span x-show="isSavingVehicle" class="spinner-border spinner-border-sm me-2"
+                                                role="status"></span>
+                                            <svg x-show="!isSavingVehicle" xmlns="http://www.w3.org/2000/svg"
+                                                class="icon icon-tabler icon-tabler-device-floppy me-1" width="24"
+                                                height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path
+                                                    d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2">
+                                                </path>
+                                                <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                                <path d="M14 4l0 4l-6 0l0 -4"></path>
+                                            </svg>
+                                            Save & Select Vehicle
+                                        </button>
+                                    </div>
                                 </div>
-                              </div>
-                              <div class="modal-footer">
-                                <button type="button" class="btn btn-link link-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
-                                <button type="button" class="btn btn-primary shadow" @click="saveNewVehicle()" :disabled="isSavingVehicle">
-                                    <span x-show="isSavingVehicle" class="spinner-border spinner-border-sm me-2" role="status"></span>
-                                    <svg x-show="!isSavingVehicle" xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-device-floppy me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                       <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                       <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"></path>
-                                       <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                       <path d="M14 4l0 4l-6 0l0 -4"></path>
-                                    </svg>
-                                    Save & Select Vehicle
-                                </button>
-                              </div>
                             </div>
-                          </div>
                         </div>
 
                         <!-- Section 2: Destination & Usage Selection -->
@@ -411,7 +439,7 @@
                                     </div>
                                     <x-input-error :messages="$errors->get('rate_per_ton')" />
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-6" x-show="destinationType !== 'internal'" x-transition>
                                     <label class="form-label">Lead (₹)</label>
                                     <div class="input-group mb-2">
                                         <span class="input-group-text bg-light">₹</span>
@@ -421,7 +449,8 @@
                                     </div>
                                     <x-input-error :messages="$errors->get('lead')" />
                                 </div>
-                                <div class="col-md-6 d-flex align-items-center">
+                                <div class="col-md-6 d-flex align-items-center" x-show="destinationType !== 'internal'"
+                                    x-transition>
                                     <div class="mt-2">
                                         <label class="form-check form-switch form-check-inline"
                                             x-show="activityType === 'Sales'">
@@ -614,11 +643,13 @@
                             this.sourceUnitId = 1;
                             this.destinationUnitId = 2;
                             this.isBillable = false;
+                            this.leadAmount = 0;
                         } else if (this.destinationType === 'internal') {
                             this.activityType = 'Internal Movement';
                             this.sourceUnitId = 2;
                             this.destinationUnitId = 3;
                             this.isBillable = false;
+                            this.leadAmount = 0;
                         } else {
                             this.activityType = 'Sales';
                             this.sourceUnitId = 2;
@@ -634,6 +665,7 @@
                             this.manualCustomerName = '';
                             this.villageArea = '';
                         }
+                        this.calculateTotal();
                     },
 
                     onProjectChange(e) {
