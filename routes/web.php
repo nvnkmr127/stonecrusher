@@ -98,6 +98,7 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
     Route::get('reports/vehicle-usage', [App\Http\Controllers\ReportController::class, 'vehicleUsage'])->name('reports.vehicle-usage');
 
     // Gate Pass Reports
+    Route::get('gate-passes/next-number', [GatePassController::class, 'nextNumber'])->name('gate-passes.next-number');
     Route::get('gate-passes/daily-report', [GatePassController::class, 'dailyReport'])->name('gate-passes.daily-report');
     Route::get('gate-passes/distance-report', [GatePassController::class, 'distanceReport'])->name('gate-passes.distance-report');
     Route::get('gate-passes/distance-report/export', [GatePassController::class, 'exportDistanceReport'])->name('gate-passes.distance-report.export');
@@ -106,6 +107,8 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
     Route::post('gate-passes/{gate_pass}/payment', [GatePassController::class, 'recordPayment'])->name('gate-passes.payment');
     Route::resource('gate-passes', GatePassController::class);
     // Vehicle Management
+    Route::get('vehicles/search', [VehicleController::class, 'search'])->name('vehicles.search');
+    Route::post('vehicles/quick-store', [VehicleController::class, 'quickStore'])->name('vehicles.quick-store');
     Route::resource('vehicles', VehicleController::class);
     Route::resource('vehicle-maintenance', App\Http\Controllers\VehicleMaintenanceController::class);
     Route::post('vehicle-maintenance/{vehicle_maintenance}/complete', [App\Http\Controllers\VehicleMaintenanceController::class, 'markComplete'])->name('vehicle-maintenance.complete');

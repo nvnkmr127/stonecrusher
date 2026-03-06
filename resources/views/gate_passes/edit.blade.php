@@ -24,9 +24,10 @@
         <div class="col-12">
             <form action="{{ route('gate-passes.update', $gatePass->id) }}" method="POST" 
                 x-data="gatePassEditForm({
+                    gatePassNumber: {{ Illuminate\Support\Js::from(old('gate_pass_number', $gatePass->gate_pass_number)) }},
+                    date: {{ Illuminate\Support\Js::from(old('date', $gatePass->date->format('Y-m-d\TH:i'))) }},
                     netWeight: {{ (float) old('net_weight', $gatePass->net_weight) }},
-                    transportCost: {{ (float) old('transport_cost', $gatePass->transport_cost ?? 0) }},
-                    dieselAmount: {{ (float) old('diesel_amount', $gatePass->diesel_amount ?? 0) }},
+                    leadAmount: {{ (float) old('lead', $gatePass->lead ?? 0) }},
                     ratePerTon: {{ (float) old('rate_per_ton', $gatePass->rate_per_ton ?? 0) }},
                     activityType: '{{ old('activity_type', $gatePass->activity_type->value) }}',
                     sourceUnitId: {{ old('source_unit_id', $gatePass->source_unit_id ?? 2) }},
@@ -36,6 +37,7 @@
                     clientId: {{ Illuminate\Support\Js::from(old('client_id', $gatePass->client_id)) }},
                     projectId: {{ Illuminate\Support\Js::from(old('project_id', $gatePass->project_id)) }},
                     manualCustomerName: {{ Illuminate\Support\Js::from(old('manual_customer_name', $gatePass->manual_customer_name)) }},
+                    villageArea: {{ Illuminate\Support\Js::from(old('village_area', $gatePass->village_area)) }},
                     manualVehicleNumber: {{ Illuminate\Support\Js::from(old('manual_vehicle_number', $gatePass->vehicle ? $gatePass->vehicle->registration_number : $gatePass->manual_vehicle_number)) }},
                     destinationType: {{ Illuminate\Support\Js::from(old('destination_type') ?: (old('manual_customer_name', $gatePass->manual_customer_name) ? 'regular' : ($gatePass->activity_type->value == 'Material Transfer' ? 'transfer' : ($gatePass->project && $gatePass->project->is_internal ? 'internal' : 'registered')))) }}
                 })">
@@ -68,11 +70,22 @@
                         @endif
                         <div class="row g-3">
                             <!-- Section 1: Identification -->
-                            <div class="col-md-4">
+                             <div class="col-md-4">
                                 <div class="mb-3">
                                     <label class="form-label required">Gate Pass Number</label>
-                                    <input type="text" class="form-control fw-bold bg-light" name="gate_pass_number"
-                                        value="{{ old('gate_pass_number', $gatePass->gate_pass_number) }}" readonly>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control fw-bold bg-light" name="gate_pass_number"
+                                            x-model="gatePassNumber" readonly>
+                                        <button type="button" class="btn btn-outline-warning" 
+                                            x-show="isMismatch" @click="fixGpNumber()" 
+                                            title="Update number based on new date">
+                                            Fix
+                                        </button>
+                                    </div>
+                                    <div class="mt-1 text-danger small" x-show="isMismatch">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-alert-triangle me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9v2m0 4v.01m-6.937 7h13.874c1.77 0 2.87 -1.9 1.93 -3.45l-6.937 -12.05a2.23 2.23 0 0 0 -3.86 0l-6.937 12.05c-.94 1.55 .16 3.45 1.937 3.45z" /></svg>
+                                        Mismatch with selected date
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -80,7 +93,7 @@
                                     <label class="form-label required">Date & Time</label>
                                     <input type="datetime-local"
                                         class="form-control @error('date') is-invalid @enderror" name="date"
-                                        value="{{ old('date', $gatePass->date->format('Y-m-d\TH:i')) }}" required>
+                                        x-model="date" required>
                                     <x-input-error :messages="$errors->get('date')" />
                                 </div>
                             </div>
@@ -194,13 +207,22 @@
                             </div>
 
                             <!-- Regular Sale Mode Fields -->
-                            <div class="col-md-12" x-show="destinationType === 'regular'" x-transition>
+                            <div class="col-md-6" x-show="destinationType === 'regular'" x-transition>
                                 <div class="mb-3">
                                     <label class="form-label required">Customer Name</label>
                                     <input type="text" class="form-control @error('manual_customer_name') is-invalid @enderror"
                                         name="manual_customer_name" x-model="manualCustomerName"
                                         placeholder="Enter Customer Name" :required="destinationType === 'regular'">
                                     <x-input-error :messages="$errors->get('manual_customer_name')" />
+                                </div>
+                            </div>
+                            <div class="col-md-6" x-show="destinationType === 'regular'" x-transition>
+                                <div class="mb-3">
+                                    <label class="form-label required">Village or Area</label>
+                                    <input type="text" class="form-control @error('village_area') is-invalid @enderror"
+                                        name="village_area" x-model="villageArea"
+                                        placeholder="Enter Village or Area" :required="destinationType === 'regular'">
+                                    <x-input-error :messages="$errors->get('village_area')" />
                                 </div>
                             </div>
 
@@ -272,42 +294,29 @@
                                 <x-input-error :messages="$errors->get('rate_per_ton')" />
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Transport Cost (₹)</label>
+                                    <label class="form-label">Lead (₹)</label>
                                     <div class="input-group mb-2">
                                         <span class="input-group-text">₹</span>
                                         <input type="number" step="0.01"
-                                            class="form-control @error('transport_cost') is-invalid @enderror"
-                                            name="transport_cost" x-model.number="transportCost" @input="calculateTotal()">
+                                            class="form-control @error('lead') is-invalid @enderror"
+                                            name="lead" x-model.number="leadAmount" @input="calculateTotal()">
                                     </div>
                                     <label class="form-check form-check-inline" x-show="activityType === 'Sales'">
                                         <input class="form-check-input" type="checkbox" name="transport_is_billable"
                                             value="1" id="billTransport" x-model="isBillable" @change="calculateTotal()"
                                             {{ $gatePass->transport_is_billable ? 'checked' : '' }}>
-                                        <span class="form-check-label">Bill transport to client?</span>
+                                        <span class="form-check-label">Bill lead to client?</span>
                                     </label>
-                                    <x-input-error :messages="$errors->get('transport_cost')" />
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label class="form-label">Diesel Amount (₹)</label>
-                                    <div class="input-group mb-2">
-                                        <span class="input-group-text">₹</span>
-                                        <input type="number" step="0.01"
-                                            class="form-control @error('diesel_amount') is-invalid @enderror"
-                                            name="diesel_amount" x-model.number="dieselAmount" @input="calculateTotal()">
-                                    </div>
-                                    <x-input-error :messages="$errors->get('diesel_amount')" />
+                                    <x-input-error :messages="$errors->get('lead')" />
                                 </div>
                             </div>
 
                             <div class="col-12 mt-2" x-show="destinationType !== 'transfer' && destinationType !== 'internal'" x-transition>
                                 <div class="col-12 text-end">
                                     <h2 class="mb-0 text-muted">Total Amount: <span class="text-primary" x-text="'₹ ' + totalAmount"></span></h2>
-                                    <small class="text-muted" x-show="isBillable">(Includes Transport Cost & Diesel)</small>
+                                    <small class="text-muted" x-show="isBillable">(Includes Lead)</small>
                                 </div>
                             </div>
 
@@ -329,9 +338,11 @@
         <script>
             document.addEventListener('alpine:init', () => {
                 Alpine.data('gatePassEditForm', (initial) => ({
+                    gatePassNumber: initial.gatePassNumber,
+                    date: initial.date,
+                    isMismatch: false,
                     netWeight: initial.netWeight,
-                    transportCost: initial.transportCost,
-                    dieselAmount: initial.dieselAmount,
+                    leadAmount: initial.leadAmount,
                     activityType: initial.activityType,
                     sourceUnitId: initial.sourceUnitId,
                     destinationUnitId: initial.destinationUnitId,
@@ -339,14 +350,20 @@
                     clientId: initial.clientId,
                     projectId: initial.projectId,
                     manualCustomerName: initial.manualCustomerName,
+                    villageArea: initial.villageArea,
                     manualVehicleNumber: initial.manualVehicleNumber,
                     destinationType: initial.destinationType,
                     isBillable: initial.isBillable,
                     ratePerTon: initial.ratePerTon,
                     totalAmount: 0,
 
-                    init() {
+                     init() {
                         this.calculateTotal();
+                        this.checkMismatch();
+
+                        this.$watch('date', () => {
+                            this.checkMismatch();
+                        });
 
                         this.$watch('clientId', (value) => {
                             if (value && this.activityType === 'Sales') {
@@ -370,6 +387,27 @@
                         });
                     },
 
+                    checkMismatch() {
+                        if (!this.date || !this.gatePassNumber) return;
+                        const datePrefix = 'GP-' + this.date.split('T')[0].replace(/-/g, '');
+                        this.isMismatch = !this.gatePassNumber.startsWith(datePrefix);
+                    },
+
+                    async fixGpNumber() {
+                        if (!this.date) return;
+                        const dateOnly = this.date.split('T')[0];
+                        try {
+                            const response = await fetch(`/gate-passes/next-number?date=${dateOnly}`);
+                            const data = await response.json();
+                            if (data.next_number) {
+                                this.gatePassNumber = data.next_number;
+                                this.checkMismatch();
+                            }
+                        } catch (error) {
+                            console.error('Failed to fetch next GP number', error);
+                        }
+                    },
+
                     onUsageChange() {
                         if (this.destinationType === 'transfer') {
                             this.activityType = 'Material Transfer';
@@ -386,6 +424,15 @@
                             this.sourceUnitId = 2;
                             this.destinationUnitId = 3;
                             this.isBillable = true;
+                        }
+
+                        if (this.destinationType !== 'registered' && this.destinationType !== 'internal') {
+                            this.clientId = '';
+                            this.projectId = '';
+                        }
+                        if (this.destinationType !== 'regular') {
+                            this.manualCustomerName = '';
+                            this.villageArea = '';
                         }
                     },
 
@@ -417,14 +464,13 @@
 
                         const quantity = parseFloat(this.netWeight) || 0;
                         const rate = parseFloat(this.ratePerTon) || 0;
-                        const diesel = parseFloat(this.dieselAmount) || 0;
-                        const transport = this.isBillable ? (parseFloat(this.transportCost) || 0) : 0;
+                        const lead = this.isBillable ? (parseFloat(this.leadAmount) || 0) : 0;
 
                         // Base amount from Quantity * Rate
                         const baseAmount = quantity * rate;
                         
-                        // Total = Base Amount + Diesel + Transport
-                        this.totalAmount = (baseAmount + diesel + transport).toFixed(2);
+                        // Total = Base Amount + Lead
+                        this.totalAmount = (baseAmount + lead).toFixed(2);
                     }
                 }));
             });

@@ -47,7 +47,7 @@ class GatePassController extends Controller
         $vehicles = Vehicle::getCached();
         $metalTypes = MetalType::getCached();
 
-        $gpNumber = 'GP-' . date('Ymd') . '-' . str_pad(GatePass::where('date', '>=', now()->startOfDay())->where('date', '<=', now()->endOfDay())->count() + 1, 4, '0', STR_PAD_LEFT);
+        $gpNumber = $this->generateNextGpNumber(now()->toDateString());
 
         $transportRate = Setting::get('rate_per_km', 0);
         $crusherLat = Setting::get('crusher_latitude', 0);
@@ -57,6 +57,46 @@ class GatePassController extends Controller
         $operationalUnits = \App\Models\OperationalUnit::getActive();
 
         return view('gate_passes.create', compact('clients', 'projects', 'vehicles', 'metalTypes', 'gpNumber', 'transportRate', 'crusherLat', 'crusherLon', 'destinations', 'defaultRoundTrip', 'operationalUnits'));
+    }
+
+    /**
+     * Get the next sequence number for a given date via AJAX.
+     */
+    public function nextNumber(Request $request)
+    {
+        $date = $request->input('date');
+        if (!$date) {
+            return response()->json(['error' => 'Date is required'], 400);
+        }
+
+        try {
+            $nextNumber = $this->generateNextGpNumber($date);
+            return response()->json(['next_number' => $nextNumber]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Invalid date format: ' . $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Helper to generate the next Gate Pass number for a date.
+     */
+    private function generateNextGpNumber($date)
+    {
+        $parsedDate = \Carbon\Carbon::parse($date);
+        $prefix = 'GP-' . $parsedDate->format('Ymd');
+
+        $lastGp = GatePass::where('gate_pass_number', 'like', $prefix . '-%')
+            ->orderBy('gate_pass_number', 'desc')
+            ->first();
+
+        if ($lastGp) {
+            $lastSequence = intval(substr($lastGp->gate_pass_number, -4));
+            $nextSequence = $lastSequence + 1;
+        } else {
+            $nextSequence = 1;
+        }
+
+        return $prefix . '-' . str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -82,13 +122,13 @@ class GatePassController extends Controller
             'destination_unit_id' => 'required|exists:operational_units,id',
             'trips' => 'required|integer|min:1',
             'destination_type' => 'nullable|string', // Used for conditional logic
+            'manual_customer_name' => 'nullable|string|max:255',
+            'village_area' => 'nullable|string|max:255',
             'remarks' => 'nullable|string',
             'delivery_location' => 'nullable|string|max:255',
             'distance_km' => 'nullable|numeric|min:0',
-            'transport_cost' => 'nullable|numeric|min:0',
+            'lead' => 'nullable|numeric|min:0',
             'transport_is_billable' => 'nullable|boolean',
-            'diesel_qty' => 'nullable|numeric|min:0',
-            'diesel_amount' => 'nullable|numeric|min:0',
             'rate_per_ton' => 'nullable|numeric',
             'metal_type_id' => 'nullable|exists:metal_types,id',
             'net_weight' => 'nullable|numeric',
@@ -101,6 +141,7 @@ class GatePassController extends Controller
             $rules['metal_type_id'] = 'required|exists:metal_types,id';
             $rules['client_id'] = 'nullable|required_if:destination_type,registered|exists:clients,id';
             $rules['manual_customer_name'] = 'nullable|required_if:destination_type,regular|string|max:255';
+            $rules['village_area'] = 'nullable|required_if:destination_type,regular|string|max:255';
         }
         // Validation for other Completed passes
         elseif ($status === \App\Enums\GatePassStatus::COMPLETED->value) {
@@ -110,6 +151,13 @@ class GatePassController extends Controller
 
         $validated = $request->validate($rules);
 
+        // EXTRA VALIDATION: Ensure Gate Pass Number matches the date
+        $expectedPrefix = 'GP-' . \Carbon\Carbon::parse($validated['date'])->format('Ymd');
+        if (!str_starts_with($validated['gate_pass_number'], $expectedPrefix)) {
+            return back()->withErrors(['gate_pass_number' => "The Gate Pass Number must match the selected date ({$expectedPrefix}...)."])
+                ->withInput();
+        }
+
         // Check if date is closed
         \App\Services\DayClosureService::checkAllowed($validated['date']);
 
@@ -117,7 +165,7 @@ class GatePassController extends Controller
         if (empty($validated['vehicle_id']) && !empty($request->input('manual_vehicle_number'))) {
             $vehicle = Vehicle::firstOrCreate(
                 ['registration_number' => $request->input('manual_vehicle_number')],
-                ['is_active' => true, 'transport_multiplier' => 1.0] // Default defaults
+                ['is_active' => true, 'cft' => 0.0] // Default defaults
             );
             $validated['vehicle_id'] = $vehicle->id;
         }
@@ -149,16 +197,16 @@ class GatePassController extends Controller
             }
             $rate = floatval($rate ?? 0);
 
-            $diesel = floatval($request->input('diesel_amount', 0));
+            $lead = floatval($request->input('lead', 0));
             $validated['diesel_qty'] = floatval($request->input('diesel_qty', 0));
-            $transport = 0;
+            $transportCharge = 0;
 
             if ($request->boolean('transport_is_billable')) {
-                $transport = floatval($request->input('transport_cost', 0));
+                $transportCharge = $lead;
             }
 
-            // Total = (Qty * Rate) + Diesel + Transport
-            $calculatedTotal = ($qty * $rate) + $diesel + $transport;
+            // Total = (Qty * Rate) + (is_billable ? Lead : 0)
+            $calculatedTotal = ($qty * $rate) + $transportCharge;
 
             // Override for internal movement
             if ($validated['activity_type'] === \App\Enums\ActivityType::INTERNAL_MOVEMENT->value) {
@@ -176,8 +224,7 @@ class GatePassController extends Controller
             // Override with server-calculated entries
             $validated['loading_quantity'] = $qty;
             $validated['rate_per_ton'] = $rate;
-            $validated['diesel_amount'] = $diesel;
-            $validated['transport_cost'] = floatval($request->input('transport_cost', 0));
+            $validated['lead'] = $lead;
             $validated['total_amount'] = round($calculatedTotal, 2);
         }
 
@@ -255,16 +302,15 @@ class GatePassController extends Controller
             'remarks' => 'nullable|string',
             'delivery_location' => 'nullable|string|max:255',
             'distance_km' => 'nullable|numeric|min:0',
-            'transport_cost' => 'nullable|numeric|min:0',
+            'lead' => 'nullable|numeric|min:0',
             'transport_is_billable' => 'nullable|boolean',
-            'diesel_qty' => 'nullable|numeric|min:0',
-            'diesel_amount' => 'nullable|numeric|min:0',
             'rate_per_ton' => 'nullable|numeric',
             'metal_type_id' => 'nullable|exists:metal_types,id',
             'net_weight' => 'nullable|numeric',
             'client_id' => 'nullable|exists:clients,id',
             'project_id' => 'nullable|exists:projects,id',
             'manual_customer_name' => 'nullable|string|max:255',
+            'village_area' => 'nullable|string|max:255',
         ];
 
         // Strict validation for Sales
@@ -274,6 +320,7 @@ class GatePassController extends Controller
             $rules['metal_type_id'] = 'required|exists:metal_types,id';
             $rules['client_id'] = 'nullable|required_if:destination_type,registered|exists:clients,id';
             $rules['manual_customer_name'] = 'nullable|required_if:destination_type,regular|string|max:255';
+            $rules['village_area'] = 'nullable|required_if:destination_type,regular|string|max:255';
         }
         // Validation for other Completed passes
         elseif ($request->input('status') === \App\Enums\GatePassStatus::COMPLETED->value) {
@@ -282,6 +329,17 @@ class GatePassController extends Controller
         }
 
         $validated = $request->validate($rules);
+
+        // EXTRA VALIDATION: Ensure Gate Pass Number matches the date
+        $expectedPrefix = 'GP-' . \Carbon\Carbon::parse($validated['date'])->format('Ymd');
+        $gpNumberInRequest = $request->input('gate_pass_number', $gate_pass->gate_pass_number);
+
+        if (!str_starts_with($gpNumberInRequest, $expectedPrefix)) {
+            return back()->withErrors(['gate_pass_number' => "The Gate Pass Number does not match the selected date ({$expectedPrefix}...). Please update the number."])
+                ->withInput();
+        }
+
+        $validated['gate_pass_number'] = $gpNumberInRequest;
 
         // Check if new date is closed
         \App\Services\DayClosureService::checkAllowed($validated['date']);
@@ -292,7 +350,7 @@ class GatePassController extends Controller
         if (empty($validated['vehicle_id']) && !empty($request->input('manual_vehicle_number'))) {
             $vehicle = Vehicle::firstOrCreate(
                 ['registration_number' => $request->input('manual_vehicle_number')],
-                ['is_active' => true, 'transport_multiplier' => 1.0] // Default defaults
+                ['is_active' => true, 'cft' => 0.0] // Default defaults
             );
             $validated['vehicle_id'] = $vehicle->id;
         }
@@ -324,16 +382,16 @@ class GatePassController extends Controller
             }
             $rate = floatval($rate ?? 0);
 
-            $diesel = floatval($request->input('diesel_amount', $gate_pass->diesel_amount ?? 0));
+            $lead = floatval($request->input('lead', $gate_pass->lead ?? 0));
             $validated['diesel_qty'] = floatval($request->input('diesel_qty', $gate_pass->diesel_qty ?? 0));
-            $transport = 0;
+            $transportCharge = 0;
 
             if ($request->boolean('transport_is_billable')) {
-                $transport = floatval($request->input('transport_cost', 0));
+                $transportCharge = $lead;
             }
 
-            // Total = (Qty * Rate) + Diesel + Transport
-            $calculatedTotal = ($qty * $rate) + $diesel + $transport;
+            // Total = (Qty * Rate) + (is_billable ? Lead : 0)
+            $calculatedTotal = ($qty * $rate) + $transportCharge;
 
             // Override for internal movement
             if ($validated['activity_type'] === \App\Enums\ActivityType::INTERNAL_MOVEMENT->value) {
@@ -351,8 +409,7 @@ class GatePassController extends Controller
             // Override with server-calculated entries
             $validated['loading_quantity'] = $qty;
             $validated['rate_per_ton'] = $rate;
-            $validated['diesel_amount'] = $diesel;
-            $validated['transport_cost'] = floatval($request->input('transport_cost', 0));
+            $validated['lead'] = $lead;
             $validated['total_amount'] = round($calculatedTotal, 2);
         }
 
@@ -402,7 +459,7 @@ class GatePassController extends Controller
         // Overall Summary
         $summary = [
             'total_sales' => (clone $baseQuery)->sum('total_amount'),
-            'total_diesel' => (clone $baseQuery)->sum('diesel_amount'),
+            'total_lead' => (clone $baseQuery)->sum('lead'),
             'total_paid' => (clone $baseQuery)->sum('paid_amount'),
             'total_loads' => (clone $baseQuery)->count(),
         ];
@@ -481,13 +538,13 @@ class GatePassController extends Controller
             $destLat = $request->input('lat');
             $destLon = $request->input('lon');
             $roundTrip = $request->boolean('round_trip');
-            $multiplier = $request->input('multiplier', 1.0);
+            $cft = $request->input('cft', 0.0);
 
             $distance = $distanceService->calculateDistance($crusherLat, $crusherLon, $destLat, $destLon);
 
-            // Cost = Distance * Rate * Multiplier * (RoundTrip ? 2 : 1)
+            // Cost = Distance * Rate * CFT * (RoundTrip ? 2 : 1)
             $rtFactor = $roundTrip ? 2 : 1;
-            $cost = $distance * $defaultRate * $multiplier * $rtFactor;
+            $cost = $distance * $defaultRate * $cft * $rtFactor;
 
             if ($request->wantsJson()) {
                 return response()->json([
@@ -498,7 +555,7 @@ class GatePassController extends Controller
             }
         }
 
-        $vehicles = Vehicle::where('is_active', true)->select('id', 'registration_number', 'model', 'transport_multiplier')->get();
+        $vehicles = Vehicle::where('is_active', true)->select('id', 'registration_number', 'model', 'cft')->get();
         return view('gate_passes.calculator', compact('defaultRate', 'crusherLat', 'crusherLon', 'vehicles'));
     }
 
@@ -514,7 +571,7 @@ class GatePassController extends Controller
         $summary = [
             'total_trips' => (clone $query)->count(),
             'total_distance' => (clone $query)->sum('distance_km'),
-            'total_cost' => (clone $query)->sum('transport_cost'),
+            'total_cost' => (clone $query)->sum('lead'),
             'total_sales' => (clone $query)->sum('total_amount'), // For Cost vs Sales ratio
             'total_volume' => (clone $query)->sum('loading_quantity'),
         ];
@@ -530,7 +587,7 @@ class GatePassController extends Controller
                 'delivery_location',
                 \DB::raw('COUNT(*) as trip_count'),
                 \DB::raw('SUM(distance_km) as total_distance'),
-                \DB::raw('SUM(transport_cost) as total_cost'),
+                \DB::raw('SUM(lead) as total_cost'),
                 \DB::raw('SUM(loading_quantity) as total_qty')
             )
             ->groupBy('delivery_location')
@@ -555,7 +612,7 @@ class GatePassController extends Controller
                 END as range_label
             ")
             ->selectRaw('COUNT(*) as count')
-            ->selectRaw('SUM(transport_cost) as total_cost')
+            ->selectRaw('SUM(lead) as total_cost')
             ->selectRaw('SUM(distance_km) as total_dist')
             ->groupBy('range_label')
             ->get()

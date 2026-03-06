@@ -88,6 +88,9 @@
                                 </td>
                                 <td>
                                     {{ $gp->client->name ?? $gp->manual_customer_name ?? '-' }}
+                                    @if($gp->village_area)
+                                        <div class="small text-muted italic">{{ $gp->village_area }}</div>
+                                    @endif
                                     @if($gp->project)
                                         <div class="small text-muted">{{ $gp->project->name }}</div>
                                     @endif

@@ -26,7 +26,7 @@ class AdvancedTransportTest extends TestCase
         // Setup Vehicle with Multiplier
         $vehicle = Vehicle::create([
             'registration_number' => 'TEST-123',
-            'transport_multiplier' => 1.5,
+            'cft' => 1.5,
             'is_active' => true
         ]);
 
@@ -35,7 +35,7 @@ class AdvancedTransportTest extends TestCase
             'lat' => 1, // approx 111km from 0,0
             'lon' => 0,
             'json' => 1,
-            'multiplier' => 1.5,
+            'cft' => 1.5,
             'round_trip' => 1
         ]));
 
@@ -44,11 +44,11 @@ class AdvancedTransportTest extends TestCase
 
         $distance = $data['distance'];
         $rate = 10;
-        $multiplier = 1.5;
+        $cft = 1.5;
         $roundTrip = 2;
 
         // Tolerance for distance calculation
-        $expectedCost = $distance * $rate * $multiplier * $roundTrip;
+        $expectedCost = $distance * $rate * $cft * $roundTrip;
 
         $this->assertEquals($expectedCost, $data['cost']);
     }

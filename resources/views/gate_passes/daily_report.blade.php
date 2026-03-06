@@ -86,10 +86,10 @@
                         </div>
                         <div class="col">
                             <div class="font-weight-medium">
-                                Diesel Cost
+                                Total Lead
                             </div>
                             <div class="text-muted">
-                                ₹ {{ number_format($summary['total_diesel'], 2) }}
+                                ₹ {{ number_format($summary['total_lead'], 2) }}
                             </div>
                         </div>
                     </div>

@@ -19,6 +19,7 @@ class GatePass extends Model
         'destination_unit_id',
         'activity_type',
         'manual_customer_name',
+        'village_area',
         'project_id',
         'metal_type_id',
         'trips',
@@ -30,7 +31,7 @@ class GatePass extends Model
         'rate_per_ton',
         'total_amount',
         'paid_amount',
-        'diesel_amount',
+        'lead',
         'diesel_qty',
         'advance_amount',
         'status',
@@ -38,7 +39,6 @@ class GatePass extends Model
         'remarks',
         'delivery_location',
         'distance_km',
-        'transport_cost',
         'transport_is_billable',
     ];
 

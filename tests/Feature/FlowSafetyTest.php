@@ -36,14 +36,19 @@ class FlowSafetyTest extends TestCase
     public function gate_pass_uses_enums_for_validation()
     {
         $client = Client::create(['name' => 'Test Client', 'is_active' => true, 'credit_limit' => 10000]);
-        $vehicle = Vehicle::create(['registration_number' => 'KA-01-AB-1234', 'is_active' => true, 'model' => 'Tata', 'transport_multiplier' => 1]);
+        $vehicle = Vehicle::create(['registration_number' => 'KA-01-AB-1234', 'is_active' => true, 'model' => 'Tata', 'cft' => 1]);
 
         $response = $this->actingAs($this->user)->post(route('gate-passes.store'), [
-            'gate_pass_number' => 'GP-TEST-001',
+            'gate_pass_number' => 'GP-' . now()->format('Ymd') . '-001',
             'date' => now()->toDateString(),
             'vehicle_id' => $vehicle->id,
             'client_id' => $client->id,
             'status' => 'invalid_status', // Invalid Enum Value
+            'activity_type' => \App\Enums\ActivityType::SALES->value,
+            'source_unit_id' => 2,
+            'destination_unit_id' => 3,
+            'rate_per_ton' => 500,
+            'trips' => 1,
         ]);
 
         $response->assertSessionHasErrors('status');
@@ -95,11 +100,11 @@ class FlowSafetyTest extends TestCase
     public function gate_pass_creation_is_successful_with_enums()
     {
         $client = Client::create(['name' => 'Test Client 3', 'is_active' => true, 'credit_limit' => 50000]);
-        $vehicle = Vehicle::create(['registration_number' => 'KA-01-XY-9999', 'is_active' => true, 'model' => 'Benz', 'transport_multiplier' => 1]);
+        $vehicle = Vehicle::create(['registration_number' => 'KA-01-XY-9999', 'is_active' => true, 'model' => 'Benz', 'cft' => 1]);
         $metal = MetalType::create(['name' => 'Granite', 'rate_per_ton' => 500, 'is_active' => true]);
 
         $response = $this->actingAs($this->user)->post(route('gate-passes.store'), [
-            'gate_pass_number' => 'GP-TEST-002',
+            'gate_pass_number' => 'GP-' . now()->format('Ymd') . '-002',
             'date' => now()->toDateString(),
             'vehicle_id' => $vehicle->id,
             'client_id' => $client->id,
@@ -110,10 +115,15 @@ class FlowSafetyTest extends TestCase
             'tare_weight' => 10,
             'net_weight' => 10,
             'total_amount' => 5000,
+            'activity_type' => \App\Enums\ActivityType::SALES->value,
+            'source_unit_id' => 2,
+            'destination_unit_id' => 3,
+            'rate_per_ton' => 500,
+            'trips' => 1,
         ]);
 
         $response->assertRedirect(route('gate-passes.index'));
-        $this->assertDatabaseHas('gate_passes', ['gate_pass_number' => 'GP-TEST-002']);
+        $this->assertDatabaseHas('gate_passes', ['gate_pass_number' => 'GP-' . now()->format('Ymd') . '-002']);
 
         // Check transaction creation (side effect)
         $this->assertDatabaseHas('client_transactions', [

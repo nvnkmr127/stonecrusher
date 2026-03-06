@@ -23,6 +23,8 @@
     <div class="row row-cards">
         <div class="col-lg-10 mx-auto">
             <form action="{{ route('gate-passes.store') }}" method="POST" x-data="gatePassCreateForm({
+                gatePassNumber: '{{ old('gate_pass_number', $gpNumber) }}',
+                date: '{{ old('date', now()->format('Y-m-d\TH:i')) }}',
                 grossWeight: {{ (float) old('gross_weight', 0) }},
                 tareWeight: {{ (float) old('tare_weight', 0) }},
                 netWeight: {{ (float) old('net_weight', 0) }},
@@ -33,14 +35,14 @@
                 clientId: {{ Illuminate\Support\Js::from(old('client_id', '')) }},
                 projectId: {{ Illuminate\Support\Js::from(old('project_id', '')) }},
                 manualCustomerName: {{ Illuminate\Support\Js::from(old('manual_customer_name', '')) }},
+                villageArea: {{ Illuminate\Support\Js::from(old('village_area', '')) }},
                 manualVehicleNumber: {{ Illuminate\Support\Js::from(old('manual_vehicle_number', '')) }},
                 destinationType: {{ Illuminate\Support\Js::from(old('destination_type') ?: (old('manual_customer_name') ? 'regular' : (old('activity_type') == 'Material Transfer' ? 'transfer' : (old('project_id') && $projects->where('id', old('project_id'))->where('is_internal', true)->count() > 0 ? 'internal' : 'registered')))) }},
-                dieselAmount: {{ (float) old('diesel_amount', 0) }},
+                leadAmount: {{ (float) old('lead', 0) }},
                 ratePerTon: {{ (float) old('rate_per_ton', 0) }},
                 totalAmount: 0,
                 isBillable: {{ (old('client_id') || old('manual_customer_name') || old('transport_is_billable')) ? 'true' : 'false' }},
-                isManualVehicle: true,
-                vehicles: {{ Illuminate\Support\Js::from($vehicles->map(fn($v) => ['number' => $v->registration_number, 'multiplier' => (float) $v->transport_multiplier, 'unit_id' => $v->operational_unit_id])) }}
+                vehicles: {{ Illuminate\Support\Js::from($vehicles->map(fn($v) => ['number' => $v->registration_number, 'cft' => (float) $v->cft, 'unit_id' => $v->operational_unit_id])) }}
             })">
                 @csrf
                 <x-card>
@@ -93,48 +95,123 @@
                                 <div class="col-md-4">
                                     <label class="form-label required">Gate Pass Number</label>
                                     <input type="text" class="form-control fw-bold bg-light" name="gate_pass_number"
-                                        value="{{ old('gate_pass_number', $gpNumber) }}" readonly>
+                                        x-model="gatePassNumber" readonly>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label required">Date & Time</label>
                                     <input type="datetime-local"
                                         class="form-control @error('date') is-invalid @enderror" name="date"
-                                        value="{{ old('date', now()->format('Y-m-d\TH:i')) }}" required>
+                                        x-model="date" @change="updateGpNumber()" required>
                                     <x-input-error :messages="$errors->get('date')" />
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label required">Vehicle Number</label>
-                                    <div class="input-icon">
-                                        <span class="input-icon-addon">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                class="icon icon-tabler icon-tabler-truck" width="24" height="24"
-                                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                                stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                                <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                                <path
-                                                    d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5">
-                                                </path>
-                                            </svg>
-                                        </span>
-                                        <input type="text"
-                                            class="form-control text-uppercase fw-medium @if($errors->has('manual_vehicle_number') || $errors->has('vehicle_id')) is-invalid @endif"
-                                            name="manual_vehicle_number" list="vehicleList"
-                                            x-model="manualVehicleNumber" @input="checkVehicleMultiplier()"
-                                            placeholder="ABC-1234" required autocomplete="off">
+                                    <div class="position-relative" @click.away="showSuggestions = false">
+                                         <div class="input-icon">
+                                             <span class="input-icon-addon">
+                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-truck" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                     <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                                     <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                                     <path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"></path>
+                                                 </svg>
+                                             </span>
+                                             <input type="text"
+                                                 class="form-control text-uppercase fw-medium @if($errors->has('manual_vehicle_number')) is-invalid @endif"
+                                                 x-model="searchTerm" 
+                                                 @input.debounce.300ms="searchVehicles()"
+                                                 @focus="if(searchTerm.length >= 2) showSuggestions = true"
+                                                 placeholder="ABC-1234" required autocomplete="off">
+                                             <input type="hidden" name="manual_vehicle_number" x-model="manualVehicleNumber">
+                                         </div>
+                                         
+                                         <!-- Suggestions Dropdown -->
+                                         <div x-show="showSuggestions && (suggestions.length > 0 || searchTerm.length >= 2)" 
+                                              class="dropdown-menu show w-100 shadow-lg border-primary" 
+                                              style="max-height: 300px; overflow-y: auto; z-index: 1050;"
+                                              x-transition>
+                                             <div x-show="isLoading" class="p-3 text-center">
+                                                 <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                                 <span class="ms-2">Searching...</span>
+                                             </div>
+                                             
+                                             <template x-for="vehicle in suggestions" :key="vehicle.id">
+                                                 <button type="button" class="dropdown-item py-2 border-bottom" @click="selectVehicle(vehicle)">
+                                                     <div class="d-flex justify-content-between align-items-center">
+                                                         <div>
+                                                             <div class="fw-bold text-primary" x-text="vehicle.registration_number"></div>
+                                                             <div class="text-muted small" x-text="vehicle.model || 'No model specified'"></div>
+                                                         </div>
+                                                         <div class="text-end">
+                                                             <span class="badge bg-green-lt px-2">CFT: <span x-text="vehicle.cft"></span></span>
+                                                         </div>
+                                                     </div>
+                                                 </button>
+                                             </template>
+
+                                             <div x-show="!isLoading && searchTerm.length >= 2" class="p-2 border-top bg-light">
+                                                 <button type="button" class="btn btn-outline-primary btn-sm w-100" @click="openCreateVehicleModal()">
+                                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                        <path d="M12 5l0 14"></path>
+                                                        <path d="M5 12l14 0"></path>
+                                                     </svg>
+                                                     Create "<span x-text="searchTerm" class="text-uppercase"></span>" as New
+                                                 </button>
+                                             </div>
+                                         </div>
                                     </div>
-                                    <datalist id="vehicleList">
-                                        @foreach($vehicles as $vehicle)
-                                            <option value="{{ $vehicle->registration_number }}">
-                                                {{ $vehicle->registration_number }}
-                                            </option>
-                                        @endforeach
-                                    </datalist>
                                     <x-input-error :messages="$errors->get('manual_vehicle_number')" />
-                                    <x-input-error :messages="$errors->get('vehicle_id')" />
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Modal: Create New Vehicle -->
+                        <div class="modal modal-blur fade" id="modal-new-vehicle" tabindex="-1" role="dialog" aria-hidden="true">
+                          <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content shadow-lg border-primary">
+                              <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title">Quick Add New Vehicle</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                <div class="mb-3">
+                                  <label class="form-label required">Registration Number</label>
+                                  <input type="text" class="form-control text-uppercase fw-bold" x-model="newVehicle.registration_number" placeholder="ABC-1234">
+                                </div>
+                                <div class="row">
+                                  <div class="col-md-7">
+                                    <div class="mb-3">
+                                      <label class="form-label">Vehicle Model</label>
+                                      <input type="text" class="form-control" x-model="newVehicle.model" placeholder="e.g. Tata Tiara, Leyland">
+                                    </div>
+                                  </div>
+                                  <div class="col-md-5">
+                                    <div class="mb-3">
+                                      <label class="form-label required">Vehicle CFT</label>
+                                      <div class="input-group">
+                                        <input type="number" step="0.01" class="form-control" x-model.number="newVehicle.cft">
+                                        <span class="input-group-text">CFT</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-link link-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary shadow" @click="saveNewVehicle()" :disabled="isSavingVehicle">
+                                    <span x-show="isSavingVehicle" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    <svg x-show="!isSavingVehicle" xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-device-floppy me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                       <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                       <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"></path>
+                                       <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                       <path d="M14 4l0 4l-6 0l0 -4"></path>
+                                    </svg>
+                                    Save & Select Vehicle
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
                         <!-- Section 2: Destination & Usage Selection -->
@@ -244,13 +321,22 @@
                                     </div>
 
                                     <!-- Regular Sale Mode Fields -->
-                                    <div class="col-12" x-show="destinationType === 'regular'">
+                                    <div class="col-md-6" x-show="destinationType === 'regular'">
                                         <label class="form-label required">Customer Name (Manual)</label>
                                         <input type="text"
                                             class="form-control @error('manual_customer_name') is-invalid @enderror"
                                             name="manual_customer_name" x-model="manualCustomerName"
                                             placeholder="Enter Customer Name" :required="destinationType === 'regular'">
                                         <x-input-error :messages="$errors->get('manual_customer_name')" />
+                                    </div>
+                                    <div class="col-md-6" x-show="destinationType === 'regular'">
+                                        <label class="form-label required">Village or Area</label>
+                                        <input type="text"
+                                            class="form-control @error('village_area') is-invalid @enderror"
+                                            name="village_area" x-model="villageArea"
+                                            placeholder="Enter Village or Area"
+                                            :required="destinationType === 'regular'">
+                                        <x-input-error :messages="$errors->get('village_area')" />
                                     </div>
 
                                     <!-- Internal Mode Fields -->
@@ -325,49 +411,15 @@
                                     </div>
                                     <x-input-error :messages="$errors->get('rate_per_ton')" />
                                 </div>
-                                <input type="hidden" name="trips" value="1">
-                                <input type="hidden" name="gross_weight" value="0">
-                                <input type="hidden" name="tare_weight" value="0">
-                            </div>
-                            <div class="row g-3 mt-2"
-                                x-show="destinationType !== 'transfer' && destinationType !== 'internal'" x-transition>
-                                <div class="col-12 text-end">
-                                    <h2 class="mb-0 text-muted">Total Amount: <span class="text-primary"
-                                            x-text="'₹ ' + totalAmount"></span></h2>
-                                    <small class="text-muted" x-show="isBillable">(Includes Transport Cost &
-                                        Diesel)</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section 4: Logistics & Charges -->
-                        <div class="mb-2">
-                            <h3 class="card-title text-primary border-bottom pb-2 mb-3">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="icon icon-tabler icon-tabler-receipt me-2" width="24" height="24"
-                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path
-                                        d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2">
-                                    </path>
-                                    <path d="M9 7h6"></path>
-                                    <path d="M9 11h6"></path>
-                                    <path d="M13 15h2"></path>
-                                </svg>
-                                4. Logistics & Billing
-                            </h3>
-                            <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Transport Cost (₹)</label>
+                                    <label class="form-label">Lead (₹)</label>
                                     <div class="input-group mb-2">
                                         <span class="input-group-text bg-light">₹</span>
                                         <input type="number" step="0.01"
-                                            class="form-control text-end fs-3 @error('transport_cost') is-invalid @enderror"
-                                            name="transport_cost" x-model.number="transportCost"
-                                            @input="isManualTransportCost = true; calculateTotal()">
+                                            class="form-control text-end fs-3 @error('lead') is-invalid @enderror"
+                                            name="lead" x-model.number="leadAmount" @input="calculateTotal()">
                                     </div>
-                                    <x-input-error :messages="$errors->get('transport_cost')" />
+                                    <x-input-error :messages="$errors->get('lead')" />
                                 </div>
                                 <div class="col-md-6 d-flex align-items-center">
                                     <div class="mt-2">
@@ -375,43 +427,47 @@
                                             x-show="activityType === 'Sales'">
                                             <input class="form-check-input" type="checkbox" name="transport_is_billable"
                                                 value="1" x-model="isBillable" @change="calculateTotal()">
-                                            <span class="form-check-label fw-medium">Bill transport to client?</span>
+                                            <span class="form-check-label fw-medium">Bill lead to client?</span>
                                         </label>
                                         <div class="text-muted small" x-show="isBillable && activityType === 'Sales'">
-                                            The transport cost will be added to the customer's invoice.
+                                            The lead cost will be added to the customer's invoice.
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Diesel Amount (₹)</label>
-                                    <div class="input-group mb-2">
-                                        <span class="input-group-text bg-light">₹</span>
-                                        <input type="number" step="0.01"
-                                            class="form-control text-end fs-3 @error('diesel_amount') is-invalid @enderror"
-                                            name="diesel_amount" x-model.number="dieselAmount" @input="calculateTotal()"
-                                            placeholder="0.00">
-                                    </div>
-                                    <x-input-error :messages="$errors->get('diesel_amount')" />
+
+                                <input type="hidden" name="trips" value="1">
+                                <input type="hidden" name="gross_weight" value="0">
+                                <input type="hidden" name="tare_weight" value="0">
+                            </div>
+
+                            <div class="row g-3 mt-2"
+                                x-show="destinationType !== 'transfer' && destinationType !== 'internal'" x-transition>
+                                <div class="col-12 text-end">
+                                    <h2 class="mb-0 text-muted">Total Amount: <span class="text-primary"
+                                            x-text="'₹ ' + totalAmount"></span></h2>
+                                    <small class="text-muted" x-show="isBillable">(Includes Lead)</small>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="card-footer bg-light px-4 py-3 text-end mt-2">
-                        <button type="submit" class="btn btn-primary btn-lg px-6 shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-circle-check"
-                                width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path>
-                                <path d="M9 12l2 2l4 -4"></path>
-                            </svg>
-                            Generate Gate Pass
-                        </button>
                     </div>
-                </x-card>
-            </form>
         </div>
+
+        <div class="card-footer bg-light px-4 py-3 text-end mt-2">
+            <button type="submit" class="btn btn-primary btn-lg px-6 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-circle-check" width="24"
+                    height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path>
+                    <path d="M9 12l2 2l4 -4"></path>
+                </svg>
+                Generate Gate Pass
+            </button>
+        </div>
+        </x-card>
+        </form>
+    </div>
     </div>
 
     @push('scripts')
@@ -419,13 +475,14 @@
             document.addEventListener('alpine:init', () => {
                 Alpine.data('gatePassCreateForm', (config) => ({
                     // Form Data
+                    gatePassNumber: config.gatePassNumber || '',
+                    date: config.date || '',
                     gatePassId: config.gatePassId || null,
                     status: config.status || 'pending',
                     metalTypeId: config.metalTypeId || '',
                     netWeight: config.netWeight || 0,
-                    transportCost: config.transportCost || 0,
-                    dieselAmount: config.dieselAmount || 0,
                     ratePerTon: config.ratePerTon || 0,
+                    leadAmount: config.leadAmount || 0,
                     totalAmount: 0,
                     activityType: config.activityType || 'Sales',
                     sourceUnitId: config.sourceUnitId || 2,
@@ -434,14 +491,26 @@
                     clientId: config.clientId || '',
                     projectId: config.projectId || '',
                     manualCustomerName: config.manualCustomerName || '',
+                    villageArea: config.villageArea || '',
                     destinationType: config.destinationType || 'registered', // registered, regular
                     manualVehicleNumber: config.manualVehicleNumber || '',
                     isBillable: config.isBillable || false,
                     isManualTransportCost: false,
                     vehicles: config.vehicles || [],
 
+                    // Vehicle Suggestion State
+                    searchTerm: config.manualVehicleNumber || '',
+                    suggestions: [],
+                    isLoading: false,
+                    showSuggestions: false,
+                    newVehicle: {
+                        registration_number: '',
+                        model: '',
+                        cft: 0
+                    },
+                    isSavingVehicle: false,
+
                     init() {
-                        this.checkVehicleMultiplier();
                         this.calculateTotal();
 
                         this.$watch('clientId', (value) => {
@@ -456,12 +525,87 @@
                             if (value === 'registered' && this.clientId) this.isBillable = true;
                             if (value === 'regular' && this.manualCustomerName) this.isBillable = true;
                         });
+
+                        this.$watch('searchTerm', (value) => {
+                            this.manualVehicleNumber = value;
+                        });
                     },
 
-                    checkVehicleMultiplier() {
-                        if (!this.manualVehicleNumber) return;
-                        const normalizedInput = this.manualVehicleNumber.toLowerCase().trim();
-                        const vehicle = this.vehicles.find(v => v.number && v.number.toLowerCase() === normalizedInput);
+                    async updateGpNumber() {
+                        if (!this.date) return;
+                        const dateOnly = this.date.split('T')[0];
+                        try {
+                            const response = await fetch(`/gate-passes/next-number?date=${dateOnly}`);
+                            const data = await response.json();
+                            if (data.next_number) {
+                                this.gatePassNumber = data.next_number;
+                            }
+                        } catch (error) {
+                            console.error('Failed to fetch next GP number', error);
+                        }
+                    },
+
+                    async searchVehicles() {
+                        if (this.searchTerm.length < 2) {
+                            this.suggestions = [];
+                            return;
+                        }
+                        this.isLoading = true;
+                        try {
+                            const response = await fetch(`/vehicles/search?q=${this.searchTerm}`);
+                            this.suggestions = await response.json();
+                            this.showSuggestions = true;
+                        } catch (error) {
+                            console.error('Search failed', error);
+                        } finally {
+                            this.isLoading = false;
+                        }
+                    },
+
+                    selectVehicle(vehicle) {
+                        this.manualVehicleNumber = vehicle.registration_number;
+                        this.searchTerm = vehicle.registration_number;
+                        this.netWeight = vehicle.cft;
+                        this.suggestions = [];
+                        this.showSuggestions = false;
+                        this.calculateTotal();
+                    },
+
+                    openCreateVehicleModal() {
+                        this.newVehicle.registration_number = this.searchTerm.toUpperCase();
+                        this.showSuggestions = false;
+                        const modal = new bootstrap.Modal(document.getElementById('modal-new-vehicle'));
+                        modal.show();
+                    },
+
+                    async saveNewVehicle() {
+                        if (!this.newVehicle.registration_number) return;
+                        this.isSavingVehicle = true;
+                        try {
+                            const response = await fetch('/vehicles/quick-store', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify(this.newVehicle)
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                this.selectVehicle(data.vehicle);
+                                const modalElement = document.getElementById('modal-new-vehicle');
+                                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                                if (modalInstance) modalInstance.hide();
+                            } else {
+                                alert(data.message || 'Validation error');
+                            }
+                        } catch (error) {
+                            console.error('Save failed', error);
+                            alert('An error occurred while saving the vehicle.');
+                        } finally {
+                            this.isSavingVehicle = false;
+                        }
                     },
 
                     onUsageChange() {
@@ -488,6 +632,7 @@
                         }
                         if (this.destinationType !== 'regular') {
                             this.manualCustomerName = '';
+                            this.villageArea = '';
                         }
                     },
 
@@ -512,11 +657,10 @@
 
                         const quantity = parseFloat(this.netWeight) || 0;
                         const rate = parseFloat(this.ratePerTon) || 0;
-                        const diesel = parseFloat(this.dieselAmount) || 0;
-                        const transport = this.isBillable ? (parseFloat(this.transportCost) || 0) : 0;
+                        const lead = this.isBillable ? (parseFloat(this.leadAmount) || 0) : 0;
 
                         const baseAmount = quantity * rate;
-                        this.totalAmount = (baseAmount + diesel + transport).toFixed(2);
+                        this.totalAmount = (baseAmount + lead).toFixed(2);
                     }
                 }));
             });

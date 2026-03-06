@@ -205,6 +205,20 @@
                                                 href="{{ route('clients.show', $gatePass->client) }}">{{ $gatePass->client->name }}</a>
                                         @else
                                             {{ $gatePass->manual_customer_name ?: 'N/A' }}
+                                            @if($gatePass->village_area)
+                                                <div class="small text-muted mt-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                        class="icon icon-tabler icon-tabler-map-pin" width="16" height="16"
+                                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                                        stroke-linecap="round" stroke-linejoin="round">
+                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                        <path d="M9 11a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                                                        <path
+                                                            d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" />
+                                                    </svg>
+                                                    {{ $gatePass->village_area }}
+                                                </div>
+                                            @endif
                                         @endif
                                     </div>
                                 </div>
@@ -405,7 +419,8 @@
                                     <div>
                                         <div class="fw-bold">Ledger Entry Created</div>
                                         <div class="small">This gate pass is linked to transaction
-                                            <b>#{{ $gatePass->transaction->id }}</b>.</div>
+                                            <b>#{{ $gatePass->transaction->id }}</b>.
+                                        </div>
                                     </div>
                                     <div class="ms-auto">
                                         <a href="#" class="btn btn-sm btn-teal">View Entry</a>

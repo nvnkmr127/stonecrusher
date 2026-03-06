@@ -99,11 +99,11 @@
 
                     <div class="mb-3">
                         <label class="form-label">Vehicle Type (Optional)</label>
-                        <select class="form-select" x-model="vehicleMultiplier" @change="calculate()">
-                            <option value="1">Standard (1.0x)</option>
+                        <select class="form-select" x-model="vehicleCft" @change="calculate()">
+                            <option value="0">Select Vehicle (0 CFT)</option>
                             @foreach($vehicles as $vehicle)
-                                <option value="{{ $vehicle->transport_multiplier }}">{{ $vehicle->registration_number }} -
-                                    {{ $vehicle->model }} ({{ $vehicle->transport_multiplier }}x)
+                                <option value="{{ $vehicle->cft }}">{{ $vehicle->registration_number }} -
+                                    {{ $vehicle->model }} ({{ $vehicle->cft }} CFT)
                                 </option>
                             @endforeach
                         </select>
@@ -161,7 +161,7 @@
                     rate: {{ $defaultRate }},
                     defaultRate: {{ $defaultRate }},
                     cost: 0,
-                    vehicleMultiplier: 1,
+                    vehicleCft: 0,
                     isRoundTrip: false,
 
                     searchQuery: '',
@@ -176,10 +176,10 @@
                     calculate() {
                         let d = parseFloat(this.distance) || 0;
                         let r = parseFloat(this.rate) || 0;
-                        let vm = parseFloat(this.vehicleMultiplier) || 1;
+                        let vc = parseFloat(this.vehicleCft) || 0;
                         let rt = this.isRoundTrip ? 2 : 1;
 
-                        this.cost = (d * r * vm * rt).toFixed(2);
+                        this.cost = (d * r * vc * rt).toFixed(2);
                     },
 
                     resetRate() {

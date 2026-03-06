@@ -40,7 +40,7 @@ class VehicleController extends Controller
             'type' => 'nullable|string|max:255',
             'operational_unit_id' => 'nullable|exists:operational_units,id',
             'model' => 'nullable|string|max:255',
-            'transport_multiplier' => 'nullable|numeric|min:0',
+            'cft' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
             'is_owned' => 'boolean',
         ]);
@@ -65,7 +65,7 @@ class VehicleController extends Controller
             'type' => 'nullable|string|max:255',
             'operational_unit_id' => 'nullable|exists:operational_units,id',
             'model' => 'nullable|string|max:255',
-            'transport_multiplier' => 'nullable|numeric|min:0',
+            'cft' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
             'is_owned' => 'boolean',
         ]);
@@ -79,5 +79,42 @@ class VehicleController extends Controller
     {
         $vehicle->delete();
         return redirect()->route('vehicles.index')->with('success', 'Vehicle deleted successfully!');
+    }
+
+    public function search(Request $request)
+    {
+        $q = $request->get('q');
+        $vehicles = Vehicle::where('registration_number', 'like', "%{$q}%")
+            ->where('is_active', true)
+            ->limit(10)
+            ->get(['id', 'registration_number', 'model', 'cft', 'operational_unit_id']);
+
+        return response()->json($vehicles);
+    }
+
+    public function quickStore(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'registration_number' => 'required|string|max:255|unique:vehicles',
+                'model' => 'nullable|string|max:255',
+                'cft' => 'nullable|numeric|min:0',
+            ]);
+
+            $validated['is_owned'] = true;
+            $validated['is_active'] = true;
+
+            $vehicle = Vehicle::create($validated);
+
+            return response()->json([
+                'success' => true,
+                'vehicle' => $vehicle
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        }
     }
 }

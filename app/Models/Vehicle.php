@@ -16,7 +16,7 @@ class Vehicle extends Model
         'type',
         'operational_unit_id',
         'model',
-        'transport_multiplier',
+        'cft',
         'is_active',
         'is_owned',
         'operational_status',
@@ -47,7 +47,7 @@ class Vehicle extends Model
         return [
             'is_active' => 'boolean',
             'is_owned' => 'boolean',
-            'transport_multiplier' => 'decimal:2',
+            'cft' => 'decimal:2',
         ];
     }
 

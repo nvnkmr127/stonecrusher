@@ -25,7 +25,7 @@ class DistanceReportTest extends TestCase
             'registration_number' => 'KA-01-1234',
             'model' => 'Tata',
             'type' => 'Truck',
-            'transport_multiplier' => 1,
+            'cft' => 1,
             'is_active' => true
         ]);
         $metalType = MetalType::create(['name' => 'Sand', 'rate' => 100]);
@@ -44,7 +44,7 @@ class DistanceReportTest extends TestCase
             'net_weight' => 10,
             'delivery_location' => 'Location A',
             'distance_km' => 10,
-            'transport_cost' => 100,
+            'lead' => 100,
             'total_amount' => 1100
         ]);
 
@@ -62,7 +62,7 @@ class DistanceReportTest extends TestCase
             'net_weight' => 10,
             'delivery_location' => 'Location A',
             'distance_km' => 20,
-            'transport_cost' => 200,
+            'lead' => 200,
             'total_amount' => 1200
         ]);
 
@@ -80,7 +80,7 @@ class DistanceReportTest extends TestCase
             'net_weight' => 10,
             'delivery_location' => 'Location B',
             'distance_km' => 50,
-            'transport_cost' => 500,
+            'lead' => 500,
             'total_amount' => 1500
         ]);
 
@@ -93,7 +93,7 @@ class DistanceReportTest extends TestCase
             'status' => 'pending',
             'delivery_location' => 'Location A',
             'distance_km' => 10,
-            'transport_cost' => 100
+            'lead' => 100
         ]);
 
         $response = $this->actingAs($user)->get(route('gate-passes.distance-report'));
