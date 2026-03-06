@@ -72,7 +72,7 @@ class Phase6VerificationTest extends TestCase
         ]);
 
         $response->assertRedirect(route('daily-closings.index'));
-        $this->assertDatabaseHas('daily_closings', ['date' => $date, 'status' => 'closed']);
+        $this->assertDatabaseHas('daily_closings', ['date' => $date . ' 00:00:00', 'status' => 'closed']);
 
         // 3. Try to Create a NEW Gate Pass for Closed Date -> Should Fail
         $response = $this->actingAs($this->user)->post(route('gate-passes.store'), [

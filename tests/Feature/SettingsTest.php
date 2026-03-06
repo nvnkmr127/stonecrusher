@@ -113,6 +113,9 @@ class SettingsTest extends TestCase
             'default_diesel_rate' => '120.50',
             'rate_per_km' => '15.00',
             'date_format' => 'Y-m-d',
+            'app_timezone' => 'UTC',
+            'attendance_shift_start' => '09:00',
+            'attendance_shift_end' => '18:00',
         ]);
 
         $response->assertRedirect('/settings');
@@ -138,6 +141,9 @@ class SettingsTest extends TestCase
             'default_diesel_rate' => '-10', // Should be min:0
             'rate_per_km' => '15.00',
             'date_format' => 'Y-m-d',
+            'app_timezone' => 'UTC',
+            'attendance_shift_start' => '09:00',
+            'attendance_shift_end' => '18:00',
         ]);
 
         $response->assertSessionHasErrors(['company_name', 'crusher_latitude', 'default_diesel_rate']);
@@ -161,6 +167,6 @@ class SettingsTest extends TestCase
 
         $response = $this->actingAs($user)->get('/dashboard');
 
-        $response->assertDontSee('Settings');
+        $response->assertDontSee(route('settings.index'));
     }
 }

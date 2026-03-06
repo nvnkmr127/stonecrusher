@@ -77,6 +77,7 @@
                         Profile
                     </a>
                     <!-- Settings Link -->
+                    @role('admin')
                     <a href="{{ route('settings.index') }}" class="dropdown-item d-flex align-items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-settings" width="24"
                             height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -88,6 +89,7 @@
                         </svg>
                         Settings
                     </a>
+                    @endrole
 
                     <div class="dropdown-divider"></div>
                     <form method="POST" action="{{ route('logout') }}">
