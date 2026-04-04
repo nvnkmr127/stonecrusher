@@ -37,23 +37,53 @@ class ClientController extends Controller
 
     public function show(Request $request, Client $client)
     {
-        $query = $client->transactions();
+        $selectedMonth = $request->input('month', now()->format('Y-m'));
+        $startOfMonth = \Carbon\Carbon::parse($selectedMonth)->startOfMonth();
+        $endOfMonth = \Carbon\Carbon::parse($selectedMonth)->endOfMonth();
 
+        // Transaction Query
+        $query = $client->transactions();
         if ($request->has(['start_date', 'end_date']) && $request->start_date && $request->end_date) {
             $query->whereBetween('transaction_date', [$request->start_date, $request->end_date]);
         }
-
         $transactions = $query->latest('transaction_date')->paginate(20, ['*'], 'tx_page')->withQueryString();
 
+        // Gate Pass Query
         $gatePasses = $client->gatePasses()
             ->with(['vehicle', 'metalType'])
             ->latest('date')
             ->paginate(15, ['*'], 'gp_page');
 
+        // Overall Stats
         $totalTrips = $client->gatePasses()->count();
         $totalCft = $client->gatePasses()->sum('net_weight');
 
-        return view('clients.show', compact('client', 'transactions', 'gatePasses', 'totalTrips', 'totalCft'));
+        // Monthly Stats (Filtered Month)
+        $monthlyStats = [
+            'trips' => $client->gatePasses()->whereBetween('date', [$startOfMonth, $endOfMonth])->count(),
+            'quantity' => $client->gatePasses()->whereBetween('date', [$startOfMonth, $endOfMonth])->sum('net_weight'),
+            'bill' => $client->gatePasses()->whereBetween('date', [$startOfMonth, $endOfMonth])->sum('total_amount'),
+            'paid' => $client->transactions()->where('transaction_type', 'credit')->whereBetween('transaction_date', [$startOfMonth, $endOfMonth])->sum('amount'),
+        ];
+
+        // Current Month Stats (Static)
+        $currentMonthStart = now()->startOfMonth();
+        $currentMonthEnd = now()->endOfMonth();
+        $thisMonthStats = [
+            'trips' => $client->gatePasses()->whereBetween('date', [$currentMonthStart, $currentMonthEnd])->count(),
+            'quantity' => $client->gatePasses()->whereBetween('date', [$currentMonthStart, $currentMonthEnd])->sum('net_weight'),
+            'bill' => $client->gatePasses()->whereBetween('date', [$currentMonthStart, $currentMonthEnd])->sum('total_amount'),
+            'paid' => $client->transactions()->where('transaction_type', 'credit')->whereBetween('transaction_date', [$currentMonthStart, $currentMonthEnd])->sum('amount'),
+        ];
+
+        // Month List for Filter
+        $monthList = [];
+        for ($i = 0; $i < 12; $i++) {
+            $date = now()->subMonths($i);
+            $monthList[$date->format('Y-m')] = $date->format('F Y');
+        }
+
+        return view('clients.show', compact('client', 'transactions', 'gatePasses', 'totalTrips', 'totalCft', 'monthlyStats', 'thisMonthStats', 'selectedMonth', 'monthList'));
     }
 
     public function create()

@@ -25,9 +25,9 @@
             <form action="{{ route('gate-passes.store') }}" method="POST" x-data="gatePassCreateForm({
                 gatePassNumber: '{{ old('gate_pass_number', $gpNumber) }}',
                 date: '{{ old('date', now()->format('Y-m-d\TH:i')) }}',
-                grossWeight: {{ (float) old('gross_weight', 0) }},
-                tareWeight: {{ (float) old('tare_weight', 0) }},
-                netWeight: {{ (float) old('net_weight', 0) }},
+                grossWeight: {{ Illuminate\Support\Js::from(old('gross_weight', '')) }},
+                tareWeight: {{ Illuminate\Support\Js::from(old('tare_weight', '')) }},
+                netWeight: {{ Illuminate\Support\Js::from(old('net_weight', '')) }},
                 activityType: '{{ old('activity_type', 'Sales') }}',
                 sourceUnitId: {{ old('source_unit_id', 2) }},
                 destinationUnitId: {{ old('destination_unit_id', 3) }},
@@ -38,8 +38,8 @@
                 villageArea: {{ Illuminate\Support\Js::from(old('village_area', '')) }},
                 manualVehicleNumber: {{ Illuminate\Support\Js::from(old('manual_vehicle_number', '')) }},
                 destinationType: {{ Illuminate\Support\Js::from(old('destination_type') ?: (old('manual_customer_name') ? 'regular' : (old('activity_type') == 'Material Transfer' ? 'transfer' : (old('project_id') && $projects->where('id', old('project_id'))->where('is_internal', true)->count() > 0 ? 'internal' : 'registered')))) }},
-                leadAmount: {{ (float) old('lead', 0) }},
-                ratePerTon: {{ (float) old('rate_per_ton', 0) }},
+                leadAmount: {{ Illuminate\Support\Js::from(old('lead', '')) }},
+                ratePerTon: {{ Illuminate\Support\Js::from(old('rate_per_ton', '')) }},
                 totalAmount: 0,
                 isBillable: {{ (old('client_id') || old('manual_customer_name') || old('transport_is_billable')) ? 'true' : 'false' }},
                 vehicles: {{ Illuminate\Support\Js::from($vehicles->map(fn($v) => ['number' => $v->registration_number, 'cft' => (float) $v->cft, 'unit_id' => $v->operational_unit_id])) }}
@@ -350,20 +350,19 @@
 
                                     <!-- Regular Sale Mode Fields -->
                                     <div class="col-md-6" x-show="destinationType === 'regular'">
-                                        <label class="form-label required">Customer Name (Manual)</label>
+                                        <label class="form-label">Customer Name (Manual)</label>
                                         <input type="text"
                                             class="form-control @error('manual_customer_name') is-invalid @enderror"
                                             name="manual_customer_name" x-model="manualCustomerName"
-                                            placeholder="Enter Customer Name" :required="destinationType === 'regular'">
+                                            placeholder="Enter Customer Name">
                                         <x-input-error :messages="$errors->get('manual_customer_name')" />
                                     </div>
                                     <div class="col-md-6" x-show="destinationType === 'regular'">
-                                        <label class="form-label required">Village or Area</label>
+                                        <label class="form-label">Village or Area</label>
                                         <input type="text"
                                             class="form-control @error('village_area') is-invalid @enderror"
                                             name="village_area" x-model="villageArea"
-                                            placeholder="Enter Village or Area"
-                                            :required="destinationType === 'regular'">
+                                            placeholder="Enter Village or Area">
                                         <x-input-error :messages="$errors->get('village_area')" />
                                     </div>
 
@@ -509,9 +508,9 @@
                     gatePassId: config.gatePassId || null,
                     status: config.status || 'pending',
                     metalTypeId: config.metalTypeId || '',
-                    netWeight: config.netWeight || 0,
-                    ratePerTon: config.ratePerTon || 0,
-                    leadAmount: config.leadAmount || 0,
+                    netWeight: config.netWeight ?? '',
+                    ratePerTon: config.ratePerTon ?? '',
+                    leadAmount: config.leadAmount ?? '',
                     totalAmount: 0,
                     activityType: config.activityType || 'Sales',
                     sourceUnitId: config.sourceUnitId || 2,

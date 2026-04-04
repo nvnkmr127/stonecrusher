@@ -140,8 +140,8 @@ class GatePassController extends Controller
             $rules['rate_per_ton'] = 'required|numeric|gt:0';
             $rules['metal_type_id'] = 'required|exists:metal_types,id';
             $rules['client_id'] = 'nullable|required_if:destination_type,registered|exists:clients,id';
-            $rules['manual_customer_name'] = 'nullable|required_if:destination_type,regular|string|max:255';
-            $rules['village_area'] = 'nullable|required_if:destination_type,regular|string|max:255';
+            $rules['manual_customer_name'] = 'nullable|string|max:255';
+            $rules['village_area'] = 'nullable|string|max:255';
         }
         // Validation for other Completed passes
         elseif ($status === \App\Enums\GatePassStatus::COMPLETED->value) {
@@ -322,8 +322,8 @@ class GatePassController extends Controller
             $rules['rate_per_ton'] = 'required|numeric|gt:0';
             $rules['metal_type_id'] = 'required|exists:metal_types,id';
             $rules['client_id'] = 'nullable|required_if:destination_type,registered|exists:clients,id';
-            $rules['manual_customer_name'] = 'nullable|required_if:destination_type,regular|string|max:255';
-            $rules['village_area'] = 'nullable|required_if:destination_type,regular|string|max:255';
+            $rules['manual_customer_name'] = 'nullable|string|max:255';
+            $rules['village_area'] = 'nullable|string|max:255';
         }
         // Validation for other Completed passes
         elseif ($request->input('status') === \App\Enums\GatePassStatus::COMPLETED->value) {

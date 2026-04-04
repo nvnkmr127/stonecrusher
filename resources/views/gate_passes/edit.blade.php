@@ -26,9 +26,9 @@
                 gatePassNumber: {{ Illuminate\Support\Js::from(old('gate_pass_number', $gatePass->gate_pass_number)) }},
                 date: {{ Illuminate\Support\Js::from(old('date', $gatePass->date->format('Y-m-d\TH:i'))) }},
                 status: '{{ old('status', $gatePass->status->value) }}',
-                netWeight: {{ (float) old('net_weight', $gatePass->net_weight) }},
-                leadAmount: {{ (float) old('lead', $gatePass->lead ?? 0) }},
-                ratePerTon: {{ (float) old('rate_per_ton', $gatePass->rate_per_ton ?? 0) }},
+                netWeight: {{ Illuminate\Support\Js::from(old('net_weight', $gatePass->net_weight ?: '')) }},
+                leadAmount: {{ Illuminate\Support\Js::from(old('lead', $gatePass->lead ?: '')) }},
+                ratePerTon: {{ Illuminate\Support\Js::from(old('rate_per_ton', $gatePass->rate_per_ton ?: '')) }},
                 activityType: '{{ old('activity_type', $gatePass->activity_type->value) }}',
                 sourceUnitId: {{ old('source_unit_id', $gatePass->source_unit_id ?? 2) }},
                 destinationUnitId: {{ old('destination_unit_id', $gatePass->destination_unit_id ?? 3) }},
@@ -377,20 +377,19 @@
 
                                     <!-- Regular Sale Mode Fields -->
                                     <div class="col-md-6" x-show="destinationType === 'regular'">
-                                        <label class="form-label required">Customer Name (Manual)</label>
+                                        <label class="form-label">Customer Name (Manual)</label>
                                         <input type="text"
                                             class="form-control @error('manual_customer_name') is-invalid @enderror"
                                             name="manual_customer_name" x-model="manualCustomerName"
-                                            placeholder="Enter Customer Name" :required="destinationType === 'regular'">
+                                            placeholder="Enter Customer Name">
                                         <x-input-error :messages="$errors->get('manual_customer_name')" />
                                     </div>
                                     <div class="col-md-6" x-show="destinationType === 'regular'">
-                                        <label class="form-label required">Village or Area</label>
+                                        <label class="form-label">Village or Area</label>
                                         <input type="text"
                                             class="form-control @error('village_area') is-invalid @enderror"
                                             name="village_area" x-model="villageArea"
-                                            placeholder="Enter Village or Area"
-                                            :required="destinationType === 'regular'">
+                                            placeholder="Enter Village or Area">
                                         <x-input-error :messages="$errors->get('village_area')" />
                                     </div>
 
@@ -535,9 +534,9 @@
                     date: initial.date || '',
                     status: initial.status || 'pending',
                     isMismatch: false,
-                    netWeight: initial.netWeight || 0,
-                    ratePerTon: initial.ratePerTon || 0,
-                    leadAmount: initial.leadAmount || 0,
+                    netWeight: initial.netWeight ?? '',
+                    ratePerTon: initial.ratePerTon ?? '',
+                    leadAmount: initial.leadAmount ?? '',
                     totalAmount: 0,
                     activityType: initial.activityType || 'Sales',
                     sourceUnitId: initial.sourceUnitId || 2,

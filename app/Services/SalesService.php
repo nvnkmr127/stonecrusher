@@ -37,7 +37,7 @@ class SalesService
                 'amount' => $gatePass->total_amount,
                 'payment_mode' => PaymentMode::OTHER, // On Account
                 'transaction_date' => $gatePass->date,
-                'description' => "Sale - Gate Pass #{$gatePass->gate_pass_number}, Type: {$gatePass->metalType->name}, Qty: {$qtyDesc} @ {$gatePass->rate_per_ton}",
+                'description' => "Sale - Type: {$gatePass->metalType->name}, Qty: {$qtyDesc} @ {$gatePass->rate_per_ton}",
                 'reference_number' => $gatePass->gate_pass_number,
             ];
 
@@ -61,7 +61,7 @@ class SalesService
                 'amount' => $amount,
                 'payment_mode' => $paymentMode,
                 'transaction_date' => $date,
-                'description' => "Payment for GP #{$gatePass->gate_pass_number} - {$remarks}",
+                'description' => "Payment - {$remarks}",
                 'reference_number' => $gatePass->gate_pass_number,
             ]);
 
