@@ -147,6 +147,21 @@ body {
   pointer-events: none;
 }
 
+/* Global Icon Visibility Fix */
+.icon, [class^="icon-"], [class*=" icon-"] {
+    stroke-width: 2;
+    vertical-align: middle;
+    color: currentColor; /* Inherit from parent text color */
+}
+
+.text-dark .icon, .btn-dark .icon {
+    color: white !important;
+}
+
+.bg-dark .icon, .bg-primary .icon {
+    color: white !important;
+}
+
 .avatar-initials {
   background-color: #0f172a;
   color: #ffffff;
@@ -311,4 +326,179 @@ body {
     visibility: visible;
     transition: opacity 0.3s ease;
   }
+}
+
+/* Premium Design System */
+:root {
+  --premium-blue: #0f172a;
+  --premium-accent: #3b82f6;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.2);
+}
+
+.premium-header-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.premium-header-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.premium-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.stat-premium-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-premium-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+.stat-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.premium-balance-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.nav-tabs-premium {
+  border-bottom: 2px solid #f1f5f9;
+  margin-bottom: 2rem;
+  gap: 1.5rem;
+}
+
+.nav-tabs-premium .nav-link {
+  padding: 0.75rem 0.25rem;
+  color: #64748b;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.nav-tabs-premium .nav-link:hover {
+  color: #0f172a;
+}
+
+.nav-tabs-premium .nav-link.active {
+  color: #3b82f6;
+}
+
+.nav-tabs-premium .nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #3b82f6;
+  border-radius: 2px;
+}
+
+.table-premium thead th {
+  background: #f8fafc;
+  color: #64748b;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table-premium tbody td {
+  padding: 1rem;
+  vertical-align: middle;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.premium-month-selector {
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-premium-action {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+/* Global Datepicker Modernization */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.4);
+    transition: filter 0.2s ease;
+}
+
+input[type="date"]:focus::-webkit-calendar-picker-indicator {
+    filter: invert(0.2);
+}
+
+input[type="date"] {
+    position: relative;
+    padding-right: 30px;
+    background-color: #fff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    color: #0f172a !important;
+}
+
+.dark-datepicker input[type="date"] {
+    background-color: rgba(255,255,255,0.05) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    color: white !important;
+}
+
+.dark-datepicker input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
 }

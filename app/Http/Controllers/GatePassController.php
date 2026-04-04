@@ -472,10 +472,7 @@ class GatePassController extends Controller
         $summary['outstanding'] = $summary['total_sales'] - $summary['total_paid'];
 
         // Metal-wise Breakdown
-        $metalStats = GatePass::with('metalType')
-            ->where('date', '>=', \Carbon\Carbon::parse($date)->startOfDay())
-            ->where('date', '<=', \Carbon\Carbon::parse($date)->endOfDay())
-            ->where('status', \App\Enums\GatePassStatus::COMPLETED->value)
+        $metalStats = (clone $baseQuery)
             ->select(
                 'metal_type_id',
                 \DB::raw('SUM(loading_quantity) as total_cft'),
@@ -483,10 +480,36 @@ class GatePassController extends Controller
                 \DB::raw('SUM(total_amount) as total_amount'),
                 \DB::raw('COUNT(*) as count')
             )
+            ->with('metalType')
             ->groupBy('metal_type_id')
             ->get();
 
-        return view('gate_passes.daily_report', compact('summary', 'metalStats', 'date'));
+        // Client-wise Breakdown
+        $clientStats = (clone $baseQuery)
+            ->select(
+                'client_id',
+                'manual_customer_name',
+                \DB::raw('SUM(total_amount) as total_amount'),
+                \DB::raw('COUNT(*) as count')
+            )
+            ->with('client')
+            ->groupBy('client_id', 'manual_customer_name')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        // Vehicle-wise Breakdown
+        $vehicleStats = (clone $baseQuery)
+            ->select(
+                'vehicle_id',
+                \DB::raw('SUM(total_amount) as total_amount'),
+                \DB::raw('COUNT(*) as count')
+            )
+            ->with('vehicle')
+            ->groupBy('vehicle_id')
+            ->orderByDesc('count')
+            ->get();
+
+        return view('gate_passes.daily_report', compact('summary', 'metalStats', 'clientStats', 'vehicleStats', 'date'));
     }
 
     /**

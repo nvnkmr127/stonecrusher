@@ -13,6 +13,6 @@
     };
 @endphp
 
-<span {{ $attributes->merge(['class' => "badge bg-$color"]) }}>
+<span {{ $attributes->merge(['class' => "badge bg-$color-lt text-$color text-uppercase fw-bold px-2", 'style' => 'letter-spacing: 0.05em; font-size: 0.65rem;']) }}>
     {{ ucfirst($status) }}
 </span>

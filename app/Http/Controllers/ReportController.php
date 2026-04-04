@@ -193,17 +193,23 @@ class ReportController extends Controller
     {
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', Carbon::now()->toDateString());
+        $clientId = $request->input('client_id');
 
-        $sales = GatePass::with(['client', 'vehicle', 'metalType'])
+        $query = GatePass::with(['client', 'vehicle', 'metalType'])
             ->whereBetween('date', [$startDate, $endDate])
-            ->where('status', 'completed')
-            ->orderBy('date')
-            ->get();
+            ->where('status', 'completed');
+
+        if ($clientId) {
+            $query->where('client_id', $clientId);
+        }
+
+        $sales = $query->orderBy('date')->get();
+        $clients = Client::orderBy('name')->get();
 
         $totalSales = $sales->sum('total_amount');
         $totalCount = $sales->count();
 
-        return view('reports.custom', compact('sales', 'startDate', 'endDate', 'totalSales', 'totalCount'));
+        return view('reports.custom', compact('sales', 'startDate', 'endDate', 'totalSales', 'totalCount', 'clients', 'clientId'));
     }
 
     public function exportCustom(Request $request)
@@ -282,6 +288,18 @@ class ReportController extends Controller
                 ->groupBy('client_id')
                 ->orderByDesc('total_sales')
                 ->get();
+
+            // Enhance with collections for this period
+            foreach ($data as $row) {
+                if ($row->client_id) {
+                    $row->total_collections = ClientTransaction::where('client_id', $row->client_id)
+                        ->whereBetween('transaction_date', [$startDate, $endDate])
+                        ->where('transaction_type', 'credit')
+                        ->sum('amount');
+                } else {
+                    $row->total_collections = 0;
+                }
+            }
         } elseif ($type === 'vehicle') {
             $data = GatePass::with('vehicle')
                 ->whereBetween('date', [$startDate, $endDate])

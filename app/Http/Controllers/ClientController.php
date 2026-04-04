@@ -13,26 +13,66 @@ class ClientController extends Controller
         $query = Client::query();
 
         if ($search = $request->input('search')) {
-            $query->where('name', 'like', "%{$search}%")
-                ->orWhere('phone', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%");
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
         }
 
-        $clients = $query->withSum([
-            'transactions as total_credit' => function ($query) {
-                $query->where('transaction_type', 'credit');
-            }
-        ], 'amount')
-            ->withSum([
-                'transactions as total_debit' => function ($query) {
-                    $query->where('transaction_type', 'debit');
-                }
-            ], 'amount')
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+        // Global Stats (unfiltered for overall portfolio health)
+        $total_clients = Client::count();
+        $active_clients = Client::where('is_active', true)->count();
 
-        return view('clients.index', compact('clients'));
+        // Calculate global financial summary (Portfolio wide)
+        $financials = Client::withSum(['transactions as total_credit' => function ($query) {
+            $query->where('transaction_type', 'credit');
+        }], 'amount')
+        ->withSum(['transactions as total_debit' => function ($query) {
+            $query->where('transaction_type', 'debit');
+        }], 'amount')
+        ->get(['id']); // Only need IDs to fetch relations
+
+        $total_receivable = 0;
+        $total_advance = 0;
+
+        foreach ($financials as $f) {
+            $balance = ($f->total_debit ?? 0) - ($f->total_credit ?? 0);
+            if ($balance > 0) {
+                $total_receivable += $balance;
+            } elseif ($balance < 0) {
+                $total_advance += abs($balance);
+            }
+        }
+
+        $currentMonthStart = now()->startOfMonth();
+        $currentMonthEnd = now()->endOfMonth();
+
+        $clients = (clone $query)->withSum(['transactions as total_credit' => function ($query) {
+            $query->where('transaction_type', 'credit');
+        }], 'amount')
+        ->withSum(['transactions as total_debit' => function ($query) {
+            $query->where('transaction_type', 'debit');
+        }], 'amount')
+        ->withSum(['gatePasses as current_month_bill' => function ($query) use ($currentMonthStart, $currentMonthEnd) {
+            $query->whereBetween('date', [$currentMonthStart, $currentMonthEnd]);
+        }], 'total_amount')
+        ->withSum(['transactions as current_month_paid' => function ($query) use ($currentMonthStart, $currentMonthEnd) {
+            $query->where('transaction_type', 'credit')
+                ->whereBetween('transaction_date', [$currentMonthStart, $currentMonthEnd]);
+        }], 'amount')
+        ->latest()
+        ->paginate(15)
+        ->withQueryString();
+
+        $summary = [
+            'total' => $total_clients,
+            'active' => $active_clients,
+            'receivable' => $total_receivable,
+            'advance' => $total_advance,
+        ];
+
+        return view('clients.index', compact('clients', 'summary'));
     }
 
     public function show(Request $request, Client $client)
@@ -52,7 +92,8 @@ class ClientController extends Controller
         $gatePasses = $client->gatePasses()
             ->with(['vehicle', 'metalType'])
             ->latest('date')
-            ->paginate(15, ['*'], 'gp_page');
+            ->paginate(15, ['*'], 'gp_page')
+            ->withQueryString();
 
         // Overall Stats
         $totalTrips = $client->gatePasses()->count();
@@ -98,7 +139,6 @@ class ClientController extends Controller
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
-            'credit_limit' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'is_active' => 'boolean',
         ]);
@@ -122,7 +162,6 @@ class ClientController extends Controller
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
-            'credit_limit' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'is_active' => 'boolean',
         ]);

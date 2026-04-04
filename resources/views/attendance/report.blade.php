@@ -1,193 +1,182 @@
 <x-tabler-layout>
     <x-slot name="header">
-        <h2 class="page-title">
-            {{ __('Monthly Attendance Report') }}
-        </h2>
+        <div class="row align-items-center d-print-none">
+            <div class="col">
+                <div class="page-pretitle text-uppercase fw-bold text-muted" style="letter-spacing: 0.05em;">Human Resources / Payroll</div>
+                <h2 class="page-title h1 fw-bold">{{ __('Monthly Attendance Report') }}</h2>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    <a href="{{ route('attendance.report.export-pdf', ['month' => $month, 'year' => $year]) }}" class="btn btn-white shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-download" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path><path d="M12 17v-6"></path><path d="M9 14l3 3l3 -3"></path></svg>
+                        Export PDF
+                    </a>
+                </div>
+            </div>
+        </div>
     </x-slot>
 
-    <div class="row row-cards">
-        <div class="col-12">
-            <x-card>
-                <div class="card-header">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('attendance.report.daily') }}">Daily Report</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#">Monthly Summary</a>
-                        </li>
-                    </ul>
-                    <div class="card-actions">
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('attendance.report.export', ['month' => $month, 'year' => $year]) }}"
-                                class="btn btn-success">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="icon icon-tabler icon-tabler-file-spreadsheet" width="24" height="24"
-                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
-                                    <path d="M8 11h8v7h-8z" />
-                                    <path d="M8 15h8" />
-                                    <path d="M11 11v7" />
-                                </svg>
-                                Export CSV
-                            </a>
-                            <a href="{{ route('attendance.report.export-pdf', ['month' => $month, 'year' => $year]) }}"
-                                class="btn btn-danger">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="icon icon-tabler icon-tabler-file-type-pdf" width="24" height="24"
-                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
-                                    <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" />
-                                    <path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6" />
-                                </svg>
-                                Export PDF
-                            </a>
-                            <button onclick="window.print()" class="btn btn-secondary">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-printer"
-                                    width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path
-                                        d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
-                                    <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
-                                    <path
-                                        d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" />
-                                </svg>
-                                Print
-                            </button>
+    <div class="premium-header-card mb-4 overflow-hidden">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <form action="{{ route('attendance.report') }}" method="GET" class="d-flex align-items-center">
+                    <span class="avatar avatar-lg bg-white-lt text-white me-3 border border-white-subtle" style="backdrop-filter: blur(4px);">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 21h-6a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4.5" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><circle cx="19" cy="19" r="3" /><path d="M17 21v-2a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2" /></svg>
+                    </span>
+                    <div>
+                        <div class="text-white-50 small text-uppercase fw-bold" style="letter-spacing: 1px;">PAYROLL PERIOD</div>
+                        <div class="d-flex align-items-center gap-2">
+                           <select name="month" class="form-select form-select-flush fw-bold fs-2 text-white bg-transparent border-0 p-0" onchange="this.form.submit()" style="width: auto; cursor: pointer;">
+                                @foreach(range(1, 12) as $m)
+                                    <option value="{{ $m }}" {{ $m == $month ? 'selected' : '' }} class="text-dark">
+                                        {{ date('F', mktime(0, 0, 0, $m, 1)) }}
+                                    </option>
+                                @endforeach
+                           </select>
+                           <select name="year" class="form-select form-select-flush fw-bold fs-3 text-white-50 bg-transparent border-0 p-0" onchange="this.form.submit()" style="width: auto; cursor: pointer;">
+                                @foreach(range(date('Y') - 5, date('Y')) as $y)
+                                    <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }} class="text-dark">{{ $y }}</option>
+                                @endforeach
+                           </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-5 text-md-end mt-4 mt-md-0">
+                <div class="p-3 bg-white-lt rounded-4 border border-white-subtle d-inline-block text-start" style="backdrop-filter: blur(8px); min-width: 250px;">
+                    <div class="text-white-50 small text-uppercase fw-bold mb-1">Estimated Payout Total</div>
+                    <div class="h1 mb-0 fw-bold">₹ {{ number_format($reportData->sum('remaining'), 2) }}</div>
+                </div>
+            </div>
+        </div>
 
-                            @php
-                                $canRelease = now()->greaterThanOrEqualTo(\Carbon\Carbon::createFromDate($year, $month, 1)->addMonths(2));
-                            @endphp
-
-                            @if(!$payrollPeriod?->is_locked)
-                                <form action="{{ route('attendance.report.lock') }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="month" value="{{ $month }}">
-                                    <input type="hidden" name="year" value="{{ $year }}">
-                                    <button type="submit" class="btn btn-warning" onclick="return confirm('Lock this payroll? Attendance and advances will no longer be editable.')">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-lock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 11m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" /><path d="M12 11v-4a4 4 0 0 1 8 0v4" /><path d="M8 11v-4a4 4 0 0 1 8 0v4" /></svg>
-                                        Lock Payroll
-                                    </button>
-                                </form>
-                            @elseif(!$payrollPeriod?->is_released)
-                                @if($canRelease)
-                                    <form action="{{ route('attendance.report.release') }}" method="POST">
-                                        @csrf
-                                        <input type="hidden" name="month" value="{{ $month }}">
-                                        <input type="hidden" name="year" value="{{ $year }}">
-                                        <button type="submit" class="btn btn-primary">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-cash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 9m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" /><path d="M18 12h.01" /><path d="M11 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M7 15v.01" /></svg>
-                                            Release Salary
-                                        </button>
-                                    </form>
-                                @else
-                                    <button class="btn btn-secondary" title="Salary is held for 2 months" disabled>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hourglass-high" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6.5 7h11" /><path d="M6.5 17h11" /><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1z" /><path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1z" /></svg>
-                                        Hold Ends in {{ \Carbon\Carbon::createFromDate($year, $month, 1)->addMonths(2)->format('F') }}
-                                    </button>
-                                @endif
-                            @else
-                                <button class="btn btn-outline-success" disabled>
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-check" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
-                                    Salary Released
-                                </button>
-                            @endif
+        <div class="mt-4 pt-3 border-top border-white-subtle">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="badge bg-white-lt text-white text-uppercase px-2 py-1" style="font-size: 0.65rem; border: 1px solid rgba(255,255,255,0.2);">
+                            Payout Cycle: 2 Months Hold
+                        </div>
+                        <div class="text-white-50 small">
+                            Salaries for <strong>{{ \Carbon\Carbon::createFromDate($year, $month, 1)->format('F Y') }}</strong> will be released in <strong>{{ $payoutMonthName }}</strong>.
                         </div>
                     </div>
                 </div>
-                <div class="card-body bg-azure-lt border-bottom">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-info-circle me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M12 13v4" /></svg>
-                            Salary for <strong>{{ \Carbon\Carbon::createFromDate($year, $month, 1)->format('F Y') }}</strong> will be paid in <strong>{{ $payoutMonthName }}</strong> (2-month hold policy).
-                        </div>
-                        <div class="col-auto">
-                            @php
-                                $status = $payrollPeriod ? $payrollPeriod->getStatus() : 'Draft';
-                                $badgeClass = match($status) {
-                                    'Draft' => 'bg-secondary',
-                                    'Locked' => 'bg-warning',
-                                    'Pending' => 'bg-info',
-                                    'Paid' => 'bg-success',
-                                    default => 'bg-secondary'
-                                };
-                            @endphp
-                            <span class="badge {{ $badgeClass }} text-white">{{ strtoupper($status) }}</span>
-                        </div>
-                    </div>
+                <div class="col-auto">
+                    @php
+                        $status = $payrollPeriod ? $payrollPeriod->getStatus() : 'Draft';
+                        $statusColor = match($status) {
+                            'Draft' => 'azure',
+                            'Locked' => 'orange',
+                            'Paid' => 'green',
+                            default => 'secondary'
+                        };
+                    @endphp
+                    <span class="badge bg-{{ $statusColor }} text-white text-uppercase px-3 py-2 fw-bold" style="letter-spacing: 1px;">
+                        Status: {{ $status }}
+                    </span>
                 </div>
-                <div class="card-body border-bottom py-3">
-                    <form method="GET" action="{{ route('attendance.report') }}" class="d-flex gap-2">
-                        <select name="month" class="form-select w-auto">
-                            @foreach(range(1, 12) as $m)
-                                <option value="{{ $m }}" {{ $month == $m ? 'selected' : '' }}>
-                                    {{ \Carbon\Carbon::create()->month($m)->format('F') }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <select name="year" class="form-select w-auto">
-                            @foreach(range(now()->year - 5, now()->year) as $y)
-                                <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>
-                                    {{ $y }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="premium-stats-grid mb-4">
+        <div class="stat-premium-card">
+            <div class="stat-icon-wrapper bg-blue-lt">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-blue" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg>
+            </div>
+            <div class="text-muted small fw-bold text-uppercase mb-1">Active Staff</div>
+            <div class="h2 mb-0 fw-bold text-blue">{{ $reportData->count() }} Employees</div>
+        </div>
+
+        <div class="stat-premium-card">
+            <div class="stat-icon-wrapper bg-red-lt">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-red" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 13h1" /><path d="M20 13h1" /><path d="M12 3v1" /><path d="M12 20v1" /></svg>
+            </div>
+            <div class="text-muted small fw-bold text-uppercase mb-1">Total Absents</div>
+            <div class="h2 mb-0 fw-bold text-red">{{ $reportData->sum('absent') }} Days</div>
+        </div>
+
+        <div class="stat-premium-card">
+            <div class="stat-icon-wrapper bg-orange-lt">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-orange" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12" /></svg>
+            </div>
+            <div class="text-muted small fw-bold text-uppercase mb-1">Advance Deductions</div>
+            <div class="h2 mb-0 fw-bold text-orange">₹ {{ number_format($reportData->sum('advances'), 2) }}</div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card border-0 shadow-sm overflow-hidden mb-5">
+        <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+            <h3 class="card-title fw-bold">Payroll Details</h3>
+            <div class="card-actions">
+                @if(!$payrollPeriod?->is_locked)
+                    <form action="{{ route('attendance.report.lock') }}" method="POST" class="d-inline">
+                        @csrf
+                        <input type="hidden" name="month" value="{{ $month }}">
+                        <input type="hidden" name="year" value="{{ $year }}">
+                        <button type="submit" class="btn btn-warning shadow-sm fw-bold" onclick="return confirm('Lock this payroll?')">
+                            LOCK PAYROLL
+                        </button>
                     </form>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table card-table table-vcenter text-nowrap datatable">
-                        <thead>
-                            <tr>
-                                <th>Employee</th>
-                                <th class="text-center">Working Days</th>
-                                <th class="text-center">Unpaid Absent</th>
-                                <th class="text-center">Base Salary</th>
-                                <th class="text-center">Advances</th>
-                                <th class="text-center">Deductions</th>
-                                <th class="text-center">Carry Forward</th>
-                                <th class="text-center">Net Payable</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($reportData as $data)
-                                <tr>
-                                    <td>
-                                        <div class="fw-bold">{{ $data['user']->name }}</div>
-                                        <div class="small text-muted">Leave Used:
-                                            {{ $data['leave_used'] }}/{{ $data['leave_allowed'] }}</div>
-                                    </td>
-                                    <td class="text-center text-success fw-bold">{{ $data['present'] }}</td>
-                                    <td class="text-center text-danger">
-                                        {{ ($data['absent'] + max(0, $data['leave'] - 4) + ($data['half_day'] * 0.5)) }}
-                                    </td>
-                                    <td class="text-center">₹ {{ number_format($data['base_salary'], 2) }}</td>
-                                    <td class="text-center text-warning">₹ {{ number_format($data['advances'], 2) }}</td>
-                                    <td class="text-center text-orange">₹ {{ number_format($data['absent_deduction'], 2) }}</td>
-                                    <td class="text-center {{ $data['carry_forward'] < 0 ? 'text-danger' : 'text-muted' }}">
-                                        ₹ {{ number_format($data['carry_forward'], 2) }}
-                                    </td>
-                                    <td class="text-center fw-bold text-primary" title="Payable in {{ $payoutMonthName }}">
-                                        ₹ {{ number_format($data['remaining'], 2) }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="text-center">No data found for this month.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </x-card>
+                @elseif(!$payrollPeriod?->is_released)
+                    <form action="{{ route('attendance.report.release') }}" method="POST" class="d-inline">
+                        @csrf
+                        <input type="hidden" name="month" value="{{ $month }}">
+                        <input type="hidden" name="year" value="{{ $year }}">
+                        <button type="submit" class="btn btn-primary shadow-sm fw-bold">
+                            RELEASE SALARY
+                        </button>
+                    </form>
+                @endif
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-vcenter table-premium card-table border-top">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Employee Profile</th>
+                        <th class="text-center">Work Days</th>
+                        <th class="text-center">Unpaid Days</th>
+                        <th class="text-end">Base Salary</th>
+                        <th class="text-end">Adv / Ded</th>
+                        <th class="text-end">Net Payable</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($reportData as $data)
+                        <tr>
+                            <td>
+                                <div class="fw-bold fs-3 text-dark">{{ $data['user']->name }}</div>
+                                <div class="small text-muted">{{ $data['user']->email }}</div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-green-lt text-green border-0 px-2 py-1 fw-bold fs-3">{{ $data['present'] }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-red-lt text-red border-0 px-2 py-1 fw-bold fs-4">
+                                    {{ ($data['absent'] + ($data['half_day'] * 0.5)) }}
+                                </span>
+                            </td>
+                            <td class="text-end fw-bold">₹ {{ number_format($data['base_salary'], 2) }}</td>
+                            <td class="text-end">
+                                <div class="fw-bold text-orange">₹ {{ number_format($data['advances'] + $data['absent_deduction'], 2) }}</div>
+                                <div class="small text-muted">Advances: ₹{{ number_format($data['advances'], 2) }}</div>
+                            </td>
+                            <td class="text-end bg-primary-lt">
+                                <div class="fw-bold fs-2 text-primary">₹ {{ number_format($data['remaining'], 2) }}</div>
+                                <div class="small text-muted fw-bold">PAY IN {{ strtoupper($payoutMonthName) }}</div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">No attendance data logs found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </x-tabler-layout>

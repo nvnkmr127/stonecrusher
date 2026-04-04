@@ -27,7 +27,7 @@ class DailyClosingController extends Controller
             return redirect()->route('daily-closings.index')->with('error', "Date $date is already closed.");
         }
 
-        $totals = $this->calculateTotals($date);
+        $totals = DayClosureService::getTotalsForDate($date);
 
         return view('daily_closings.create', compact('date', 'totals'));
     }
@@ -46,21 +46,13 @@ class DailyClosingController extends Controller
             return back()->with('error', 'Date is already closed.');
         }
 
-        $totals = $this->calculateTotals($date);
+        $closing = DayClosureService::perform($date, auth()->id(), $validated['notes'] ?? 'Manual Closing');
 
-        DailyClosing::updateOrCreate(
-            ['date' => $date],
-            [
-                'total_sales' => $totals['total_sales'],
-                'total_cash' => $totals['total_cash'],
-                'total_expenses' => $totals['total_expenses'],
-                'status' => 'closed',
-                'closed_by_user_id' => auth()->id(),
-                'notes' => $validated['notes'],
-            ]
-        );
-
-        return redirect()->route('daily-closings.index')->with('success', "Daily Closing for $date completed successfully.");
+        if ($closing) {
+            return redirect()->route('daily-closings.index')->with('success', "Daily Closing for $date completed successfully.");
+        } else {
+            return back()->with('error', 'Closing failed or date is already closed.');
+        }
     }
 
     public function reopen(Request $request, DailyClosing $dailyClosing)
@@ -80,33 +72,5 @@ class DailyClosingController extends Controller
         ]);
 
         return back()->with('success', 'Date reopened successfully.');
-    }
-
-    private function calculateTotals($date)
-    {
-        // Total Sales: Sum of all COMPLETED GatePasses total_amount
-        $totalSales = GatePass::whereDate('date', $date)
-            ->where('status', 'completed')
-            ->sum('total_amount');
-
-        // Total Cash / Collections: Sum of all ClientTransactions (Credit)
-        // This includes payments related to GatePasses AND standalone payments.
-        // We assume 'credit' transactions are 'Received Money'.
-        $totalCollections = ClientTransaction::whereDate('transaction_date', $date)
-            ->where('transaction_type', 'credit')
-            ->sum('amount');
-
-        // Total Expenses: (Placeholder if we don't have expenses table yet)
-        // If ClientTransactions has 'debit' that is NOT a Sale (e.g. Refund?), we might count it.
-        // But SalesService uses 'debit' for SALES.
-        // So for now, Expense is 0 unless we have Expense model. 
-        // Or maybe check if we have an Expense model? I didn't see one in file list.
-        $totalExpenses = 0;
-
-        return [
-            'total_sales' => $totalSales,
-            'total_cash' => $totalCollections,
-            'total_expenses' => $totalExpenses
-        ];
     }
 }

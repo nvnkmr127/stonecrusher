@@ -49,18 +49,6 @@ class AdminDashboardController extends Controller
             'pending_reminders' => 0, // Placeholder for future
         ];
 
-        $systemHealth = [
-            'database' => 'Online', // Default
-            'disk_free' => $this->humanFileSize(disk_free_space(base_path())),
-            'disk_total' => $this->humanFileSize(disk_total_space(base_path())),
-            'server_time' => now()->format('Y-m-d H:i:s'),
-        ];
-
-        try {
-            \Illuminate\Support\Facades\DB::connection()->getPdo();
-        } catch (\Exception $e) {
-            $systemHealth['database'] = 'Offline';
-        }
 
         // --- Chart Data ---
         $chartDates = [];
@@ -104,17 +92,7 @@ class AdminDashboardController extends Controller
             'material_counts' => json_encode($materialData->pluck('count')),
         ];
 
-        return view('admin.dashboard', compact('projectStats', 'recentProjects', 'totalClients', 'vehicleStats', 'dailyStats', 'systemHealth', 'dieselStats', 'maintenanceStats', 'chartData'));
+        return view('admin.dashboard', compact('projectStats', 'recentProjects', 'totalClients', 'vehicleStats', 'dailyStats', 'dieselStats', 'maintenanceStats', 'chartData'));
     }
 
-    private function humanFileSize($size, $unit = "")
-    {
-        if ((!$unit && $size >= 1 << 30) || $unit == "GB")
-            return number_format($size / (1 << 30), 2) . "GB";
-        if ((!$unit && $size >= 1 << 20) || $unit == "MB")
-            return number_format($size / (1 << 20), 2) . "MB";
-        if ((!$unit && $size >= 1 << 10) || $unit == "KB")
-            return number_format($size / (1 << 10), 2) . "KB";
-        return number_format($size) . " bytes";
-    }
 }

@@ -1,5 +1,5 @@
 <div {{ $attributes->merge(['class' => 'table-responsive']) }}>
-    <table class="table table-vcenter card-table">
+    <table class="table table-vcenter table-premium card-table">
         {{ $slot }}
     </table>
 </div>
