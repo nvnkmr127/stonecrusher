@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Employee;
 use App\Models\Attendance;
 use App\Models\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,7 +16,7 @@ class AttendanceSettingsTest extends TestCase
     use RefreshDatabase;
 
     protected $admin;
-    protected $user;
+    protected $employee;
 
     protected function setUp(): void
     {
@@ -33,8 +34,8 @@ class AttendanceSettingsTest extends TestCase
         $role->givePermissionTo($permissions); // Give permissions to role
         $this->admin->assignRole($role);
 
-        // Create User
-        $this->user = User::factory()->create();
+        // Create Employee
+        $this->employee = Employee::factory()->create();
     }
 
     public function test_custom_shift_timings_affect_status_calculation()
@@ -47,7 +48,7 @@ class AttendanceSettingsTest extends TestCase
 
         // Employee checks in at 09:45 (Late for 09:30, but On Time for 10:00)
         $this->actingAs($this->admin)->post(route('attendance.store'), [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'check_in' => '09:45',
         ]);
@@ -58,22 +59,24 @@ class AttendanceSettingsTest extends TestCase
         }
 
         $attendance = Attendance::first();
-        $this->assertEquals('present', $attendance->status); // Should be present, not late
+        $this->assertEquals('present', $attendance->status->value); // Should be present, not late
     }
 
     public function test_late_status_based_on_settings()
     {
+        $this->withoutExceptionHandling();
+
         // Set custom shift start to 08:00 AM
         Setting::set('attendance_shift_start', '08:00');
 
         // Employee checks in at 08:15
         $this->actingAs($this->admin)->post(route('attendance.store'), [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->addDay()->format('Y-m-d'),
             'check_in' => '08:15',
         ]);
 
-        $attendance = Attendance::where('date', now()->addDay()->format('Y-m-d'))->first();
-        $this->assertEquals('late', $attendance->status);
+        $attendance = Attendance::whereDate('date', now()->addDay()->format('Y-m-d'))->first();
+        $this->assertEquals('late', $attendance->status->value);
     }
 }

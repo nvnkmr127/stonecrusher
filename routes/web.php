@@ -11,6 +11,7 @@ use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\MetalTypeController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\EmployeeController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\WelcomeController;
@@ -48,8 +49,27 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::post('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
-    // Master Data
-    // Attendance (Policy handled in controller, but route access mainly Admin)
+
+
+    // Restricted Transaction Edits (Admin Only)
+    Route::get('clients/{client}/transactions/{transaction}/edit', [App\Http\Controllers\ClientTransactionController::class, 'edit'])->name('clients.transactions.edit');
+    Route::put('clients/{client}/transactions/{transaction}', [App\Http\Controllers\ClientTransactionController::class, 'update'])->name('clients.transactions.update');
+    Route::delete('clients/{client}/transactions/{transaction}', [App\Http\Controllers\ClientTransactionController::class, 'destroy'])->name('clients.transactions.destroy');
+
+    // Daily Closing
+    Route::resource('daily-closings', App\Http\Controllers\DailyClosingController::class)->only(['index', 'create', 'store']);
+    Route::post('daily-closings/{daily_closing}/reopen', [App\Http\Controllers\DailyClosingController::class, 'reopen'])->name('daily-closings.reopen');
+});
+
+// Owner & Admin Dashboard
+Route::middleware(['auth', 'verified', 'role:admin|owner'])->group(function () {
+    Route::get('/owner/dashboard', [App\Http\Controllers\OwnerDashboardController::class, 'index'])->name('owner.dashboard');
+});
+
+// Admin & Manager & Accountant Routes
+Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(function () {
+
+    // Attendance (Policy handled in controller)
     Route::get('attendance/report/daily', [App\Http\Controllers\AttendanceReportController::class, 'daily'])->name('attendance.report.daily');
     Route::get('attendance/report', [App\Http\Controllers\AttendanceReportController::class, 'index'])->name('attendance.report');
     Route::get('attendance/report/export', [App\Http\Controllers\AttendanceReportController::class, 'export'])->name('attendance.report.export');
@@ -63,19 +83,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('attendance/calendar', [App\Http\Controllers\AttendanceController::class, 'calendar'])->name('attendance.calendar');
     Route::resource('attendance', AttendanceController::class)->except(['show']);
 
-    // Restricted Transaction Edits (Admin Only)
-    Route::get('clients/{client}/transactions/{transaction}/edit', [App\Http\Controllers\ClientTransactionController::class, 'edit'])->name('clients.transactions.edit');
-    Route::put('clients/{client}/transactions/{transaction}', [App\Http\Controllers\ClientTransactionController::class, 'update'])->name('clients.transactions.update');
-    Route::delete('clients/{client}/transactions/{transaction}', [App\Http\Controllers\ClientTransactionController::class, 'destroy'])->name('clients.transactions.destroy');
-
-    // Daily Closing
-    Route::resource('daily-closings', App\Http\Controllers\DailyClosingController::class)->only(['index', 'create', 'store']);
-    Route::post('daily-closings/{daily_closing}/reopen', [App\Http\Controllers\DailyClosingController::class, 'reopen'])->name('daily-closings.reopen');
-});
-
-// Admin & Manager & Accountant Routes
-Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(function () {
-
     // Client Reports (Placed before resource to avoid ID collision)
     Route::get('clients/reports/outstanding', [App\Http\Controllers\ClientReportController::class, 'index'])->name('clients.reports.outstanding');
     Route::get('clients/reports/outstanding/export', [App\Http\Controllers\ClientReportController::class, 'export'])->name('clients.reports.outstanding.export');
@@ -83,6 +90,8 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
 
     // Master Data
     Route::resource('clients', ClientController::class);
+    Route::resource('employees', EmployeeController::class);
+    Route::post('employees/{employee}/toggle-status', [EmployeeController::class, 'toggleStatus'])->name('employees.toggle-status');
 
     // Reports (General)
     Route::get('reports', [App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
@@ -120,6 +129,33 @@ Route::middleware(['auth', 'verified', 'role:admin|manager|accountant'])->group(
     Route::resource('diesel', App\Http\Controllers\DieselEntryController::class);
     Route::resource('diesel-stocks', App\Http\Controllers\DieselStockController::class);
     Route::resource('operational-units', App\Http\Controllers\OperationalUnitController::class);
+
+    // Operational Records (Quarry & Crusher)
+    Route::get('operations/quarry', [App\Http\Controllers\OperationalRecordController::class, 'quarryIndex'])->name('quarry.index');
+    Route::get('operations/crusher', [App\Http\Controllers\OperationalRecordController::class, 'crusherIndex'])->name('crusher.index');
+    Route::post('operations/{unit}/records', [App\Http\Controllers\OperationalRecordController::class, 'storeRecord'])->name('operations.records.store');
+    Route::put('operations/records/{record}', [App\Http\Controllers\OperationalRecordController::class, 'updateRecord'])->name('operations.records.update');
+    Route::delete('operations/records/{record}', [App\Http\Controllers\OperationalRecordController::class, 'destroyRecord'])->name('operations.records.destroy');
+    Route::post('operations/{unit}/tags', [App\Http\Controllers\OperationalRecordController::class, 'storeTag'])->name('operations.tags.store');
+    Route::delete('operations/tags/{tag}', [App\Http\Controllers\OperationalRecordController::class, 'destroyTag'])->name('operations.tags.destroy');
+
+    // Operational Profit & Loss Report
+    Route::get('reports/operational-profit-loss', [App\Http\Controllers\ReportController::class, 'operationalProfitLoss'])->name('reports.operational-profit-loss');
+
+    // Crusher Profit Engine API Endpoints
+    Route::get('api/crusher/{unit}/profitability', [App\Http\Controllers\CrusherProfitController::class, 'getProfitability'])->name('api.crusher.profitability');
+    Route::get('api/crusher/{unit}/monthly-summary', [App\Http\Controllers\CrusherProfitController::class, 'getMonthlySummary'])->name('api.crusher.monthly-summary');
+
+    // Quarry Cost Engine API Endpoints
+    Route::get('api/quarry/{unit}/cost-breakdown', [App\Http\Controllers\QuarryCostController::class, 'getCostBreakdown'])->name('api.quarry.cost-breakdown');
+    Route::get('api/quarry/{unit}/daily-summary', [App\Http\Controllers\QuarryCostController::class, 'getDailySummary'])->name('api.quarry.daily-summary');
+    Route::get('api/quarry/{unit}/monthly-summary', [App\Http\Controllers\QuarryCostController::class, 'getMonthlySummary'])->name('api.quarry.monthly-summary');
+    Route::get('api/quarry/{unit}/vendor-summary', [App\Http\Controllers\QuarryCostController::class, 'getVendorSummary'])->name('api.quarry.vendor-summary');
+
+    // Monthly P&L Engine Endpoints
+    Route::get('api/finance/profit-loss', [App\Http\Controllers\ProfitLossController::class, 'getProfitLoss'])->name('api.finance.profit-loss');
+    Route::get('api/finance/profit-loss/monthly', [App\Http\Controllers\ProfitLossController::class, 'getMonthlySummary'])->name('api.finance.profit-loss.monthly');
+    Route::get('api/finance/profit-loss/export', [App\Http\Controllers\ProfitLossController::class, 'export'])->name('api.finance.profit-loss.export');
 
     // Client Transactions
     Route::get('clients/{client}/transactions/create', [App\Http\Controllers\ClientTransactionController::class, 'create'])->name('clients.transactions.create');

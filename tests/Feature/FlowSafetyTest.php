@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Vehicle;
 use App\Models\MetalType;
 use App\Models\GatePass;
+use App\Models\Employee;
 use App\Enums\GatePassStatus;
 use App\Enums\PaymentMode;
 use App\Enums\AttendanceStatus;
@@ -72,13 +73,6 @@ class FlowSafetyTest extends TestCase
     /** @test */
     public function user_creation_is_atomic()
     {
-        // To test atomicity, we'd ideally mock a failure in the second step (assignRole).
-        // However, since strictly mocking within the transaction closure is hard without DI,
-        // we can test the happy path first to ensure transaction logic is valid.
-        // For failure, we can try to provide an invalid role which should fail validation BEFORE transaction?
-        // No, we want a failure DURING transaction. 
-        // Let's rely on the code review for strict atomicity and just test happy path works with standard flow.
-
         $formData = [
             'name' => 'Test User',
             'email' => 'test_atomic@example.com',
@@ -136,10 +130,10 @@ class FlowSafetyTest extends TestCase
     /** @test */
     public function attendance_uses_enums_for_validation()
     {
-        $user = User::factory()->create();
+        $employee = Employee::factory()->create();
 
         $response = $this->actingAs($this->user)->post(route('attendance.store'), [
-            'user_id' => $user->id,
+            'employee_id' => $employee->id,
             'date' => now()->toDateString(),
             'status' => 'invalid_status', // Invalid Enum Value
         ]);
@@ -150,31 +144,92 @@ class FlowSafetyTest extends TestCase
     /** @test */
     public function attendance_auto_calculates_status_but_allows_enum_override()
     {
-        $user = User::factory()->create();
+        $employee = Employee::factory()->create();
 
         // Test 1: Auto-calc (Present)
-        $msg1 = $this->actingAs($this->user)->post(route('attendance.store'), [
-            'user_id' => $user->id,
+        $this->actingAs($this->user)->post(route('attendance.store'), [
+            'employee_id' => $employee->id,
             'date' => now()->subDays(1)->toDateString(),
             'check_in' => '09:00',
             'check_out' => '18:35',
         ]);
         $this->assertDatabaseHas('attendances', [
-            'user_id' => $user->id,
+            'employee_id' => $employee->id,
             'date' => now()->subDays(1)->format('Y-m-d 00:00:00'),
             'status' => AttendanceStatus::PRESENT->value
         ]);
 
         // Test 2: Enum Override (Leave)
-        $msg2 = $this->actingAs($this->user)->post(route('attendance.store'), [
-            'user_id' => $user->id,
+        $this->actingAs($this->user)->post(route('attendance.store'), [
+            'employee_id' => $employee->id,
             'date' => now()->subDays(2)->toDateString(),
             'status' => AttendanceStatus::LEAVE->value,
         ]);
         $this->assertDatabaseHas('attendances', [
-            'user_id' => $user->id,
+            'employee_id' => $employee->id,
             'date' => now()->subDays(2)->format('Y-m-d 00:00:00'),
             'status' => AttendanceStatus::LEAVE->value
         ]);
+    }
+
+    /** @test */
+    public function gate_pass_deletion_removes_linked_transactions()
+    {
+        $client = Client::create(['name' => 'Delete Test Client', 'is_active' => true, 'credit_limit' => 50000]);
+        $vehicle = Vehicle::create(['registration_number' => 'KA-01-DL-8888', 'is_active' => true, 'model' => 'Tata', 'cft' => 1]);
+        $metal = MetalType::create(['name' => 'Blue Metal', 'rate_per_ton' => 400, 'is_active' => true]);
+
+        // Create completed Gate Pass
+        $this->actingAs($this->user)->post(route('gate-passes.store'), [
+            'gate_pass_number' => 'GP-' . now()->format('Ymd') . '-999',
+            'date' => now()->toDateString(),
+            'vehicle_id' => $vehicle->id,
+            'client_id' => $client->id,
+            'status' => GatePassStatus::COMPLETED->value,
+            'metal_type_id' => $metal->id,
+            'driver_name' => 'Driver Y',
+            'gross_weight' => 20,
+            'tare_weight' => 10,
+            'net_weight' => 10,
+            'total_amount' => 4000,
+            'activity_type' => \App\Enums\ActivityType::SALES->value,
+            'source_unit_id' => 2,
+            'destination_unit_id' => 3,
+            'rate_per_ton' => 400,
+            'trips' => 1,
+        ]);
+
+        $gp = GatePass::where('gate_pass_number', 'GP-' . now()->format('Ymd') . '-999')->firstOrFail();
+
+        // Record a payment against this Gate Pass
+        $this->actingAs($this->user)->post(route('gate-passes.payment', $gp), [
+            'amount' => 1500,
+            'date' => now()->toDateString(),
+            'payment_mode' => PaymentMode::CASH->value,
+            'remarks' => 'Partial Payment',
+        ]);
+
+        // Check database state
+        $this->assertDatabaseHas('gate_passes', ['id' => $gp->id]);
+        $this->assertDatabaseHas('client_transactions', [
+            'gate_pass_id' => $gp->id,
+            'transaction_type' => 'debit',
+            'amount' => 4000
+        ]);
+        $this->assertDatabaseHas('client_transactions', [
+            'gate_pass_id' => $gp->id,
+            'transaction_type' => 'credit',
+            'amount' => 1500
+        ]);
+
+        // Perform deletion
+        $response = $this->actingAs($this->user)->delete(route('gate-passes.destroy', $gp));
+        $response->assertRedirect(route('gate-passes.index'));
+
+        // Assert Gate Pass is soft deleted
+        $this->assertSoftDeleted('gate_passes', ['id' => $gp->id]);
+
+        // Assert all linked transactions are deleted
+        $this->assertDatabaseMissing('client_transactions', ['gate_pass_id' => $gp->id]);
     }
 }

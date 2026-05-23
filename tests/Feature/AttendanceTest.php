@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Employee;
 use App\Models\Attendance;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -13,7 +14,7 @@ class AttendanceTest extends TestCase
     use RefreshDatabase;
 
     protected $admin;
-    protected $user;
+    protected $employee;
 
     protected function setUp(): void
     {
@@ -26,10 +27,8 @@ class AttendanceTest extends TestCase
         $role = Role::create(['name' => 'admin']);
         $this->admin->assignRole($role);
 
-        // Create User
-        $this->user = User::factory()->create();
-        $this->user->email_verified_at = now();
-        $this->user->save();
+        // Create Employee
+        $this->employee = Employee::factory()->create();
     }
 
     public function test_admin_can_view_attendance_index()
@@ -42,7 +41,7 @@ class AttendanceTest extends TestCase
     public function test_admin_can_create_attendance()
     {
         $attendanceData = [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'check_in' => '09:00',
             'check_out' => '18:30',
@@ -54,7 +53,7 @@ class AttendanceTest extends TestCase
 
         $response->assertRedirect(route('attendance.index'));
         $this->assertDatabaseHas('attendances', [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'status' => 'present',
         ]);
     }
@@ -62,13 +61,13 @@ class AttendanceTest extends TestCase
     public function test_admin_cannot_create_duplicate_attendance_for_same_day()
     {
         Attendance::create([
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'status' => 'present',
         ]);
 
         $attendanceData = [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'check_in' => '09:00',
             'status' => 'present',
@@ -82,13 +81,13 @@ class AttendanceTest extends TestCase
     public function test_admin_can_update_attendance()
     {
         $attendance = Attendance::create([
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'status' => 'present',
         ]);
 
         $updateData = [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'check_in' => '09:35',
             'status' => 'late',
@@ -108,17 +107,18 @@ class AttendanceTest extends TestCase
     public function test_cannot_check_out_without_check_in()
     {
         $attendance = Attendance::create([
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'status' => 'present',
             'check_in' => null,
         ]);
 
         $updateData = [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'check_out' => '17:00',
             'status' => 'present',
+            'remarks' => 'Updating check out',
         ];
 
         $response = $this->actingAs($this->admin)->put(route('attendance.update', $attendance), $updateData);
@@ -129,18 +129,19 @@ class AttendanceTest extends TestCase
     public function test_check_out_must_be_after_check_in()
     {
         $attendance = Attendance::create([
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'status' => 'present',
             'check_in' => '09:00',
         ]);
 
         $updateData = [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'check_in' => '09:00',
             'check_out' => '08:00',
             'status' => 'present',
+            'remarks' => 'Updating check out',
         ];
 
         $response = $this->actingAs($this->admin)->put(route('attendance.update', $attendance), $updateData);
@@ -151,13 +152,13 @@ class AttendanceTest extends TestCase
     public function test_attendance_date_filter()
     {
         Attendance::create([
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->subDay()->format('Y-m-d'),
             'status' => 'present',
         ]);
 
         $todayAttendance = Attendance::create([
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'status' => 'present',
         ]);
@@ -165,6 +166,6 @@ class AttendanceTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('attendance.index', ['date' => now()->format('Y-m-d')]));
 
         $response->assertStatus(200);
-        $response->assertSee($todayAttendance->date);
+        $response->assertSee($todayAttendance->date->format('Y-m-d'));
     }
 }

@@ -53,16 +53,16 @@
                                                     <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
                                                 </svg>
                                             </span>
-                                            <select name="user_id" class="form-select @error('user_id') is-invalid @enderror" required>
+                                            <select name="employee_id" class="form-select @error('employee_id') is-invalid @enderror" required>
                                                 <option value="">Select an employee...</option>
-                                                @foreach($users as $user)
-                                                    <option value="{{ $user->id }}" {{ (old('user_id') ?? ($selectedUserId ?? '')) == $user->id ? 'selected' : '' }}>
-                                                        {{ $user->name }}
+                                                @foreach($employees as $employee)
+                                                    <option value="{{ $employee->id }}" {{ (old('employee_id') ?? ($selectedEmployeeId ?? '')) == $employee->id ? 'selected' : '' }}>
+                                                        {{ $employee->name }} ({{ ucfirst($employee->role) }})
                                                     </option>
                                                 @endforeach
                                             </select>
                                         </div>
-                                        @error('user_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                        @error('employee_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                     </div>
                                 </div>
 

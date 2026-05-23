@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PayrollPeriod;
 use App\Models\SalaryAdvance;
-use App\Models\User;
+use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -20,9 +20,6 @@ class PayrollLiabilityController extends Controller
         $totalPendingSalary = $pendingPeriods->sum('total_payable');
 
         // 2. Upcoming Release Month
-        // Find the locked, unpaid period with the earliest payout date.
-        // Payout date is work_month + 2 months. 
-        // We want the one that will be released soonest.
         $nextRelease = $pendingPeriods->sortBy(function ($p) {
             return Carbon::create($p->year, $p->month, 1)->addMonths(2);
         })->first();
@@ -32,14 +29,6 @@ class PayrollLiabilityController extends Controller
             : 'None';
 
         // 3. Total Advances Outstanding
-        // This is tricky. Advances are technically settled per month.
-        // But "Outstanding" usually means advances given in months that haven't been released yet.
-        // Or advances given in the current DRAFT month.
-        $unpaidMonths = PayrollPeriod::where('is_released', false)->get(['month', 'year']);
-
-        // Let's sum all advances in months that are not yet released.
-        // And also include advances in the current month (which likely doesn't have a PayrollPeriod record yet).
-        // A better way: All advances minus those in released months.
         $releasedMonths = PayrollPeriod::where('is_released', true)->get(['month', 'year']);
 
         $totalAdvancesOutstanding = SalaryAdvance::where(function ($query) use ($releasedMonths) {
@@ -51,24 +40,17 @@ class PayrollLiabilityController extends Controller
         })->sum('amount');
 
         // 4. Negative Carry Forward Cases
-        // We need to check all employees for their current balance.
-        $employees = User::where('base_salary', '>', 0)->get();
+        $employees = Employee::where('base_salary', '>', 0)->get();
         $negativeCases = [];
 
-        // I'll borrow the calculateCarryForward logic from AttendanceReportController
-        // Since I can't easily call it from here, I'll instantiate the controller or move logic to a service later.
-        // For now, I'll use the controller instance as a helper if needed, but it's cleaner to just do a quick loop.
-        $reportCtrl = new AttendanceReportController();
         $currentMonth = now()->month;
         $currentYear = now()->year;
 
         foreach ($employees as $employee) {
-            // Check carry forward at the START of the current month
-            // This represents the debt they brought into this month.
             $cf = $this->calculateEmployeeBalance($employee, $currentMonth, $currentYear);
             if ($cf < 0) {
                 $negativeCases[] = [
-                    'user' => $employee,
+                    'employee' => $employee,
                     'balance' => $cf
                 ];
             }
@@ -84,9 +66,8 @@ class PayrollLiabilityController extends Controller
 
     private function calculateEmployeeBalance($employee, $month, $year)
     {
-        // Re-implementing simplified carry forward logic for liability report
         $currentDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
-        $startDate = User::find($employee->id)->created_at ?? Carbon::parse('2024-01-01');
+        $startDate = $employee->created_at ?? Carbon::parse('2024-01-01');
 
         $iterator = Carbon::parse($startDate)->startOfMonth();
         $balance = 0;
@@ -96,12 +77,12 @@ class PayrollLiabilityController extends Controller
             $m = $iterator->month;
             $y = $iterator->year;
 
-            $attendances = \App\Models\Attendance::where('user_id', $employee->id)
+            $attendances = \App\Models\Attendance::where('employee_id', $employee->id)
                 ->whereMonth('date', $m)
                 ->whereYear('date', $y)
                 ->get();
 
-            $advs = \App\Models\SalaryAdvance::where('user_id', $employee->id)
+            $advs = \App\Models\SalaryAdvance::where('employee_id', $employee->id)
                 ->whereMonth('date', $m)
                 ->whereYear('date', $y)
                 ->sum('amount');

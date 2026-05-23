@@ -185,7 +185,7 @@
                                             }
                                         @endphp
                                         <td class="p-0">
-                                            <button class="status-btn {{ $btnClass }}" data-user="{{ $employee->id }}"
+                                            <button class="status-btn {{ $btnClass }}" data-employee="{{ $employee->id }}"
                                                 data-date="{{ $dateStr }}"
                                                 data-status="{{ $status == 'absent' && !$att ? '' : $status }}"
                                                 onclick="toggleStatus(this)">
@@ -323,7 +323,7 @@
                     "X-CSRF-TOKEN": "{{ csrf_token() }}"
                 },
                 body: JSON.stringify({
-                    user_id: btn.getAttribute('data-user'),
+                    employee_id: btn.getAttribute('data-employee'),
                     date: btn.getAttribute('data-date'),
                     status: nextStatus || 'absent' // Default to absent if empty during rotate
                 })

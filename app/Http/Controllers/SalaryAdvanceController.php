@@ -3,28 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\SalaryAdvance;
-use App\Models\User;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 
 class SalaryAdvanceController extends Controller
 {
     public function index()
     {
-        $advances = SalaryAdvance::with('user')->latest()->paginate(20);
+        $advances = SalaryAdvance::with('employee')->latest()->paginate(20);
         return view('salary_advances.index', compact('advances'));
     }
 
     public function create(Request $request)
     {
-        $users = User::all();
-        $selectedUserId = $request->input('user_id');
-        return view('salary_advances.create', compact('users', 'selectedUserId'));
+        $employees = Employee::all();
+        $selectedEmployeeId = $request->input('employee_id');
+        return view('salary_advances.create', compact('employees', 'selectedEmployeeId'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'employee_id' => 'required|exists:employees,id',
             'amount' => 'required|numeric|min:1',
             'payment_mode' => 'nullable|string',
             'date' => 'required|date',
@@ -41,14 +41,14 @@ class SalaryAdvanceController extends Controller
 
     public function edit(SalaryAdvance $salaryAdvance)
     {
-        $users = User::all();
-        return view('salary_advances.edit', compact('salaryAdvance', 'users'));
+        $employees = Employee::all();
+        return view('salary_advances.edit', compact('salaryAdvance', 'employees'));
     }
 
     public function update(Request $request, SalaryAdvance $salaryAdvance)
     {
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'employee_id' => 'required|exists:employees,id',
             'amount' => 'required|numeric|min:1',
             'payment_mode' => 'nullable|string',
             'date' => 'required|date',

@@ -25,8 +25,6 @@ class User extends Authenticatable
         'email',
         'password',
         'department',
-        'base_salary',
-        'daily_rate',
         'is_active',
     ];
 
@@ -51,18 +49,12 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
-            'base_salary' => 'decimal:2',
-            'daily_rate' => 'decimal:2',
         ];
     }
-    public function attendances()
-    {
-        return $this->hasMany(Attendance::class);
-    }
 
-    public function advances()
+    public function employee()
     {
-        return $this->hasMany(SalaryAdvance::class);
+        return $this->hasOne(Employee::class);
     }
 
     public function getActivitylogOptions(): LogOptions

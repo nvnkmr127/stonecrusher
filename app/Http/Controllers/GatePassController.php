@@ -543,10 +543,8 @@ class GatePassController extends Controller
         \App\Services\DayClosureService::checkAllowed($gate_pass->date);
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($gate_pass) {
-            // Check if there is a transaction and maybe prevent delete or delete transaction?
-            if ($gate_pass->transaction) {
-                $gate_pass->transaction->delete();
-            }
+            // Delete all associated client transactions (debits and credit payments)
+            \App\Models\ClientTransaction::where('gate_pass_id', $gate_pass->id)->delete();
 
             $gate_pass->delete();
 

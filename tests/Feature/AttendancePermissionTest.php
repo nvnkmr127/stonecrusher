@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Employee;
 use App\Models\Attendance;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -16,10 +17,14 @@ class AttendancePermissionTest extends TestCase
     protected $admin;
     protected $manager;
     protected $user;
+    protected $employee;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Reset cached roles and permissions
+        $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
         // Setup Permissions (Same as Seeder logic)
         $permissions = ['attendance.view_any', 'attendance.mark', 'attendance.edit'];
@@ -44,6 +49,9 @@ class AttendancePermissionTest extends TestCase
 
         $this->user = User::factory()->create();
         $this->user->assignRole('user');
+
+        // Create Employee
+        $this->employee = Employee::factory()->create();
     }
 
     public function test_admin_has_full_access()
@@ -51,7 +59,7 @@ class AttendancePermissionTest extends TestCase
         $this->actingAs($this->admin)->get(route('attendance.index'))->assertStatus(200);
         $this->actingAs($this->admin)->get(route('attendance.create'))->assertStatus(200);
         $this->actingAs($this->admin)->post(route('attendance.store'), [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'status' => 'present'
         ])->assertRedirect(route('attendance.index'));
@@ -59,7 +67,7 @@ class AttendancePermissionTest extends TestCase
         $attendance = Attendance::first();
         $this->actingAs($this->admin)->get(route('attendance.edit', $attendance))->assertStatus(200);
         $this->actingAs($this->admin)->put(route('attendance.update', $attendance), [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'status' => 'absent',
             'remarks' => 'Changed by Admin'
@@ -74,7 +82,7 @@ class AttendancePermissionTest extends TestCase
 
         // Can Store (Mark Check-in)
         $this->actingAs($this->manager)->post(route('attendance.store'), [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'check_in' => '09:00',
             'status' => 'present' // Will be auto-calculated but passed for validation
@@ -85,7 +93,7 @@ class AttendancePermissionTest extends TestCase
         // Manager Update: Can update ONLY if check_out is null (Marking Check-out)
         // Currently check_out is null.
         $this->actingAs($this->manager)->put(route('attendance.update', $attendance), [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'check_in' => '09:00',
             'check_out' => '18:00',
@@ -98,7 +106,7 @@ class AttendancePermissionTest extends TestCase
 
         // Manager try to edit AGAIN (changing status/remarks after checkout is done) -> Should fail
         $response = $this->actingAs($this->manager)->put(route('attendance.update', $attendance), [
-            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
             'date' => now()->format('Y-m-d'),
             'check_in' => '09:00',
             'check_out' => '18:00',

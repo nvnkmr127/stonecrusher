@@ -13,7 +13,7 @@ class SalaryAdvance extends Model
     use SoftDeletes, LogsActivity;
 
     protected $fillable = [
-        'user_id',
+        'employee_id',
         'amount',
         'payment_mode',
         'date',
@@ -25,15 +25,15 @@ class SalaryAdvance extends Model
         'amount' => 'decimal:2',
     ];
 
-    public function user(): BelongsTo
+    public function employee(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Employee::class);
     }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['user_id', 'amount', 'date', 'remarks'])
+            ->logOnly(['employee_id', 'amount', 'date', 'remarks'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

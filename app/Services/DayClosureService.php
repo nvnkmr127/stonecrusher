@@ -19,7 +19,7 @@ class DayClosureService
     public static function isClosed($date)
     {
         $date = Carbon::parse($date)->format('Y-m-d');
-        return DailyClosing::where('date', $date)->where('status', 'closed')->exists();
+        return DailyClosing::whereDate('date', $date)->where('status', 'closed')->exists();
     }
 
     /**
@@ -71,16 +71,27 @@ class DayClosureService
 
         $totals = self::getTotalsForDate($dateStr);
 
-        return DailyClosing::updateOrCreate(
-            ['date' => $dateStr],
-            [
+        $closing = DailyClosing::whereDate('date', $dateStr)->first();
+        if ($closing) {
+            $closing->update([
                 'total_sales' => $totals['total_sales'],
                 'total_cash' => $totals['total_cash'],
                 'total_expenses' => $totals['total_expenses'],
                 'status' => 'closed',
                 'closed_by_user_id' => $userId,
                 'notes' => $notes,
-            ]
-        );
+            ]);
+            return $closing;
+        }
+
+        return DailyClosing::create([
+            'date' => $dateStr,
+            'total_sales' => $totals['total_sales'],
+            'total_cash' => $totals['total_cash'],
+            'total_expenses' => $totals['total_expenses'],
+            'status' => 'closed',
+            'closed_by_user_id' => $userId,
+            'notes' => $notes,
+        ]);
     }
 }

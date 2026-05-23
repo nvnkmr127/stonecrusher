@@ -8,6 +8,9 @@ use App\Models\MetalType;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Models\OperationalUnit;
+use App\Enums\ActivityType;
+use App\Enums\GatePassStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Spatie\Permission\Models\Role;
@@ -24,7 +27,7 @@ class DistanceTransportTest extends TestCase
         Setting::set('rate_per_km', 10);
 
         // Create admin role if not exists (RefreshDatabase might wipe it)
-        Role::create(['name' => 'admin']);
+        Role::firstOrCreate(['name' => 'admin']);
     }
 
     public function test_can_create_gate_pass_with_distance_and_transport_cost()
@@ -36,24 +39,41 @@ class DistanceTransportTest extends TestCase
         $vehicle = Vehicle::create(['registration_number' => 'TS01AB1234', 'type' => 'Truck', 'model' => 'Ashok Leyland']);
         $metalType = MetalType::create(['name' => 'Test Metal', 'unit_price' => 100]);
 
+        $quarry = OperationalUnit::firstOrCreate(
+            ['code' => 'QRY'],
+            ['name' => 'Quarry Unit', 'is_active' => true]
+        );
+        $crusher = OperationalUnit::firstOrCreate(
+            ['code' => 'CRS'],
+            ['name' => 'Crusher Unit', 'is_active' => true]
+        );
+
+        $date = now()->format('Y-m-d');
+        $expectedPrefix = 'GP-' . \Carbon\Carbon::parse($date)->format('Ymd');
+        $gatePassNumber = $expectedPrefix . '001';
+
         $response = $this->actingAs($user)->post(route('gate-passes.store'), [
-            'gate_pass_number' => 'GP-TEST-001',
-            'date' => now(),
+            'gate_pass_number' => $gatePassNumber,
+            'date' => $date,
             'vehicle_id' => $vehicle->id,
             'client_id' => $client->id,
-            'status' => 'pending',
+            'status' => GatePassStatus::PENDING->value,
+            'activity_type' => ActivityType::MATERIAL_TRANSFER->value,
+            'source_unit_id' => $quarry->id,
+            'destination_unit_id' => $crusher->id,
+            'trips' => 1,
             'delivery_location' => 'Test Location',
             'distance_km' => 50,
-            'transport_cost' => 500, // 50 * 10
+            'lead' => 500, // 50 * 10
         ]);
 
         $response->assertRedirect(route('gate-passes.index'));
 
         $this->assertDatabaseHas('gate_passes', [
-            'gate_pass_number' => 'GP-TEST-001',
+            'gate_pass_number' => $gatePassNumber,
             'delivery_location' => 'Test Location',
             'distance_km' => 50,
-            'transport_cost' => 500,
+            'lead' => 500,
         ]);
     }
 
@@ -66,9 +86,22 @@ class DistanceTransportTest extends TestCase
         $vehicle = Vehicle::create(['registration_number' => 'TS02CD5678', 'type' => 'Truck', 'model' => 'Tata']);
         $metalType = MetalType::create(['name' => 'Test Metal 2', 'unit_price' => 200]);
 
+        $quarry = OperationalUnit::firstOrCreate(
+            ['code' => 'QRY'],
+            ['name' => 'Quarry Unit', 'is_active' => true]
+        );
+        $crusher = OperationalUnit::firstOrCreate(
+            ['code' => 'CRS'],
+            ['name' => 'Crusher Unit', 'is_active' => true]
+        );
+
+        $date = now()->format('Y-m-d');
+        $expectedPrefix = 'GP-' . \Carbon\Carbon::parse($date)->format('Ymd');
+        $gatePassNumber = $expectedPrefix . 'UPDATE';
+
         $gatePass = GatePass::create([
-            'gate_pass_number' => 'GP-TEST-UPDATE',
-            'date' => now(),
+            'gate_pass_number' => $gatePassNumber,
+            'date' => $date,
             'vehicle_id' => $vehicle->id,
             'client_id' => $client->id,
             'metal_type_id' => $metalType->id,
@@ -76,29 +109,37 @@ class DistanceTransportTest extends TestCase
             'gross_weight' => 10,
             'tare_weight' => 5,
             'net_weight' => 5,
-            'status' => 'pending',
+            'status' => GatePassStatus::PENDING->value,
+            'activity_type' => ActivityType::MATERIAL_TRANSFER->value,
+            'source_unit_id' => $quarry->id,
+            'destination_unit_id' => $crusher->id,
+            'trips' => 1,
         ]);
 
         $response = $this->actingAs($user)->put(route('gate-passes.update', $gatePass), [
-            'date' => now(),
+            'date' => $date,
             'vehicle_id' => $gatePass->vehicle_id,
             'client_id' => $gatePass->client_id,
             'metal_type_id' => $metalType->id,
-            'driver_name' => 'Driver Name',
-            'status' => 'pending',
+            'driver_name' => 'Original Driver',
+            'status' => GatePassStatus::PENDING->value,
+            'activity_type' => ActivityType::MATERIAL_TRANSFER->value,
+            'source_unit_id' => $quarry->id,
+            'destination_unit_id' => $crusher->id,
+            'trips' => 1,
             'delivery_location' => 'Updated Location',
             'distance_km' => 100,
-            'transport_cost' => 1000,
+            'lead' => 1000,
         ]);
 
         $response->assertRedirect(route('gate-passes.index'));
 
         $this->assertDatabaseHas('gate_passes', [
             'id' => $gatePass->id,
-            'driver_name' => 'Driver Name',
+            'driver_name' => 'Original Driver',
             'delivery_location' => 'Updated Location',
             'distance_km' => 100,
-            'transport_cost' => 1000,
+            'lead' => 1000,
         ]);
     }
 }

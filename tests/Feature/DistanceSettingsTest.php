@@ -31,6 +31,7 @@ class DistanceSettingsTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('settings.update'), [
             'company_name' => 'Test Co',
+            'app_timezone' => 'UTC',
             'currency_symbol' => '$',
             'financial_year' => '2025',
             'date_format' => 'Y-m-d',
@@ -56,7 +57,7 @@ class DistanceSettingsTest extends TestCase
 
         Setting::set('default_round_trip', 1);
 
-        $response = $this->actingAs($user)->get(route('gate-passes.create'));
+        $response = $this->actingAs($user)->get(route('gate-passes.calculator'));
         $response->assertStatus(200);
         // We check if the JavaScript variable is initialized correctly
         $response->assertSee("isRoundTrip: true");

@@ -142,8 +142,10 @@
                                     @forelse($negativeCases as $case)
                                         <tr>
                                             <td>
-                                                <div class="fw-bold">{{ $case['user']->name }}</div>
-                                                <div class="small text-muted">{{ $case['user']->email }}</div>
+                                                <div class="fw-bold">{{ $case['employee']->name }}</div>
+                                                <div class="small text-muted">
+                                                    {{ ucfirst($case['employee']->role) }}{{ $case['employee']->user ? ' (' . $case['employee']->user->email . ')' : '' }}
+                                                </div>
                                             </td>
                                             <td>
                                                 <span class="badge bg-danger">IN DEBT</span>
@@ -152,7 +154,7 @@
                                                 ₹ {{ number_format(abs($case['balance']), 2) }}
                                             </td>
                                             <td class="text-end">
-                                                <a href="{{ route('attendance.report', ['employee_id' => $case['user']->id]) }}"
+                                                <a href="{{ route('attendance.report', ['employee_id' => $case['employee']->id]) }}"
                                                     class="btn btn-sm btn-ghost-primary">View History</a>
                                             </td>
                                         </tr>

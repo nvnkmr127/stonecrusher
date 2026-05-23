@@ -444,4 +444,83 @@ class ReportController extends Controller
 
         return view('reports.vehicle_usage', compact('usageData', 'startDate', 'endDate'));
     }
+
+    /**
+     * Operational Profit and Loss Report
+     */
+    public function operationalProfitLoss(Request $request)
+    {
+        $month = $request->input('month', Carbon::now()->month);
+        $year = $request->input('year', Carbon::now()->year);
+
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth()->toDateString();
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+
+        $quarry = \App\Models\OperationalUnit::where('code', 'QRY')->first();
+        $crusher = \App\Models\OperationalUnit::where('code', 'CRS')->first();
+
+        $quarryData = [
+            'revenues' => collect(),
+            'expenses' => collect(),
+            'total_revenue' => 0,
+            'total_expense' => 0,
+            'net' => 0,
+        ];
+
+        $crusherData = [
+            'revenues' => collect(),
+            'expenses' => collect(),
+            'total_revenue' => 0,
+            'total_expense' => 0,
+            'net' => 0,
+        ];
+
+        if ($quarry) {
+            $qRecords = \App\Models\OperationalRecord::with('tag')
+                ->where('operational_unit_id', $quarry->id)
+                ->whereBetween('date', [$startDate, $endDate])
+                ->get();
+
+            $grouped = $qRecords->groupBy(fn($r) => $r->tag->name ?? 'Uncategorized');
+            foreach ($grouped as $name => $items) {
+                $type = $items->first()->tag->type ?? 'expense';
+                $amount = $items->sum('amount');
+                if ($type === 'revenue') {
+                    $quarryData['revenues']->push((object)['name' => $name, 'amount' => $amount]);
+                    $quarryData['total_revenue'] += $amount;
+                } else {
+                    $quarryData['expenses']->push((object)['name' => $name, 'amount' => $amount]);
+                    $quarryData['total_expense'] += $amount;
+                }
+            }
+            $quarryData['net'] = $quarryData['total_revenue'] - $quarryData['total_expense'];
+        }
+
+        if ($crusher) {
+            $cRecords = \App\Models\OperationalRecord::with('tag')
+                ->where('operational_unit_id', $crusher->id)
+                ->whereBetween('date', [$startDate, $endDate])
+                ->get();
+
+            $grouped = $cRecords->groupBy(fn($r) => $r->tag->name ?? 'Uncategorized');
+            foreach ($grouped as $name => $items) {
+                $type = $items->first()->tag->type ?? 'expense';
+                $amount = $items->sum('amount');
+                if ($type === 'revenue') {
+                    $crusherData['revenues']->push((object)['name' => $name, 'amount' => $amount]);
+                    $crusherData['total_revenue'] += $amount;
+                } else {
+                    $crusherData['expenses']->push((object)['name' => $name, 'amount' => $amount]);
+                    $crusherData['total_expense'] += $amount;
+                }
+            }
+            $crusherData['net'] = $crusherData['total_revenue'] - $crusherData['total_expense'];
+        }
+
+        $overallNet = $quarryData['net'] + $crusherData['net'];
+
+        return view('reports.operational_profit_loss', compact(
+            'month', 'year', 'quarry', 'crusher', 'quarryData', 'crusherData', 'overallNet'
+        ));
+    }
 }

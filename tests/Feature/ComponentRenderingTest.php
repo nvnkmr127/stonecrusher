@@ -19,6 +19,8 @@ class ComponentRenderingTest extends TestCase
 
         Role::create(['name' => 'admin']);
         Role::create(['name' => 'user']);
+
+        \Illuminate\Support\Facades\View::share('errors', new \Illuminate\Support\ViewErrorBag);
     }
 
     public function test_admin_dashboard_renders_components()
@@ -29,9 +31,9 @@ class ComponentRenderingTest extends TestCase
         $response = $this->actingAs($admin)->get('/admin/dashboard');
 
         $response->assertStatus(200);
-        $response->assertSee('Component Library Examples');
-        $response->assertSee('Success!');
-        $response->assertSee('Primary Button');
+        $response->assertSee('Admin Dashboard');
+        $response->assertSee('Projects Overview');
+        $response->assertSee('Total Clients');
     }
 
     public function test_user_dashboard_renders_components()
@@ -42,6 +44,7 @@ class ComponentRenderingTest extends TestCase
         $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertStatus(200);
+        $response->assertSee('User Dashboard');
         $response->assertSee('My Profile');
         $response->assertSee('Activity Summary');
         $response->assertSee('Contact Support');
@@ -49,38 +52,43 @@ class ComponentRenderingTest extends TestCase
 
     public function test_alert_component_renders_correctly()
     {
-        $admin = User::factory()->create();
-        $admin->assignRole('admin');
+        $view = $this->blade('<x-alert type="success">Success Message</x-alert>');
+        $view->assertSee('alert-success');
+        $view->assertSee('Success Message');
 
-        $response = $this->actingAs($admin)->get('/admin/dashboard');
+        $view = $this->blade('<x-alert type="danger">Danger Message</x-alert>');
+        $view->assertSee('alert-danger');
+        $view->assertSee('Danger Message');
 
-        $response->assertSee('alert-success');
-        $response->assertSee('alert-info');
-        $response->assertSee('alert-warning');
-        $response->assertSee('alert-danger');
+        $view = $this->blade('<x-alert type="warning">Warning Message</x-alert>');
+        $view->assertSee('alert-warning');
+        $view->assertSee('Warning Message');
+
+        $view = $this->blade('<x-alert type="info">Info Message</x-alert>');
+        $view->assertSee('alert-info');
+        $view->assertSee('Info Message');
     }
 
     public function test_table_component_renders_users()
     {
-        $admin = User::factory()->create();
-        $admin->assignRole('admin');
-
-        $response = $this->actingAs($admin)->get('/admin/dashboard');
-
-        $response->assertSee('table-responsive');
-        $response->assertSee($admin->email);
+        $view = $this->blade('<x-table><thead><tr><th>Email</th></tr></thead><tbody><tr><td>test@example.com</td></tr></tbody></x-table>');
+        $view->assertSee('table-responsive');
+        $view->assertSee('test@example.com');
     }
 
     public function test_form_components_render()
     {
-        $admin = User::factory()->create();
-        $admin->assignRole('admin');
+        $view = $this->blade('<x-form.input name="test_input" label="Input Label" />');
+        $view->assertSee('form-control');
+        $view->assertSee('Input Label');
 
-        $response = $this->actingAs($admin)->get('/admin/dashboard');
+        $view = $this->blade('<x-form.select name="test_select" label="Select Label" :options="[]" />');
+        $view->assertSee('form-select');
+        $view->assertSee('Select Label');
 
-        $response->assertSee('form-control');
-        $response->assertSee('form-select');
-        $response->assertSee('form-check');
+        $view = $this->blade('<x-form.checkbox name="test_check" label="Check Label" />');
+        $view->assertSee('form-check');
+        $view->assertSee('Check Label');
     }
 
     public function test_sidebar_shows_correct_menu_for_admin()
@@ -90,7 +98,8 @@ class ComponentRenderingTest extends TestCase
 
         $response = $this->actingAs($admin)->get('/admin/dashboard');
 
-        $response->assertSee('User Management');
+        $response->assertSee('Manage Users');
+        $response->assertSee('Global Setup');
         $response->assertDontSee('My Orders');
     }
 
@@ -101,7 +110,7 @@ class ComponentRenderingTest extends TestCase
 
         $response = $this->actingAs($user)->get('/dashboard');
 
-        $response->assertSee('My Orders');
-        $response->assertDontSee('User Management');
+        $response->assertDontSee('Manage Users');
+        $response->assertDontSee('Global Setup');
     }
 }

@@ -66,6 +66,15 @@ class DailyClosingController extends Controller
             'reason' => 'required|string|min:5',
         ]);
 
+        if (!$dailyClosing->exists) {
+            $id = $request->route('daily_closing');
+            if ($id instanceof DailyClosing) {
+                $dailyClosing = $id;
+            } else {
+                $dailyClosing = DailyClosing::findOrFail($id);
+            }
+        }
+
         $dailyClosing->update([
             'status' => 'reopened',
             'notes' => $dailyClosing->notes . "\n[Reopened by " . auth()->user()->name . " on " . now() . "]: " . $request->reason,

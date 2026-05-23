@@ -193,6 +193,39 @@
                     </div>
                 </li>
 
+                <!-- Quarry & Crusher Section -->
+                <li class="nav-item">
+                    <div class="sidebar-section-header">Quarry & Crusher</div>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('quarry.index') ? 'active' : '' }}" href="{{ route('quarry.index') }}">
+                        <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-shovel" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M17 4l3 3" />
+                                <path d="M18.5 5.5l-8.5 8.5" />
+                                <path d="M8.5 12.5l-2.5 2.5a2 2 0 1 0 2.828 2.828l2.5 -2.5" />
+                                <path d="M13 16l-3 -3" />
+                                <path d="M3 21h4" />
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">Quarry Ops</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('crusher.index') ? 'active' : '' }}" href="{{ route('crusher.index') }}">
+                        <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hammer" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M11.414 10l-7.383 7.414a2 2 0 1 0 2.829 2.828l7.414 -7.386" />
+                                <path d="M16.828 8.172l-1.414 -1.414l1.414 -1.414l2.829 2.829l-1.414 1.414z" />
+                                <path d="M12.586 9.414l-1.414 -1.414l4.242 -4.243l1.414 1.414z" />
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">Crusher Ops</span>
+                    </a>
+                </li>
+
                 <!-- Fleet & Inventory Section -->
                 <li class="nav-item">
                     <div class="sidebar-section-header">Vehicles & Fuel</div>
@@ -277,6 +310,8 @@
                             href="{{ route('reports.daily') }}">Daily Sales</a>
                         <a class="dropdown-item {{ request()->routeIs('reports.monthly') ? 'active' : '' }}"
                             href="{{ route('reports.monthly') }}">Monthly Sales</a>
+                        <a class="dropdown-item {{ request()->routeIs('reports.operational-profit-loss') ? 'active' : '' }}"
+                            href="{{ route('reports.operational-profit-loss') }}">Operational P&L</a>
                         <a class="dropdown-item {{ request()->routeIs('reports.outstanding') ? 'active' : '' }}"
                             href="{{ route('reports.outstanding') }}">Debt & Advance</a>
                         <a class="dropdown-item {{ request()->routeIs('gate-passes.distance-report') ? 'active' : '' }}"
@@ -292,6 +327,36 @@
 
                 <!-- Administration Section -->
                 @role('admin')
+                <li class="nav-item">
+                    <div class="sidebar-section-header">Master Data</div>
+                </li>
+                <li class="nav-item dropdown"
+                    x-data="{ open: {{ (request()->routeIs('clients.*') || request()->routeIs('vehicles.*') || request()->routeIs('metal-types.*') || request()->routeIs('projects.*') || request()->routeIs('employees.*')) ? 'true' : 'false' }} }">
+                    <a class="nav-link dropdown-toggle"
+                        :class="{ 'show': open, 'active': {{ (request()->routeIs('clients.*') || request()->routeIs('vehicles.*') || request()->routeIs('metal-types.*') || request()->routeIs('projects.*') || request()->routeIs('employees.*')) ? 'true' : 'false' }} }"
+                        href="#navbar-master-data" @click.prevent="open = !open" role="button" :aria-expanded="open">
+                        <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" />
+                                <path d="M12 12l8 -4.5" />
+                                <path d="M12 12l0 9" />
+                                <path d="M12 12l-8 -4.5" />
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">Master Data</span>
+                    </a>
+                    <div class="dropdown-menu" :class="{ 'show': open }">
+                        <a class="dropdown-item {{ request()->routeIs('clients.*') ? 'active' : '' }}" href="{{ route('clients.index') }}">Clients</a>
+                        <a class="dropdown-item {{ request()->routeIs('vehicles.*') ? 'active' : '' }}" href="{{ route('vehicles.index') }}">Vehicles</a>
+                        <a class="dropdown-item {{ request()->routeIs('metal-types.*') ? 'active' : '' }}" href="{{ route('metal-types.index') }}">Metal Types</a>
+                        <a class="dropdown-item {{ request()->routeIs('projects.*') ? 'active' : '' }}" href="{{ route('projects.index') }}">Projects</a>
+                        <a class="dropdown-item {{ request()->routeIs('employees.*') ? 'active' : '' }}" href="{{ route('employees.index') }}">Employees</a>
+                    </div>
+                </li>
+
                 <li class="nav-item">
                     <div class="sidebar-section-header">System</div>
                 </li>

@@ -24,6 +24,7 @@ class GatePass extends Model
         'metal_type_id',
         'trips',
         'driver_name',
+        'driver_id',
         'gross_weight',
         'tare_weight',
         'net_weight',
@@ -81,6 +82,11 @@ class GatePass extends Model
         return $this->belongsTo(MetalType::class);
     }
 
+    public function driver()
+    {
+        return $this->belongsTo(Employee::class, 'driver_id');
+    }
+
     public function sourceUnit()
     {
         return $this->belongsTo(OperationalUnit::class, 'source_unit_id');
@@ -94,6 +100,11 @@ class GatePass extends Model
     public function transaction()
     {
         return $this->hasOne(ClientTransaction::class);
+    }
+
+    public function operationalRecord()
+    {
+        return $this->hasOne(OperationalRecord::class);
     }
 
     public function getActivitylogOptions(): LogOptions

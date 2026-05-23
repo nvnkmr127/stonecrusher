@@ -13,7 +13,7 @@ class Attendance extends Model
     use HasFactory, LogsActivity;
 
     protected $fillable = [
-        'user_id',
+        'employee_id',
         'date',
         'check_in',
         'check_out',
@@ -28,15 +28,15 @@ class Attendance extends Model
 
 
 
-    public function user()
+    public function employee()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Employee::class);
     }
 
     public function getActivitylogOptions(): \Spatie\Activitylog\LogOptions
     {
         return \Spatie\Activitylog\LogOptions::defaults()
-            ->logOnly(['user_id', 'date', 'check_in', 'check_out', 'status', 'remarks'])
+            ->logOnly(['employee_id', 'date', 'check_in', 'check_out', 'status', 'remarks'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

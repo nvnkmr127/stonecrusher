@@ -56,7 +56,7 @@
                         <tbody>
                             @forelse($dailyData as $data)
                                 <tr>
-                                    <td>{{ $data['user']->name }}</td>
+                                    <td>{{ $data['employee']->name }}</td>
                                     <td class="text-center">
                                         <span
                                             class="badge bg-{{ match (strtolower($data['status_label'])) { 'present' => 'success', 'late' => 'warning', 'half day' => 'orange', 'absent' => 'danger', 'leave' => 'primary', default => 'secondary'} }} text-white">
@@ -65,7 +65,7 @@
                                     </td>
                                     <td class="text-muted">{{ $data['remarks'] ?? '-' }}</td>
                                     <td>
-                                        <a href="{{ route('salary-advances.create', ['user_id' => $data['user']->id, 'date' => $date]) }}"
+                                        <a href="{{ route('salary-advances.create', ['employee_id' => $data['employee']->id, 'date' => $date]) }}"
                                             class="btn btn-sm btn-outline-warning">Record</a>
                                     </td>
                                 </tr>

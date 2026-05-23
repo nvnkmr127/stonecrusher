@@ -19,6 +19,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register Observers
+        \App\Models\DieselEntry::observe(\App\Observers\DieselEntryObserver::class);
+        \App\Models\GatePass::observe(\App\Observers\GatePassObserver::class);
+        \App\Models\CrusherExpense::observe(\App\Observers\CrusherExpenseObserver::class);
+        \App\Models\QuarryDrillingLog::observe(\App\Observers\QuarryDrillingLogObserver::class);
+        \App\Models\QuarrySecondaryBlasting::observe(\App\Observers\QuarrySecondaryBlastingObserver::class);
+        \App\Models\QuarryLabourSheet::observe(\App\Observers\QuarryLabourSheetObserver::class);
+        \App\Models\QuarryBlast::observe(\App\Observers\QuarryBlastObserver::class);
+        \App\Models\QuarryBlastingMaterialUsed::observe(\App\Observers\QuarryBlastingMaterialUsedObserver::class);
+        \App\Models\OperationalRecord::observe(\App\Observers\OperationalRecordObserver::class);
+        \App\Models\ClientTransaction::observe(\App\Observers\ClientTransactionObserver::class);
+
         // Register Policies
         \Illuminate\Support\Facades\Gate::policy(\App\Models\Attendance::class, \App\Policies\AttendancePolicy::class);
 

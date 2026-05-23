@@ -155,18 +155,35 @@
                             <h3 class="card-title fw-bold">Recent Transactions</h3>
                         </div>
                         <div class="col-auto d-print-none">
-                            <form method="GET" action="{{ route('clients.show', $client) }}" class="d-flex gap-2">
+                            <form method="GET" action="{{ route('clients.show', $client) }}" class="d-flex flex-wrap gap-2">
                                 <input type="hidden" name="month" value="{{ $selectedMonth }}">
-                                <div class="input-group input-group-sm">
+                                <div class="input-group input-group-sm" style="width: auto;">
                                     <span class="input-group-text bg-white border-end-0"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-event" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path><path d="M16 3l0 4"></path><path d="M8 3l0 4"></path><path d="M4 11l16 0"></path><path d="M8 15l2 2l4 -4"></path></svg></span>
                                     <input type="date" name="start_date" class="form-control border-start-0" value="{{ request('start_date') }}" placeholder="From">
                                 </div>
-                                <div class="input-group input-group-sm">
+                                <div class="input-group input-group-sm" style="width: auto;">
                                     <span class="input-group-text bg-white border-end-0"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-event" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path><path d="M16 3l0 4"></path><path d="M8 3l0 4"></path><path d="M4 11l16 0"></path><path d="M8 15l2 2l4 -4"></path></svg></span>
                                     <input type="date" name="end_date" class="form-control border-start-0" value="{{ request('end_date') }}" placeholder="To">
                                 </div>
+                                <div class="input-group input-group-sm" style="width: auto; min-width: 110px;">
+                                    <select name="type" class="form-select">
+                                        <option value="">All Types</option>
+                                        <option value="debit" {{ request('type') == 'debit' ? 'selected' : '' }}>Sale</option>
+                                        <option value="credit" {{ request('type') == 'credit' ? 'selected' : '' }}>Payment</option>
+                                    </select>
+                                </div>
+                                <div class="input-group input-group-sm" style="width: auto; min-width: 130px;">
+                                    <select name="vehicle_id" class="form-select">
+                                        <option value="">All Vehicles</option>
+                                        @foreach($vehicles as $v)
+                                            <option value="{{ $v->id }}" {{ request('vehicle_id') == $v->id ? 'selected' : '' }}>
+                                                {{ $v->registration_number }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 <button type="submit" class="btn btn-sm btn-primary">Filter</button>
-                                @if(request('start_date'))
+                                @if(request('start_date') || request('end_date') || request('type') || request('vehicle_id'))
                                     <a href="{{ route('clients.show', $client) }}" class="btn btn-sm btn-light">Reset</a>
                                 @endif
                             </form>
@@ -178,10 +195,12 @@
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Details</th>
-                                <th>Ref / Mode</th>
-                                <th class="text-end">Credit (In)</th>
-                                <th class="text-end">Debit (Out)</th>
+                                <th>Type</th>
+                                <th>Vehicle</th>
+                                <th class="text-end">Qty</th>
+                                <th class="text-end">Debit</th>
+                                <th class="text-end">Credit</th>
+                                <th class="text-end">Balance</th>
                                 <th class="text-end d-print-none">Actions</th>
                             </tr>
                         </thead>
@@ -190,28 +209,38 @@
                                 <tr>
                                     <td class="small fw-bold">{{ $txn->transaction_date->format('d M, Y') }}</td>
                                     <td>
-                                        <div class="fw-bold">{{ $txn->description ?? 'No Description' }}</div>
-                                        <div class="text-muted small text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.05em;">
-                                            {{ $txn->transaction_type }}
-                                        </div>
+                                        <div class="fw-bold">{{ $txn->transaction_type === 'debit' ? 'Sale' : 'Payment' }}</div>
+                                        @if($txn->description)
+                                            <div class="text-muted small text-truncate" style="max-width: 180px;">{{ $txn->description }}</div>
+                                        @endif
                                     </td>
-                                    <td>
-                                        <div class="small fw-medium">{{ $txn->payment_mode ?? '-' }}</div>
-                                        <div class="text-muted small">{{ $txn->reference_number ?? '-' }}</div>
-                                    </td>
-                                    <td class="text-end">
-                                        @if($txn->transaction_type === 'credit')
-                                            <span class="text-green fw-bold">₹ {{ number_format($txn->amount, 2) }}</span>
+                                    <td>{{ $txn->gatePass->vehicle->registration_number ?? $txn->gatePass->manual_vehicle_number ?? '-' }}</td>
+                                    <td class="text-end fw-semibold">
+                                        @if($txn->gatePass)
+                                            {{ number_format($txn->gatePass->loading_quantity > 0 ? $txn->gatePass->loading_quantity : $txn->gatePass->net_weight, 2) }} <span class="text-muted small">CFT</span>
                                         @else
                                             -
                                         @endif
                                     </td>
                                     <td class="text-end">
                                         @if($txn->transaction_type === 'debit')
-                                            <span class="text-red fw-bold">₹ {{ number_format($txn->amount, 2) }}</span>
+                                            <span class="text-red fw-semibold">₹ {{ number_format($txn->amount, 2) }}</span>
                                         @else
                                             -
                                         @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @if($txn->transaction_type === 'credit')
+                                            <span class="text-green fw-semibold">₹ {{ number_format($txn->amount, 2) }}</span>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="{{ $txn->running_balance >= 0 ? 'text-green' : 'text-red' }} fw-bold">
+                                            ₹ {{ number_format(abs($txn->running_balance), 2) }}
+                                            <span style="font-size: 0.7rem;">{{ $txn->running_balance >= 0 ? 'Cr' : 'Dr' }}</span>
+                                        </span>
                                     </td>
                                     <td class="text-end d-print-none">
                                         @if(auth()->user()->hasRole('admin'))
@@ -231,7 +260,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center py-5">
+                                    <td colspan="8" class="text-center py-5">
                                         <div class="text-muted mb-2">No transactions matching your criteria.</div>
                                         <a href="{{ route('clients.transactions.create', $client) }}" class="btn btn-sm btn-primary">Record First Transaction</a>
                                     </td>

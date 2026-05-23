@@ -15,10 +15,10 @@
                     <div class="row">
                         <div class="col-md-6">
                             <x-form.select
-                                name="user_id"
+                                name="employee_id"
                                 label="Staff Member"
-                                :options="$users->pluck('name', 'id')->toArray()"
-                                :selected="old('user_id', $attendance->user_id)"
+                                :options="$employees->pluck('name', 'id')->toArray()"
+                                :selected="old('employee_id', $attendance->employee_id)"
                                 required
                             />
                         </div>

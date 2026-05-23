@@ -38,7 +38,7 @@
                         @forelse($advances as $advance)
                             <tr>
                                 <td>{{ $advance->date->format('d M, Y') }}</td>
-                                <td>{{ $advance->user->name }}</td>
+                                <td>{{ $advance->employee->name }}</td>
                                 <td class="fw-bold">₹ {{ number_format($advance->amount, 2) }}</td>
                                 <td>
                                     @if($advance->payment_mode)

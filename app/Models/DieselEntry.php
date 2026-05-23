@@ -20,11 +20,17 @@ class DieselEntry extends Model
         'work_type',
         'location',
         'driver_name',
+        'driver_id',
+        'vendor_id',
+        'is_deducted',
+        'deducted_at_invoice_type',
+        'deducted_at_invoice_id',
     ];
 
     protected $casts = [
         'date' => 'date',
         'liters' => 'decimal:2',
+        'is_deducted' => 'boolean',
     ];
 
     public function vehicle()
@@ -40,6 +46,21 @@ class DieselEntry extends Model
     public function gatePass()
     {
         return $this->belongsTo(GatePass::class);
+    }
+
+    public function driver()
+    {
+        return $this->belongsTo(Employee::class, 'driver_id');
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
+    public function operationalRecord()
+    {
+        return $this->hasOne(OperationalRecord::class);
     }
 
     public function getActivitylogOptions(): LogOptions

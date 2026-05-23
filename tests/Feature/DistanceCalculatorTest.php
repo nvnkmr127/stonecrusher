@@ -48,7 +48,8 @@ class DistanceCalculatorTest extends TestCase
         $response = $this->actingAs($user)->getJson(route('gate-passes.calculator', [
             'lat' => 17.4399,
             'lon' => 78.4983,
-            'json' => 1
+            'json' => 1,
+            'cft' => 1.0,
         ]));
 
         $response->assertStatus(200)

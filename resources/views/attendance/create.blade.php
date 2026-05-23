@@ -13,8 +13,8 @@
 
                     <div class="row">
                         <div class="col-md-6">
-                            <x-form.select name="user_id" label="Staff Member" :options="$users->pluck('name', 'id')->toArray()"
-                                :selected="old('user_id')" required />
+                            <x-form.select name="employee_id" label="Staff Member" :options="$employees->pluck('name', 'id')->toArray()"
+                                :selected="old('employee_id', request('employee_id'))" required />
                         </div>
                         <div class="col-md-6">
                             <x-form.input name="date" label="Date" type="date" :value="old('date', date('Y-m-d'))"

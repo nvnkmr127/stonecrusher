@@ -149,8 +149,10 @@
                     @forelse($reportData as $data)
                         <tr>
                             <td>
-                                <div class="fw-bold fs-3 text-dark">{{ $data['user']->name }}</div>
-                                <div class="small text-muted">{{ $data['user']->email }}</div>
+                                <div class="fw-bold fs-3 text-dark">{{ $data['employee']->name }}</div>
+                                <div class="small text-muted">
+                                    {{ ucfirst($data['employee']->role) }}{{ $data['employee']->user ? ' (' . $data['employee']->user->email . ')' : '' }}
+                                </div>
                             </td>
                             <td class="text-center">
                                 <span class="badge bg-green-lt text-green border-0 px-2 py-1 fw-bold fs-3">{{ $data['present'] }}</span>

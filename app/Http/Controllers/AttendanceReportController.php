@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\Employee;
 use App\Models\Attendance;
 use App\Models\SalaryAdvance;
 use App\Models\PayrollPeriod;
@@ -21,7 +21,7 @@ class AttendanceReportController extends Controller
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
 
-        $employees = User::with([
+        $employees = Employee::with([
             'attendances' => function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('date', [$startDate, $endDate]);
             },
@@ -48,7 +48,7 @@ class AttendanceReportController extends Controller
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
 
-        $employees = User::with([
+        $employees = Employee::with([
             'attendances' => function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('date', [$startDate, $endDate]);
             },
@@ -81,7 +81,7 @@ class AttendanceReportController extends Controller
             $totalPayable = $monthlyNet + $carryForward;
 
             return [
-                'user' => $employee,
+                'employee' => $employee,
                 'present' => $present,
                 'late' => $late,
                 'half_day' => $halfDay,
@@ -154,7 +154,7 @@ class AttendanceReportController extends Controller
 
             foreach ($reportData as $row) {
                 fputcsv($file, [
-                    $row['user']->name,
+                    $row['employee']->name,
                     Carbon::create($year, $month, 1)->format('F Y'),
                     $payoutDate->format('F Y'),
                     $row['base_salary'],
@@ -176,18 +176,18 @@ class AttendanceReportController extends Controller
     {
         $date = $request->input('date', Carbon::today()->format('Y-m-d'));
 
-        // Fetch all users and eager load their attendance for the specific date
-        $attendances = User::with([
+        // Fetch all employees and eager load their attendance for the specific date
+        $attendances = Employee::with([
             'attendances' => function ($query) use ($date) {
                 $query->whereDate('date', $date);
             }
         ])->get();
 
         // Prepare data for the view
-        $dailyData = $attendances->map(function ($user) {
-            $attendance = $user->attendances->first(); // Should be only one per day
+        $dailyData = $attendances->map(function ($employee) {
+            $attendance = $employee->attendances->first(); // Should be only one per day
             return [
-                'user' => $user,
+                'employee' => $employee,
                 'check_in' => $attendance ? $attendance->check_in : null,
                 'check_out' => $attendance ? $attendance->check_out : null,
                 'status' => $attendance ? $attendance->status : 'absent', // Default to absent if no record? Or 'No Record'
@@ -210,7 +210,7 @@ class AttendanceReportController extends Controller
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
 
-        $employees = User::with([
+        $employees = Employee::with([
             'attendances' => function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('date', [$startDate, $endDate]);
             },
@@ -246,7 +246,7 @@ class AttendanceReportController extends Controller
             $totalPayable = $monthlyNet + $carryForward;
 
             return [
-                'user' => $employee,
+                'employee' => $employee,
                 'present' => $present,
                 'late' => $late,
                 'half_day' => $halfDay,
@@ -271,8 +271,8 @@ class AttendanceReportController extends Controller
         $currentDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
 
         // Find earliest record for this employee
-        $earliestAttendance = \App\Models\Attendance::where('user_id', $employee->id)->orderBy('date')->first();
-        $earliestAdvance = \App\Models\SalaryAdvance::where('user_id', $employee->id)->orderBy('date')->first();
+        $earliestAttendance = \App\Models\Attendance::where('employee_id', $employee->id)->orderBy('date')->first();
+        $earliestAdvance = \App\Models\SalaryAdvance::where('employee_id', $employee->id)->orderBy('date')->first();
 
         $startDate = null;
         if ($earliestAttendance && $earliestAdvance) {
@@ -297,12 +297,12 @@ class AttendanceReportController extends Controller
             $y = $iterator->year;
             $daysInM = $iterator->daysInMonth;
 
-            $attendances = \App\Models\Attendance::where('user_id', $employee->id)
+            $attendances = \App\Models\Attendance::where('employee_id', $employee->id)
                 ->whereMonth('date', $m)
                 ->whereYear('date', $y)
                 ->get();
 
-            $advs = \App\Models\SalaryAdvance::where('user_id', $employee->id)
+            $advs = \App\Models\SalaryAdvance::where('employee_id', $employee->id)
                 ->whereMonth('date', $m)
                 ->whereYear('date', $y)
                 ->sum('amount');

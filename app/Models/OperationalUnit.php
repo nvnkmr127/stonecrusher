@@ -37,4 +37,39 @@ class OperationalUnit extends Model
     {
         return $this->hasMany(DieselEntry::class);
     }
+
+    public function tags()
+    {
+        return $this->hasMany(OperationalTag::class);
+    }
+
+    public function records()
+    {
+        return $this->hasMany(OperationalRecord::class);
+    }
+
+    public function crusherExpenses()
+    {
+        return $this->hasMany(CrusherExpense::class);
+    }
+
+    public function drillingLogs()
+    {
+        return $this->hasMany(QuarryDrillingLog::class);
+    }
+
+    public function blasts()
+    {
+        return $this->hasMany(QuarryBlast::class);
+    }
+
+    public function secondaryBlastings()
+    {
+        return $this->hasMany(QuarrySecondaryBlasting::class);
+    }
+
+    public function labourSheets()
+    {
+        return $this->hasMany(QuarryLabourSheet::class);
+    }
 }

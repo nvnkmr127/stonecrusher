@@ -162,7 +162,7 @@
                     defaultRate: {{ $defaultRate }},
                     cost: 0,
                     vehicleCft: 0,
-                    isRoundTrip: false,
+                    isRoundTrip: {{ \App\Models\Setting::get('default_round_trip', 0) ? 'true' : 'false' }},
 
                     searchQuery: '',
                     searchResults: [],

@@ -72,11 +72,11 @@
                                 class="form-control" />
                         </div>
                         <div>
-                            <select name="user_id" class="form-select">
-                                <option value="">All Users</option>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
-                                        {{ $user->name }}
+                            <select name="employee_id" class="form-select">
+                                <option value="">All Employees</option>
+                                @foreach($employeesList as $emp)
+                                    <option value="{{ $emp->id }}" {{ request('employee_id') == $emp->id ? 'selected' : '' }}>
+                                        {{ $emp->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -89,7 +89,7 @@
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>User</th>
+                            <th>Employee</th>
                             <th>Status</th>
                             <th>Remarks</th>
                             <th>Actions</th>
@@ -126,10 +126,10 @@
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                             </form>
                                         @else
-                                            <a href="{{ route('attendance.create', ['user_id' => $employee->id, 'date' => $date]) }}"
+                                            <a href="{{ route('attendance.create', ['employee_id' => $employee->id, 'date' => $date]) }}"
                                                 class="btn btn-sm btn-primary">Mark</a>
                                         @endif
-                                        <a href="{{ route('salary-advances.create', ['user_id' => $employee->id]) }}"
+                                        <a href="{{ route('salary-advances.create', ['employee_id' => $employee->id]) }}"
                                             class="btn btn-sm btn-outline-warning ms-1" title="Salary Advance">₹</a>
                                     @else
                                         <span class="badge bg-secondary">Locked</span>

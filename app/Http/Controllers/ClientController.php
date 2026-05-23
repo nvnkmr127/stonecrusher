@@ -82,11 +82,39 @@ class ClientController extends Controller
         $endOfMonth = \Carbon\Carbon::parse($selectedMonth)->endOfMonth();
 
         // Transaction Query
-        $query = $client->transactions();
-        if ($request->has(['start_date', 'end_date']) && $request->start_date && $request->end_date) {
+        $query = $client->transactions()
+            ->with(['gatePass.vehicle'])
+            ->select('client_transactions.*')
+            ->selectRaw("
+                (
+                    SELECT COALESCE(SUM(CASE WHEN ct2.transaction_type = 'credit' THEN ct2.amount ELSE -ct2.amount END), 0)
+                    FROM client_transactions as ct2
+                    WHERE ct2.client_id = client_transactions.client_id
+                      AND (
+                        ct2.transaction_date < client_transactions.transaction_date
+                        OR (
+                          ct2.transaction_date = client_transactions.transaction_date 
+                          AND ct2.id <= client_transactions.id
+                        )
+                      )
+                ) as running_balance
+            ");
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('transaction_date', [$request->start_date, $request->end_date]);
         }
-        $transactions = $query->latest('transaction_date')->paginate(20, ['*'], 'tx_page')->withQueryString();
+
+        if ($request->filled('type')) {
+            $query->where('transaction_type', $request->type);
+        }
+
+        if ($request->filled('vehicle_id')) {
+            $query->whereHas('gatePass', function ($q) use ($request) {
+                $q->where('vehicle_id', $request->vehicle_id);
+            });
+        }
+
+        $transactions = $query->paginate(20, ['*'], 'tx_page')->withQueryString();
 
         // Gate Pass Query
         $gatePasses = $client->gatePasses()
@@ -124,7 +152,9 @@ class ClientController extends Controller
             $monthList[$date->format('Y-m')] = $date->format('F Y');
         }
 
-        return view('clients.show', compact('client', 'transactions', 'gatePasses', 'totalTrips', 'totalCft', 'monthlyStats', 'thisMonthStats', 'selectedMonth', 'monthList'));
+        $vehicles = \App\Models\Vehicle::orderBy('registration_number')->get();
+
+        return view('clients.show', compact('client', 'transactions', 'gatePasses', 'totalTrips', 'totalCft', 'monthlyStats', 'thisMonthStats', 'selectedMonth', 'monthList', 'vehicles'));
     }
 
     public function create()

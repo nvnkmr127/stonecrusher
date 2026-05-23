@@ -24,6 +24,9 @@ class Phase6VerificationTest extends TestCase
     use RefreshDatabase;
     use \Illuminate\Foundation\Testing\WithoutMiddleware;
 
+    protected $quarry;
+    protected $crusher;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -36,6 +39,16 @@ class Phase6VerificationTest extends TestCase
         $this->client = Client::create(['name' => 'Test Client', 'contact_person' => 'Test', 'phone' => '1234567890', 'is_active' => true]);
         $this->vehicle = Vehicle::create(['vehicle_number' => 'V-TEST', 'registration_number' => 'V-TEST', 'driver_name' => 'Driver', 'owner_name' => 'Owner', 'is_active' => true]);
         $this->metalType = MetalType::create(['name' => 'Test Metal', 'rate_per_ton' => 500, 'is_active' => true]);
+
+        $this->quarry = \App\Models\OperationalUnit::firstOrCreate(
+            ['code' => 'QRY'],
+            ['name' => 'Quarry Unit', 'is_active' => true]
+        );
+
+        $this->crusher = \App\Models\OperationalUnit::firstOrCreate(
+            ['code' => 'CRS'],
+            ['name' => 'Crusher Unit', 'is_active' => true]
+        );
     }
 
     public function test_can_view_reports_dashboard()
@@ -46,11 +59,13 @@ class Phase6VerificationTest extends TestCase
 
     public function test_daily_closure_logic()
     {
-        $date = Carbon::yesterday()->toDateString();
+        $yesterday = Carbon::yesterday();
+        $date = $yesterday->toDateString();
+        $prefix = 'GP-' . $yesterday->format('Ymd');
 
         // 1. Create a Gate Pass for Yesterday
         GatePass::create([
-            'gate_pass_number' => 'GP-TEST-001',
+            'gate_pass_number' => $prefix . '-0001',
             'date' => $date,
             'vehicle_id' => $this->vehicle->id,
             'client_id' => $this->client->id,
@@ -60,7 +75,11 @@ class Phase6VerificationTest extends TestCase
             'tare_weight' => 10,
             'net_weight' => 10,
             'total_amount' => 1000,
-            'status' => 'completed'
+            'status' => 'completed',
+            'activity_type' => 'Sales',
+            'source_unit_id' => $this->crusher->id,
+            'destination_unit_id' => $this->quarry->id,
+            'trips' => 1
         ]);
 
         // 2. Perform Daily Closing
@@ -76,12 +95,18 @@ class Phase6VerificationTest extends TestCase
 
         // 3. Try to Create a NEW Gate Pass for Closed Date -> Should Fail
         $response = $this->actingAs($this->user)->post(route('gate-passes.store'), [
-            'gate_pass_number' => 'GP-TEST-002',
+            'gate_pass_number' => $prefix . '-0002',
             'date' => $date, // Closed Date
             'vehicle_id' => $this->vehicle->id,
             'client_id' => $this->client->id,
             'status' => 'pending',
             'metal_type_id' => $this->metalType->id,
+            'activity_type' => 'Sales',
+            'source_unit_id' => $this->crusher->id,
+            'destination_unit_id' => $this->quarry->id,
+            'trips' => 1,
+            'rate_per_ton' => 500,
+            'net_weight' => 10,
         ]);
 
         $response->assertForbidden(); // 403
@@ -96,7 +121,7 @@ class Phase6VerificationTest extends TestCase
         $response->assertForbidden(); // 403
 
         // 5. Verify Reopen (Admin only)
-        $closing = DailyClosing::where('date', $date)->first();
+        $closing = DailyClosing::whereDate('date', $date)->first();
 
         // Should fail without reason
         $response = $this->actingAs($this->user)->post(route('daily-closings.reopen', $closing), []);
@@ -105,6 +130,12 @@ class Phase6VerificationTest extends TestCase
         $response = $this->actingAs($this->user)->post(route('daily-closings.reopen', $closing), [
             'reason' => 'Verification Test Reopen'
         ]);
+        if (session('errors')) {
+            dump(session('errors')->getMessages());
+        }
+        if (session('error')) {
+            dump(session('error'));
+        }
         $response->assertRedirect();
 
         $closing->refresh();
@@ -115,12 +146,18 @@ class Phase6VerificationTest extends TestCase
         $this->withoutExceptionHandling();
         try {
             $response = $this->actingAs($this->user)->post(route('gate-passes.store'), [
-                'gate_pass_number' => 'GP-TEST-003',
+                'gate_pass_number' => $prefix . '-0003',
                 'date' => $date, // Open Again
                 'vehicle_id' => $this->vehicle->id,
                 'client_id' => $this->client->id,
                 'status' => 'pending',
                 'metal_type_id' => $this->metalType->id,
+                'activity_type' => 'Sales',
+                'source_unit_id' => $this->crusher->id,
+                'destination_unit_id' => $this->quarry->id,
+                'trips' => 1,
+                'rate_per_ton' => 500,
+                'net_weight' => 10,
             ]);
             $response->assertRedirect();
         } catch (\Exception $e) {
@@ -144,10 +181,20 @@ class Phase6VerificationTest extends TestCase
         $this->assertEquals('Re-closing after corrections', $closing->notes); // Notes are overwritten in current logic
 
         // 8. Verify Lock is Active Again
+        $this->withExceptionHandling();
         $response = $this->actingAs($this->user)->post(route('gate-passes.store'), [
-            'gate_pass_number' => 'GP-TEST-004',
+            'gate_pass_number' => $prefix . '-0004',
             'date' => $date, // Closed Again
-            // ...
+            'vehicle_id' => $this->vehicle->id,
+            'client_id' => $this->client->id,
+            'status' => 'pending',
+            'metal_type_id' => $this->metalType->id,
+            'activity_type' => 'Sales',
+            'source_unit_id' => $this->crusher->id,
+            'destination_unit_id' => $this->quarry->id,
+            'trips' => 1,
+            'rate_per_ton' => 500,
+            'net_weight' => 10,
         ]);
         $response->assertForbidden();
     }
