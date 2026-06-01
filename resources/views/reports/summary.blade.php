@@ -126,9 +126,13 @@
                                             @if($type === 'metal')
                                                 {{ $row->metalType->name ?? 'Direct' }}
                                             @elseif($type === 'client')
-                                                <a href="{{ route('clients.show', $row->client_id) }}" class="text-dark text-decoration-none hover-text-primary">
-                                                    {{ $row->client->name ?? 'Counter Sale' }}
-                                                </a>
+                                                @if($row->client_id)
+                                                    <a href="{{ route('clients.show', $row->client_id) }}" class="text-dark text-decoration-none hover-text-primary">
+                                                        {{ $row->client->name }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-secondary">Counter Sale / Cash</span>
+                                                @endif
                                             @elseif($type === 'vehicle')
                                                 {{ $row->vehicle->registration_number ?? 'External' }}
                                             @endif

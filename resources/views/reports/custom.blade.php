@@ -90,9 +90,13 @@
                                         <div class="fw-bold text-azure">{{ $sale->gate_pass_number }}</div>
                                     </td>
                                     <td>
-                                        <a href="{{ route('clients.show', $sale->client_id) }}" class="fw-bold text-dark text-decoration-none hover-text-primary">
-                                            {{ $sale->client->name }}
-                                        </a>
+                                        @if($sale->client_id)
+                                            <a href="{{ route('clients.show', $sale->client_id) }}" class="fw-bold text-dark text-decoration-none hover-text-primary">
+                                                {{ $sale->client->name }}
+                                            </a>
+                                        @else
+                                            <span class="fw-bold text-secondary">{{ $sale->manual_customer_name ?? 'Counter Sale' }}</span>
+                                        @endif
                                     </td>
                                     <td>
                                         <span class="badge border text-dark px-2 fw-medium">{{ $sale->metalType->name }}</span>

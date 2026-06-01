@@ -179,7 +179,7 @@ class ReportExportService
             ->latest();
 
         if ($request->start_date && $request->end_date) {
-            $query->whereBetween('date', [$request->start_date, $request->end_date]);
+            $query->whereBetween('date', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
         }
 
         if ($request->client_id) {
@@ -223,7 +223,7 @@ class ReportExportService
         $query = GatePass::where('status', 'completed');
 
         if ($request->start_date && $request->end_date) {
-            $query->whereBetween('date', [$request->start_date, $request->end_date]);
+            $query->whereBetween('date', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
         }
 
         $data = match ($type) {
@@ -281,7 +281,7 @@ class ReportExportService
         $format = $request->input('format', 'csv');
 
         $data = GatePass::with('vehicle')
-            ->whereBetween('date', [$startDate, $endDate])
+            ->whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->where('status', 'completed')
             ->where('distance_km', '>', 0)
             ->selectRaw('vehicle_id, SUM(distance_km) as total_km, count(*) as trip_count')

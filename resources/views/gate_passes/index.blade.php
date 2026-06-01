@@ -112,7 +112,15 @@
                                 </div>
                             </td>
                             <td>
-                                @if($gp->project && $gp->project->is_internal)
+                                @if($gp->status->value === 'cancelled')
+                                    <span class="badge bg-danger-lt text-danger text-uppercase fw-bold" style="font-size: 0.6rem;">Cancelled</span>
+                                @elseif($gp->status->value === 'pending')
+                                    <span class="badge bg-warning-lt text-warning text-uppercase fw-bold" style="font-size: 0.6rem;">Pending</span>
+                                @elseif($gp->project && $gp->project->is_internal)
+                                    <span class="badge bg-info-lt text-info text-uppercase fw-bold" style="font-size: 0.6rem;">Internal</span>
+                                @elseif($gp->activity_type->value === 'Material Transfer')
+                                    <span class="badge bg-azure-lt text-azure text-uppercase fw-bold" style="font-size: 0.6rem;">Transfer</span>
+                                @elseif($gp->activity_type->value === 'Internal Movement')
                                     <span class="badge bg-info-lt text-info text-uppercase fw-bold" style="font-size: 0.6rem;">Internal</span>
                                 @elseif($gp->transaction)
                                     <div class="badge bg-green-lt text-green text-uppercase fw-bold" style="font-size: 0.6rem;">Billed</div>
@@ -120,7 +128,16 @@
                                 @elseif($gp->client_id)
                                     <span class="badge bg-orange-lt text-orange text-uppercase fw-bold" style="font-size: 0.6rem;">Unbilled Loan</span>
                                 @else
-                                    <span class="badge bg-gray-lt text-muted text-uppercase fw-bold" style="font-size: 0.6rem;">Draft</span>
+                                    {{-- Cash/Regular Sales --}}
+                                    @if($gp->paid_amount >= $gp->total_amount)
+                                        <span class="badge bg-green-lt text-green text-uppercase fw-bold" style="font-size: 0.6rem;">Paid (Cash)</span>
+                                    @elseif($gp->paid_amount > 0)
+                                        <span class="badge bg-warning-lt text-warning text-uppercase fw-bold" style="font-size: 0.6rem;">Partial (Cash)</span>
+                                        <div class="small fw-bold text-warning mt-1">Due: ₹{{ number_format($gp->total_amount - $gp->paid_amount, 0) }}</div>
+                                    @else
+                                        <span class="badge bg-danger-lt text-danger text-uppercase fw-bold" style="font-size: 0.6rem;">Unpaid (Cash)</span>
+                                        <div class="small fw-bold text-danger mt-1">₹{{ number_format($gp->total_amount, 0) }}</div>
+                                    @endif
                                 @endif
                             </td>
                             <td class="text-end">

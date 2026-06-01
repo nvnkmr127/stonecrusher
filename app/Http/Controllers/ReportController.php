@@ -196,7 +196,7 @@ class ReportController extends Controller
         $clientId = $request->input('client_id');
 
         $query = GatePass::with(['client', 'vehicle', 'metalType'])
-            ->whereBetween('date', [$startDate, $endDate])
+            ->whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->where('status', 'completed');
 
         if ($clientId) {
@@ -219,7 +219,7 @@ class ReportController extends Controller
         $format = $request->input('format', 'csv');
 
         $sales = GatePass::with(['client', 'vehicle', 'metalType'])
-            ->whereBetween('date', [$startDate, $endDate])
+            ->whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->where('status', 'completed')
             ->orderBy('date')
             ->get();
@@ -275,14 +275,14 @@ class ReportController extends Controller
 
         if ($type === 'metal') {
             $data = GatePass::with('metalType')
-                ->whereBetween('date', [$startDate, $endDate])
+                ->whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->where('status', 'completed')
                 ->selectRaw('metal_type_id, SUM(total_amount) as total_sales, SUM(loading_quantity) as total_qty, COUNT(*) as count')
                 ->groupBy('metal_type_id')
                 ->get();
         } elseif ($type === 'client') {
             $data = GatePass::with('client')
-                ->whereBetween('date', [$startDate, $endDate])
+                ->whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->where('status', 'completed')
                 ->selectRaw('client_id, SUM(total_amount) as total_sales, COUNT(*) as count, SUM(transport_cost) as transport')
                 ->groupBy('client_id')
@@ -302,7 +302,7 @@ class ReportController extends Controller
             }
         } elseif ($type === 'vehicle') {
             $data = GatePass::with('vehicle')
-                ->whereBetween('date', [$startDate, $endDate])
+                ->whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->where('status', 'completed')
                 ->selectRaw('vehicle_id, SUM(total_amount) as total_sales, COUNT(*) as count, SUM(distance_km) as total_km')
                 ->groupBy('vehicle_id')
@@ -395,7 +395,7 @@ class ReportController extends Controller
 
         foreach ($vehicles as $vehicle) {
             $gatePasses = GatePass::where('vehicle_id', $vehicle->id)
-                ->whereBetween('date', [$startDate, $endDate])
+                ->whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->with(['sourceUnit', 'destinationUnit'])
                 ->get();
 
@@ -478,7 +478,7 @@ class ReportController extends Controller
         if ($quarry) {
             $qRecords = \App\Models\OperationalRecord::with('tag')
                 ->where('operational_unit_id', $quarry->id)
-                ->whereBetween('date', [$startDate, $endDate])
+                ->whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->get();
 
             $grouped = $qRecords->groupBy(fn($r) => $r->tag->name ?? 'Uncategorized');
@@ -499,7 +499,7 @@ class ReportController extends Controller
         if ($crusher) {
             $cRecords = \App\Models\OperationalRecord::with('tag')
                 ->where('operational_unit_id', $crusher->id)
-                ->whereBetween('date', [$startDate, $endDate])
+                ->whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->get();
 
             $grouped = $cRecords->groupBy(fn($r) => $r->tag->name ?? 'Uncategorized');
