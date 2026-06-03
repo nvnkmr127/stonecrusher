@@ -123,6 +123,7 @@ class GatePassController extends Controller
             'destination_unit_id' => 'required|exists:operational_units,id',
             'trips' => 'required|integer|min:1',
             'destination_type' => 'nullable|string', // Used for conditional logic
+            'payment_status' => 'nullable|string|in:paid,pending',
             'manual_customer_name' => 'nullable|string|max:255',
             'village_area' => 'nullable|string|max:255',
             'remarks' => 'nullable|string',
@@ -232,6 +233,16 @@ class GatePassController extends Controller
             $validated['total_amount'] = round($calculatedTotal, 2);
         }
 
+        if ($request->input('destination_type') === 'regular') {
+            if ($request->input('payment_status') === 'paid') {
+                $validated['paid_amount'] = $validated['total_amount'] ?? 0;
+                $validated['payment_status'] = 'paid';
+            } else {
+                $validated['paid_amount'] = 0;
+                $validated['payment_status'] = 'pending';
+            }
+        }
+
         return \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $request) {
             $gatePass = GatePass::create($validated);
 
@@ -303,6 +314,7 @@ class GatePassController extends Controller
             'destination_unit_id' => 'required|exists:operational_units,id',
             'trips' => 'required|integer|min:1',
             'destination_type' => 'nullable|string',
+            'payment_status' => 'nullable|string|in:paid,pending',
             'remarks' => 'nullable|string',
             'delivery_location' => 'nullable|string|max:255',
             'distance_km' => 'nullable|numeric|min:0',
@@ -418,6 +430,16 @@ class GatePassController extends Controller
             $validated['rate_per_ton'] = $rate;
             $validated['lead'] = $lead;
             $validated['total_amount'] = round($calculatedTotal, 2);
+        }
+
+        if ($request->input('destination_type') === 'regular') {
+            if ($request->input('payment_status') === 'paid') {
+                $validated['paid_amount'] = $validated['total_amount'] ?? 0;
+                $validated['payment_status'] = 'paid';
+            } else {
+                $validated['paid_amount'] = 0;
+                $validated['payment_status'] = 'pending';
+            }
         }
 
         // Check if editing a completed pass

@@ -38,6 +38,7 @@
                 villageArea: {{ Illuminate\Support\Js::from(old('village_area', '')) }},
                 manualVehicleNumber: {{ Illuminate\Support\Js::from(old('manual_vehicle_number', '')) }},
                 destinationType: {{ Illuminate\Support\Js::from(old('destination_type') ?: (old('manual_customer_name') ? 'regular' : (old('activity_type') == 'Material Transfer' ? 'transfer' : (old('project_id') && $projects->where('id', old('project_id'))->where('is_internal', true)->count() > 0 ? 'internal' : 'registered')))) }},
+                paymentStatus: '{{ old('payment_status', 'paid') }}',
                 leadAmount: {{ Illuminate\Support\Js::from(old('lead', '')) }},
                 ratePerTon: {{ Illuminate\Support\Js::from(old('rate_per_ton', '')) }},
                 totalAmount: 0,
@@ -365,6 +366,25 @@
                                             placeholder="Enter Village or Area">
                                         <x-input-error :messages="$errors->get('village_area')" />
                                     </div>
+                                    <div class="col-md-6" x-show="destinationType === 'regular'">
+                                        <label class="form-label">Payment Status</label>
+                                        <div class="form-selectgroup form-selectgroup-boxes d-flex gap-2">
+                                            <label class="form-selectgroup-item flex-fill">
+                                                <input type="radio" name="payment_status" value="paid"
+                                                    class="form-selectgroup-input" x-model="paymentStatus">
+                                                <span class="form-selectgroup-label d-flex align-items-center p-2 justify-content-center">
+                                                    <span class="fw-bold text-success">Paid</span>
+                                                </span>
+                                            </label>
+                                            <label class="form-selectgroup-item flex-fill">
+                                                <input type="radio" name="payment_status" value="pending"
+                                                    class="form-selectgroup-input" x-model="paymentStatus">
+                                                <span class="form-selectgroup-label d-flex align-items-center p-2 justify-content-center">
+                                                    <span class="fw-bold text-danger">Unpaid</span>
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </div>
 
                                     <!-- Internal Mode Fields -->
                                     <div class="col-12" x-show="destinationType === 'internal'">
@@ -521,6 +541,7 @@
                     manualCustomerName: config.manualCustomerName || '',
                     villageArea: config.villageArea || '',
                     destinationType: config.destinationType || 'registered', // registered, regular
+                    paymentStatus: config.paymentStatus || 'paid',
                     manualVehicleNumber: config.manualVehicleNumber || '',
                     isBillable: config.isBillable || false,
                     isManualTransportCost: false,

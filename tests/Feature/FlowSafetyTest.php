@@ -270,5 +270,124 @@ class FlowSafetyTest extends TestCase
             'next_number' => 'GP-20260418-0011'
         ]);
     }
+
+    /** @test */
+    public function regular_sale_payment_toggle_logic()
+    {
+        $vehicle = Vehicle::create(['registration_number' => 'KA-01-GP-9999', 'is_active' => true, 'model' => 'Tata', 'cft' => 10]);
+        $metal = MetalType::create(['name' => 'GP Metal Regular', 'rate_per_ton' => 300, 'is_active' => true]);
+
+        $quarry = \App\Models\OperationalUnit::firstOrCreate(
+            ['code' => 'QRY'],
+            ['name' => 'Quarry Unit', 'is_active' => true]
+        );
+
+        $crusher = \App\Models\OperationalUnit::firstOrCreate(
+            ['code' => 'CRS'],
+            ['name' => 'Crusher Unit', 'is_active' => true]
+        );
+
+        // 1. Create a regular sale with payment_status 'paid'
+        $response = $this->actingAs($this->user)->post(route('gate-passes.store'), [
+            'gate_pass_number' => 'GP-' . now()->format('Ymd') . '-888',
+            'date' => now()->toDateString(),
+            'vehicle_id' => $vehicle->id,
+            'destination_type' => 'regular',
+            'status' => GatePassStatus::COMPLETED->value,
+            'metal_type_id' => $metal->id,
+            'driver_name' => 'Driver Reg',
+            'net_weight' => 10,
+            'rate_per_ton' => 300,
+            'activity_type' => \App\Enums\ActivityType::SALES->value,
+            'source_unit_id' => $crusher->id,
+            'destination_unit_id' => $quarry->id,
+            'trips' => 1,
+            'payment_status' => 'paid',
+            'manual_customer_name' => 'Cash Customer',
+        ]);
+
+        $response->assertRedirect(route('gate-passes.index'));
+        
+        $gp1 = GatePass::where('gate_pass_number', 'GP-' . now()->format('Ymd') . '-888')->firstOrFail();
+        $this->assertEquals(3000.00, $gp1->total_amount);
+        $this->assertEquals(3000.00, $gp1->paid_amount);
+        $this->assertEquals('paid', $gp1->payment_status);
+
+        // 2. Create a regular sale with payment_status 'pending' (Unpaid)
+        $response = $this->actingAs($this->user)->post(route('gate-passes.store'), [
+            'gate_pass_number' => 'GP-' . now()->format('Ymd') . '-889',
+            'date' => now()->toDateString(),
+            'vehicle_id' => $vehicle->id,
+            'destination_type' => 'regular',
+            'status' => GatePassStatus::COMPLETED->value,
+            'metal_type_id' => $metal->id,
+            'driver_name' => 'Driver Reg 2',
+            'net_weight' => 10,
+            'rate_per_ton' => 300,
+            'activity_type' => \App\Enums\ActivityType::SALES->value,
+            'source_unit_id' => $crusher->id,
+            'destination_unit_id' => $quarry->id,
+            'trips' => 1,
+            'payment_status' => 'pending',
+            'manual_customer_name' => 'Cash Customer 2',
+        ]);
+
+        $response->assertRedirect(route('gate-passes.index'));
+
+        $gp2 = GatePass::where('gate_pass_number', 'GP-' . now()->format('Ymd') . '-889')->firstOrFail();
+        $this->assertEquals(3000.00, $gp2->total_amount);
+        $this->assertEquals(0.00, $gp2->paid_amount);
+        $this->assertEquals('pending', $gp2->payment_status);
+
+        // 3. Update GP2 to 'paid'
+        $response = $this->actingAs($this->user)->put(route('gate-passes.update', $gp2->id), [
+            'date' => now()->toDateString(),
+            'gate_pass_number' => $gp2->gate_pass_number,
+            'vehicle_id' => $gp2->vehicle_id,
+            'destination_type' => 'regular',
+            'status' => GatePassStatus::COMPLETED->value,
+            'metal_type_id' => $gp2->metal_type_id,
+            'driver_name' => $gp2->driver_name,
+            'net_weight' => $gp2->net_weight,
+            'rate_per_ton' => $gp2->rate_per_ton,
+            'activity_type' => $gp2->activity_type->value,
+            'source_unit_id' => $gp2->source_unit_id,
+            'destination_unit_id' => $gp2->destination_unit_id,
+            'trips' => 1,
+            'payment_status' => 'paid',
+            'manual_customer_name' => 'Cash Customer 2 Edited',
+        ]);
+
+        $response->assertRedirect(route('gate-passes.index'));
+
+        $gp2->refresh();
+        $this->assertEquals(3000.00, $gp2->paid_amount);
+        $this->assertEquals('paid', $gp2->payment_status);
+
+        // 4. Update GP1 back to 'pending'
+        $response = $this->actingAs($this->user)->put(route('gate-passes.update', $gp1->id), [
+            'date' => now()->toDateString(),
+            'gate_pass_number' => $gp1->gate_pass_number,
+            'vehicle_id' => $gp1->vehicle_id,
+            'destination_type' => 'regular',
+            'status' => GatePassStatus::COMPLETED->value,
+            'metal_type_id' => $gp1->metal_type_id,
+            'driver_name' => $gp1->driver_name,
+            'net_weight' => $gp1->net_weight,
+            'rate_per_ton' => $gp1->rate_per_ton,
+            'activity_type' => $gp1->activity_type->value,
+            'source_unit_id' => $gp1->source_unit_id,
+            'destination_unit_id' => $gp1->destination_unit_id,
+            'trips' => 1,
+            'payment_status' => 'pending',
+            'manual_customer_name' => 'Cash Customer Edited',
+        ]);
+
+        $response->assertRedirect(route('gate-passes.index'));
+
+        $gp1->refresh();
+        $this->assertEquals(0.00, $gp1->paid_amount);
+        $this->assertEquals('pending', $gp1->payment_status);
+    }
 }
 
