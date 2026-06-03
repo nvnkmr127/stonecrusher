@@ -85,7 +85,8 @@ class GatePassController extends Controller
         $parsedDate = \Carbon\Carbon::parse($date);
         $prefix = 'GP-' . $parsedDate->format('Ymd');
 
-        $lastGp = GatePass::where('gate_pass_number', 'like', $prefix . '-%')
+        $lastGp = GatePass::withTrashed()
+            ->where('gate_pass_number', 'like', $prefix . '-%')
             ->orderBy('gate_pass_number', 'desc')
             ->first();
 

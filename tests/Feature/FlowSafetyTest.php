@@ -232,4 +232,43 @@ class FlowSafetyTest extends TestCase
         // Assert all linked transactions are deleted
         $this->assertDatabaseMissing('client_transactions', ['gate_pass_id' => $gp->id]);
     }
+
+    /** @test */
+    public function gate_pass_number_generation_excludes_soft_deleted_passes()
+    {
+        $client = Client::create(['name' => 'GP Test Client', 'is_active' => true, 'credit_limit' => 50000]);
+        $vehicle = Vehicle::create(['registration_number' => 'KA-01-GP-0001', 'is_active' => true, 'model' => 'Tata', 'cft' => 1]);
+        $metal = MetalType::create(['name' => 'GP Metal', 'rate_per_ton' => 400, 'is_active' => true]);
+
+        // Create completed Gate Pass and soft delete it
+        $gp = GatePass::create([
+            'gate_pass_number' => 'GP-20260418-0010',
+            'date' => '2026-04-18 10:00:00',
+            'vehicle_id' => $vehicle->id,
+            'client_id' => $client->id,
+            'status' => GatePassStatus::COMPLETED->value,
+            'metal_type_id' => $metal->id,
+            'driver_name' => 'Driver GP',
+            'gross_weight' => 20,
+            'tare_weight' => 10,
+            'net_weight' => 10,
+            'total_amount' => 4000,
+            'activity_type' => \App\Enums\ActivityType::SALES->value,
+            'source_unit_id' => 2,
+            'destination_unit_id' => 3,
+            'rate_per_ton' => 400,
+            'trips' => 1,
+        ]);
+        
+        $gp->delete();
+
+        // Check endpoint
+        $response = $this->actingAs($this->user)->get('/gate-passes/next-number?date=2026-04-18');
+        
+        $response->assertStatus(200);
+        $response->assertJson([
+            'next_number' => 'GP-20260418-0011'
+        ]);
+    }
 }
+
