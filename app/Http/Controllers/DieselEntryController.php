@@ -57,14 +57,22 @@ class DieselEntryController extends Controller
             ->get();
 
         // Monthly consumption for the current year
+        $driver = DB::connection()->getDriverName();
+        $monthExpr = $driver === 'sqlite'
+            ? "strftime('%m', date)"
+            : "MONTH(date)";
+
         $monthlyConsumption = DieselEntry::select(
-            DB::raw("strftime('%m', date) as month"),
+            DB::raw("{$monthExpr} as month"),
             DB::raw('SUM(liters) as total_liters')
         )
             ->whereYear('date', date('Y'))
             ->groupBy('month')
             ->get()
-            ->pluck('total_liters', 'month');
+            ->pluck('total_liters', 'month')
+            ->mapWithKeys(function ($value, $key) {
+                return [str_pad((int) $key, 2, '0', STR_PAD_LEFT) => $value];
+            });
 
         $vehicles = Vehicle::getCached();
         $locations = OperationalUnit::getActive();
