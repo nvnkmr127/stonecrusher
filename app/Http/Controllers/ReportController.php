@@ -145,17 +145,17 @@ class ReportController extends Controller
         // Groupped by Date
         $dailySales = GatePass::whereBetween('date', [$startDate, $endDate])
             ->where('status', 'completed')
-            ->selectRaw('DATE(date) as date, SUM(total_amount) as total_sales, COUNT(*) as count')
-            ->groupBy('date')
+            ->selectRaw('DATE(date) as date_only, SUM(total_amount) as total_sales, COUNT(*) as count')
+            ->groupByRaw('DATE(date)')
             ->get()
-            ->keyBy('date');
+            ->keyBy('date_only');
 
         $dailyCollections = ClientTransaction::whereBetween('transaction_date', [$startDate, $endDate])
             ->where('transaction_type', 'credit')
-            ->selectRaw('DATE(transaction_date) as date, SUM(amount) as total_collections')
-            ->groupBy('date')
+            ->selectRaw('DATE(transaction_date) as date_only, SUM(amount) as total_collections')
+            ->groupBy('transaction_date')
             ->get()
-            ->keyBy('date');
+            ->keyBy('date_only');
 
         // Merge dates
         $reportData = [];

@@ -121,19 +121,19 @@ class ReportExportService
         $startDate = Carbon::parse($month)->startOfMonth();
         $endDate = Carbon::parse($month)->endOfMonth();
 
-        $dailySales = GatePass::selectRaw('DATE(date) as date, SUM(total_amount) as total_sales, COUNT(*) as trip_count')
+        $dailySales = GatePass::selectRaw('DATE(date) as date_only, SUM(total_amount) as total_sales, COUNT(*) as trip_count')
             ->whereBetween('date', [$startDate, $endDate])
             ->where('status', 'completed')
-            ->groupBy('date')
+            ->groupByRaw('DATE(date)')
             ->get()
-            ->keyBy('date');
+            ->keyBy('date_only');
 
-        $expenses = DB::table('expenses')
-            ->selectRaw('DATE(expense_date) as date, SUM(amount) as total_expense')
-            ->whereBetween('expense_date', [$startDate, $endDate])
-            ->groupBy('date')
+        $expenses = DB::table('crusher_expenses')
+            ->selectRaw('DATE(date) as date_only, SUM(amount) as total_expense')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->groupByRaw('DATE(date)')
             ->get()
-            ->keyBy('date');
+            ->keyBy('date_only');
 
         $csvFileName = 'monthly_report_' . $month . '.csv';
         $headers = [

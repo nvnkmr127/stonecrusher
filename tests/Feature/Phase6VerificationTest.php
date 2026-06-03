@@ -198,4 +198,118 @@ class Phase6VerificationTest extends TestCase
         ]);
         $response->assertForbidden();
     }
+
+    public function test_monthly_report_groups_by_day_correctly()
+    {
+        $targetDate = Carbon::create(2026, 6, 15);
+        $startDate = $targetDate->copy()->startOfMonth()->toDateString();
+        $endDate = $targetDate->copy()->endOfMonth()->toDateString();
+
+        // 1. Create multiple completed gate passes on the same day at different times
+        GatePass::create([
+            'gate_pass_number' => 'GP-20260615-0001',
+            'date' => '2026-06-15 09:00:00',
+            'vehicle_id' => $this->vehicle->id,
+            'client_id' => $this->client->id,
+            'metal_type_id' => $this->metalType->id,
+            'driver_name' => 'Driver A',
+            'gross_weight' => 20,
+            'tare_weight' => 10,
+            'net_weight' => 10,
+            'total_amount' => 1000,
+            'status' => 'completed',
+            'activity_type' => 'Sales',
+            'source_unit_id' => $this->crusher->id,
+            'destination_unit_id' => $this->quarry->id,
+            'trips' => 1
+        ]);
+
+        GatePass::create([
+            'gate_pass_number' => 'GP-20260615-0002',
+            'date' => '2026-06-15 15:30:00',
+            'vehicle_id' => $this->vehicle->id,
+            'client_id' => $this->client->id,
+            'metal_type_id' => $this->metalType->id,
+            'driver_name' => 'Driver B',
+            'gross_weight' => 22,
+            'tare_weight' => 10,
+            'net_weight' => 12,
+            'total_amount' => 1500,
+            'status' => 'completed',
+            'activity_type' => 'Sales',
+            'source_unit_id' => $this->crusher->id,
+            'destination_unit_id' => $this->quarry->id,
+            'trips' => 1
+        ]);
+
+        // 2. Fetch the monthly report for June 2026
+        $response = $this->actingAs($this->user)->get(route('reports.monthly', [
+            'month' => 6,
+            'year' => 2026
+        ]));
+
+        $response->assertStatus(200);
+
+        // 3. Assert that both gate passes are combined under June 15th
+        // Total sales should be 2500, and total sales count should be 2
+        $response->assertViewHas('reportData', function ($reportData) {
+            $june15Data = $reportData['2026-06-15'] ?? null;
+            return $june15Data && 
+                   $june15Data['sales'] == 2500 && 
+                   $june15Data['sales_count'] == 2;
+        });
+    }
+
+    public function test_monthly_report_export_groups_by_day_correctly()
+    {
+        $targetDate = Carbon::create(2026, 6, 15);
+
+        // 1. Create multiple completed gate passes on the same day at different times
+        GatePass::create([
+            'gate_pass_number' => 'GP-20260615-0001',
+            'date' => '2026-06-15 09:00:00',
+            'vehicle_id' => $this->vehicle->id,
+            'client_id' => $this->client->id,
+            'metal_type_id' => $this->metalType->id,
+            'driver_name' => 'Driver A',
+            'gross_weight' => 20,
+            'tare_weight' => 10,
+            'net_weight' => 10,
+            'total_amount' => 1000,
+            'status' => 'completed',
+            'activity_type' => 'Sales',
+            'source_unit_id' => $this->crusher->id,
+            'destination_unit_id' => $this->quarry->id,
+            'trips' => 1
+        ]);
+
+        GatePass::create([
+            'gate_pass_number' => 'GP-20260615-0002',
+            'date' => '2026-06-15 15:30:00',
+            'vehicle_id' => $this->vehicle->id,
+            'client_id' => $this->client->id,
+            'metal_type_id' => $this->metalType->id,
+            'driver_name' => 'Driver B',
+            'gross_weight' => 22,
+            'tare_weight' => 10,
+            'net_weight' => 12,
+            'total_amount' => 1500,
+            'status' => 'completed',
+            'activity_type' => 'Sales',
+            'source_unit_id' => $this->crusher->id,
+            'destination_unit_id' => $this->quarry->id,
+            'trips' => 1
+        ]);
+
+        // 2. Fetch the monthly report export for June 2026
+        $response = $this->actingAs($this->user)->get(route('reports.monthly.export', [
+            'month' => '2026-06'
+        ]));
+
+        $response->assertStatus(200);
+
+        // 3. Assert that both gate passes are combined under June 15th in CSV
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('"15 Jun 2026",2500,2,0,2500', $content);
+    }
 }
