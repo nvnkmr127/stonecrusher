@@ -89,15 +89,32 @@ class ReportController extends Controller
             ];
         });
 
-        // 2. Collections (Client Transactions - Credit)
+        // 2. Collections (Client Transactions - Credit) + Cash collected at gate from regular sales
         $collections = ClientTransaction::with('client')
             ->whereDate('transaction_date', $date)
             ->where('transaction_type', 'credit')
             ->get();
 
+        $regularCollectionsAmount = GatePass::whereDate('date', $date)
+            ->where('status', 'completed')
+            ->whereNull('client_id')
+            ->sum('paid_amount');
+
+        $byMode = $collections->groupBy(function ($txn) {
+            if ($txn->payment_mode instanceof \App\Enums\PaymentMode) {
+                return $txn->payment_mode->value;
+            }
+            return (string) $txn->payment_mode;
+        })->map->sum('amount');
+
+        if ($regularCollectionsAmount > 0) {
+            $cashKey = \App\Enums\PaymentMode::CASH->value;
+            $byMode[$cashKey] = ($byMode[$cashKey] ?? 0) + $regularCollectionsAmount;
+        }
+
         $collectionSummary = [
-            'total_collected' => $collections->sum('amount'),
-            'by_mode' => $collections->groupBy('payment_mode')->map->sum('amount'),
+            'total_collected' => $collections->sum('amount') + $regularCollectionsAmount,
+            'by_mode' => $byMode,
         ];
 
         // 3. Diesel Issues Summary (New: Requirement 3)
@@ -157,6 +174,14 @@ class ReportController extends Controller
             ->get()
             ->keyBy('date_only');
 
+        $dailyRegularCollections = GatePass::whereBetween('date', [$startDate, $endDate])
+            ->where('status', 'completed')
+            ->whereNull('client_id')
+            ->selectRaw('DATE(date) as date_only, SUM(paid_amount) as total_regular_collections')
+            ->groupByRaw('DATE(date)')
+            ->get()
+            ->keyBy('date_only');
+
         // Merge dates
         $reportData = [];
         $current = $startDate->copy();
@@ -164,12 +189,13 @@ class ReportController extends Controller
             $d = $current->toDateString();
             $sales = $dailySales[$d] ?? null;
             $col = $dailyCollections[$d] ?? null;
+            $regCol = $dailyRegularCollections[$d] ?? null;
 
-            if ($sales || $col) {
+            if ($sales || $col || $regCol) {
                 $reportData[$d] = [
                     'sales' => $sales ? $sales->total_sales : 0,
                     'sales_count' => $sales ? $sales->count : 0,
-                    'collections' => $col ? $col->total_collections : 0,
+                    'collections' => ($col ? $col->total_collections : 0) + ($regCol ? $regCol->total_regular_collections : 0),
                 ];
             }
             $current->addDay();

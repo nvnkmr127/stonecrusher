@@ -312,4 +312,131 @@ class Phase6VerificationTest extends TestCase
         $content = $response->streamedContent();
         $this->assertStringContainsString('"15 Jun 2026",2500,2,0,2500', $content);
     }
+
+    public function test_monthly_report_includes_regular_sales_collections()
+    {
+        $targetDate = Carbon::create(2026, 6, 15);
+
+        // 1. Create a regular (cash) sale with paid_amount > 0 (marked as paid)
+        GatePass::create([
+            'gate_pass_number' => 'GP-20260615-0010',
+            'date' => '2026-06-15 11:00:00',
+            'vehicle_id' => $this->vehicle->id,
+            'client_id' => null, // regular sale
+            'metal_type_id' => $this->metalType->id,
+            'driver_name' => 'Driver Cash',
+            'gross_weight' => 20,
+            'tare_weight' => 10,
+            'net_weight' => 10,
+            'rate_per_ton' => 500,
+            'total_amount' => 5000,
+            'paid_amount' => 5000,
+            'payment_status' => 'paid',
+            'status' => 'completed',
+            'activity_type' => 'Sales',
+            'source_unit_id' => $this->crusher->id,
+            'destination_unit_id' => $this->quarry->id,
+            'trips' => 1
+        ]);
+
+        // 2. Fetch monthly report
+        $response = $this->actingAs($this->user)->get(route('reports.monthly', [
+            'month' => 6,
+            'year' => 2026
+        ]));
+
+        $response->assertStatus(200);
+
+        // 3. Assert collection matches the cash sale paid amount
+        $response->assertViewHas('reportData', function ($reportData) {
+            $june15Data = $reportData['2026-06-15'] ?? null;
+            return $june15Data && 
+                   $june15Data['sales'] == 5000 && 
+                   $june15Data['collections'] == 5000;
+        });
+    }
+
+    public function test_monthly_report_pdf_export_includes_regular_sales_collections()
+    {
+        $targetDate = Carbon::create(2026, 6, 15);
+
+        // 1. Create regular sale
+        GatePass::create([
+            'gate_pass_number' => 'GP-20260615-0011',
+            'date' => '2026-06-15 11:00:00',
+            'vehicle_id' => $this->vehicle->id,
+            'client_id' => null,
+            'metal_type_id' => $this->metalType->id,
+            'driver_name' => 'Driver Cash 2',
+            'gross_weight' => 20,
+            'tare_weight' => 10,
+            'net_weight' => 10,
+            'rate_per_ton' => 500,
+            'total_amount' => 5000,
+            'paid_amount' => 5000,
+            'payment_status' => 'paid',
+            'status' => 'completed',
+            'activity_type' => 'Sales',
+            'source_unit_id' => $this->crusher->id,
+            'destination_unit_id' => $this->quarry->id,
+            'trips' => 1
+        ]);
+
+        // 2. Fetch monthly report PDF export
+        $response = $this->actingAs($this->user)->get(route('reports.monthly.export', [
+            'month' => 6,
+            'year' => 2026,
+            'format' => 'pdf'
+        ]));
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('application/pdf', $response->headers->get('Content-Type'));
+    }
+
+    public function test_daily_report_and_pdf_export_includes_regular_sales_collections()
+    {
+        $date = '2026-06-15';
+
+        // 1. Create regular sale
+        GatePass::create([
+            'gate_pass_number' => 'GP-20260615-0012',
+            'date' => '2026-06-15 11:00:00',
+            'vehicle_id' => $this->vehicle->id,
+            'client_id' => null,
+            'metal_type_id' => $this->metalType->id,
+            'driver_name' => 'Driver Cash 3',
+            'gross_weight' => 20,
+            'tare_weight' => 10,
+            'net_weight' => 10,
+            'rate_per_ton' => 500,
+            'total_amount' => 5000,
+            'paid_amount' => 5000,
+            'payment_status' => 'paid',
+            'status' => 'completed',
+            'activity_type' => 'Sales',
+            'source_unit_id' => $this->crusher->id,
+            'destination_unit_id' => $this->quarry->id,
+            'trips' => 1
+        ]);
+
+        // 2. Fetch daily report page
+        $response = $this->actingAs($this->user)->get(route('reports.daily', [
+            'date' => $date
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertViewHas('collectionSummary', function ($summary) {
+            return $summary['total_collected'] == 5000 &&
+                   ($summary['by_mode']['Cash'] ?? 0) == 5000;
+        });
+
+        // 3. Fetch daily report PDF export
+        $pdfResponse = $this->actingAs($this->user)->get(route('reports.daily.export', [
+            'date' => $date,
+            'format' => 'pdf'
+        ]));
+
+        $pdfResponse->assertStatus(200);
+        $this->assertStringContainsString('application/pdf', $pdfResponse->headers->get('Content-Type'));
+    }
 }

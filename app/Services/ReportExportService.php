@@ -28,6 +28,42 @@ class ReportExportService
             ->whereDate('transaction_date', $date)
             ->get();
 
+        if ($request->input('format') === 'pdf') {
+            $salesSummary = [
+                'count' => $sales->count(),
+                'total_amount' => $sales->sum('total_amount'),
+                'total_volume' => $sales->sum('loading_quantity'),
+                'total_diesel' => $sales->sum('diesel_amount'),
+                'total_advance' => $sales->sum('advance_amount'),
+                'total_paid' => $sales->sum('paid_amount'),
+            ];
+            $salesSummary['outstanding'] = $salesSummary['total_amount'] - $salesSummary['total_paid'];
+
+            $regularCollectionsAmount = GatePass::whereDate('date', $date)
+                ->where('status', 'completed')
+                ->whereNull('client_id')
+                ->sum('paid_amount');
+
+            $collections = ClientTransaction::with('client')
+                ->whereDate('transaction_date', $date)
+                ->where('transaction_type', 'credit')
+                ->get();
+
+            $collectionSummary = [
+                'total_collected' => $collections->sum('amount') + $regularCollectionsAmount,
+            ];
+
+            $pdf = Pdf::loadView('exports.reports.daily', [
+                'date' => $date,
+                'gatePasses' => $sales,
+                'salesSummary' => $salesSummary,
+                'collections' => $collections,
+                'collectionSummary' => $collectionSummary,
+            ]);
+
+            return $pdf->download("daily_report_{$date}.pdf");
+        }
+
         $csvFileName = 'daily_report_' . $date . '.csv';
 
         $headers = [
@@ -117,9 +153,78 @@ class ReportExportService
 
     public function exportMonthly(Request $request)
     {
-        $month = $request->month ?? date('Y-m');
-        $startDate = Carbon::parse($month)->startOfMonth();
-        $endDate = Carbon::parse($month)->endOfMonth();
+        $monthVal = $request->input('month');
+        $yearVal = $request->input('year');
+
+        if (is_numeric($monthVal) && $yearVal) {
+            $startDate = Carbon::createFromDate($yearVal, $monthVal, 1)->startOfMonth();
+            $endDate = Carbon::createFromDate($yearVal, $monthVal, 1)->endOfMonth();
+            $month = $startDate->format('Y-m');
+            $year = $yearVal;
+            $monthNum = $monthVal;
+        } elseif ($monthVal) {
+            $startDate = Carbon::parse($monthVal)->startOfMonth();
+            $endDate = Carbon::parse($monthVal)->endOfMonth();
+            $month = $startDate->format('Y-m');
+            $year = $startDate->year;
+            $monthNum = $startDate->month;
+        } else {
+            $startDate = Carbon::now()->startOfMonth();
+            $endDate = Carbon::now()->endOfMonth();
+            $month = $startDate->format('Y-m');
+            $year = $startDate->year;
+            $monthNum = $startDate->month;
+        }
+
+        if ($request->input('format') === 'pdf') {
+            $dailySales = GatePass::whereBetween('date', [$startDate, $endDate])
+                ->where('status', 'completed')
+                ->selectRaw('DATE(date) as date_only, SUM(total_amount) as total_sales, COUNT(*) as count')
+                ->groupByRaw('DATE(date)')
+                ->get()
+                ->keyBy('date_only');
+
+            $dailyCollections = ClientTransaction::whereBetween('transaction_date', [$startDate, $endDate])
+                ->where('transaction_type', 'credit')
+                ->selectRaw('DATE(transaction_date) as date_only, SUM(amount) as total_collections')
+                ->groupBy('transaction_date')
+                ->get()
+                ->keyBy('date_only');
+
+            $dailyRegularCollections = GatePass::whereBetween('date', [$startDate, $endDate])
+                ->where('status', 'completed')
+                ->whereNull('client_id')
+                ->selectRaw('DATE(date) as date_only, SUM(paid_amount) as total_regular_collections')
+                ->groupByRaw('DATE(date)')
+                ->get()
+                ->keyBy('date_only');
+
+            $reportData = [];
+            $current = $startDate->copy();
+            while ($current <= $endDate) {
+                $d = $current->toDateString();
+                $sales = $dailySales[$d] ?? null;
+                $col = $dailyCollections[$d] ?? null;
+                $regCol = $dailyRegularCollections[$d] ?? null;
+
+                if ($sales || $col || $regCol) {
+                    $reportData[$d] = [
+                        'date' => $current->format('d M Y'),
+                        'sales' => $sales ? $sales->total_sales : 0,
+                        'sales_count' => $sales ? $sales->count : 0,
+                        'collections' => ($col ? $col->total_collections : 0) + ($regCol ? $regCol->total_regular_collections : 0),
+                    ];
+                }
+                $current->addDay();
+            }
+
+            $pdf = Pdf::loadView('exports.reports.monthly', [
+                'reportData' => $reportData,
+                'month' => $monthNum,
+                'year' => $year,
+            ]);
+            return $pdf->download("monthly_report_{$month}.pdf");
+        }
 
         $dailySales = GatePass::selectRaw('DATE(date) as date_only, SUM(total_amount) as total_sales, COUNT(*) as trip_count')
             ->whereBetween('date', [$startDate, $endDate])

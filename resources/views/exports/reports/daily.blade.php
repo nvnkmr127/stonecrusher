@@ -104,7 +104,7 @@
                     <td>{{ $col->client->name ?? '-' }}</td>
                     <td>{{ number_format($col->amount, 2) }}</td>
                     <td>{{ $col->payment_mode }}</td>
-                    <td>{{ $col->remarks }}</td>
+                    <td>{{ $col->description }}</td>
                 </tr>
             @endforeach
         </tbody>
